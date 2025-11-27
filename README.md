@@ -17,13 +17,13 @@
 ```bash
 mv gsuid_core/gsuid_core/plugins/WutheringWavesUID ./WutheringWavesUID_bak
 cd gsuid_core/gsuid_core/plugins/
-git clone https://github.com/Loping151/XutheringWavesUID.git WutheringWavesUID
+git clone https://github.com/Loping151/XutheringWavesUID.git
 ```
 将继承原有数据和配置。
 
 如果为首次安装：
 ```
-git clone https://github.com/Loping151/XutheringWavesUID.git WutheringWavesUID
+git clone https://github.com/Loping151/XutheringWavesUID.git
 ``` 
 
 总排行数据库重建：群号 653696746。如果仅需要本地伤害计算而不希望打扰，可发邮件 wkl@loping151.com 申请token，支持较少的用户量。
