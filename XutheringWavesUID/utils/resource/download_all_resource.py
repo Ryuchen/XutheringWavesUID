@@ -22,8 +22,6 @@ from .RESOURCE_PATH import (
     MAP_BUILD_PATH,
 )
 
-from ..map.damage.register import reload_all_register
-
 import sys
 import platform
 import os
@@ -99,6 +97,5 @@ async def download_all_resource():
         "https://ww.loping151.top", 
         "小维US"
     )
-    reload_all_register()
     
     
