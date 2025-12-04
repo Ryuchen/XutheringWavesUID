@@ -206,7 +206,7 @@ async def send_export_gacha_info(bot: Bot, ev: Event):
     if not ck:
         return await bot.send(ERROR_CODE[WAVES_CODE_102])
 
-    await bot.send("🔜即将为你导出XutheringWavesUID抽卡记录文件，请耐心等待...")
+    # await bot.send("🔜即将为你导出XutheringWavesUID抽卡记录文件，请耐心等待...")
     export = await export_gachalogs(uid)
     if export["retcode"] == "ok":
         file_name = export["name"]
