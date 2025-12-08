@@ -194,38 +194,40 @@ def merge_gacha_data(original_data: dict, latest_data: dict) -> dict:
         O_5s = [x for x in O_all if x.get('qualityLevel') == 5]
 
         if O_5s:
-            oldest_local_time = _time_to_timestamp(O_5s[0]['time'])
+            oldest_local_time = _time_to_timestamp(O_5s[-1]['time'])
             L_5s_filtered = [
                 x for x in L_5s
                 if _time_to_timestamp(x['time']) < oldest_local_time
             ]
-            logger.debug(f"[GachaHandler] Pool {pool_id}: 本地最旧五星时间 {O_5s[0]['time']}, "
-                        f"过滤后保留 {len(L_5s_filtered)}/{len(L_5s)} 条工坊记录")
             L_5s = L_5s_filtered
 
         pool_merged_items = []
 
-        if not O_5s:
-            logger.debug(f"[GachaHandler] Pool {pool_id}: 无本地五星记录，重建所有历史")
-            for cp in L_5s:
-                filler_count = cp['draw_total'] - 1
-                filler_time = get_timestamp_minus_1s(cp['time'])
-                for _ in range(filler_count):
-                    f = FILLER_ITEM.copy()
-                    f['cardPoolType'] = str(pool_id)
-                    f['time'] = filler_time
-                    pool_merged_items.append(f)
-                cp_item = {
-                    "cardPoolType": str(pool_id),
-                    "resourceId": cp['resourceId'],
-                    "qualityLevel": 5,
-                    "resourceType": cp['resourceType'],
-                    "name": cp['name'],
-                    "count": 1,
-                    "time": cp['time']
-                }
-                pool_merged_items.append(cp_item)
-            pool_merged_items.extend(O_all)
+        if len(O_5s) < 2:
+            logger.debug(f"[GachaHandler] Pool {pool_id}: 本地五星记录不足，不进行合并")
+            return {
+                "info": export_info,
+                "list": original_data.get('data', {}).get('gacha_log_list', [])
+            }
+            # for cp in L_5s:
+            #     filler_count = cp['draw_total'] - 1
+            #     filler_time = get_timestamp_minus_1s(cp['time'])
+            #     for _ in range(filler_count):
+            #         f = FILLER_ITEM.copy()
+            #         f['cardPoolType'] = str(pool_id)
+            #         f['time'] = filler_time
+            #         pool_merged_items.append(f)
+            #     cp_item = {
+            #         "cardPoolType": str(pool_id),
+            #         "resourceId": cp['resourceId'],
+            #         "qualityLevel": 5,
+            #         "resourceType": cp['resourceType'],
+            #         "name": cp['name'],
+            #         "count": 1,
+            #         "time": cp['time']
+            #     }
+            #     pool_merged_items.append(cp_item)
+            # pool_merged_items.extend(O_all)
             
         else:
             x = O_5s[0]
