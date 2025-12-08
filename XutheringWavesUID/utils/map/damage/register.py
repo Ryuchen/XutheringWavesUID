@@ -53,7 +53,7 @@ def _dynamic_load_and_register(attr_name, register_cls, force_reload=False):
         except ImportError:
             pass
         except Exception as e:
-            print(f"[Warning] Failed to load {module_path} for {char_id}: {e}")
+            logger.warning(f"[Warning] Failed to load {module_path} for {char_id}: {e}")
 
 def register_damage(reload=False):
     _dynamic_load_and_register(

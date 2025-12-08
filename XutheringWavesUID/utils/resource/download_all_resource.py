@@ -81,6 +81,8 @@ async def download_all_resource(force: bool = False):
         import shutil
         shutil.rmtree(BUILD_PATH, ignore_errors=True)
         shutil.rmtree(MAP_BUILD_PATH, ignore_errors=True)
+        BUILD_PATH.mkdir(parents=True, exist_ok=True)
+        MAP_BUILD_PATH.mkdir(parents=True, exist_ok=True)
     
     await download_all_file(
         "XutheringWavesUID",

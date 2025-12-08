@@ -12,7 +12,7 @@ sv_download_config = SV("ww资源下载", pm=1)
 
 @sv_download_config.on_fullmatch(("强制下载全部资源", "下载全部资源", "补充资源", "刷新补充资源"))
 async def send_download_resource_msg(bot: Bot, ev: Event):
-    await bot.send("[鸣潮] 正在开始下载~可能需要较久的时间!")
+    await bot.send("[鸣潮] 正在开始下载~可能需要较久的时间！请勿重复执行！")
     await download_all_resource(force="强制" in ev.raw_text)
     await bot.send("[鸣潮] 下载完成！")
 
