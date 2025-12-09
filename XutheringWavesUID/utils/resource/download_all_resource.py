@@ -7,7 +7,6 @@ from gsuid_core.utils.download_resource.download_core import download_all_file
 
 from .RESOURCE_PATH import (
     MAP_PATH,
-    BUILD_PATH,
     BUILD_TEMP,
     AVATAR_PATH,
     WEAPON_PATH,
@@ -17,7 +16,6 @@ from .RESOURCE_PATH import (
     MATERIAL_PATH,
     SHARE_BG_PATH,
     MAP_ALIAS_PATH,
-    MAP_BUILD_PATH,
     MAP_BUILD_TEMP,
     ROLE_PILE_PATH,
     XFM_GUIDE_PATH,

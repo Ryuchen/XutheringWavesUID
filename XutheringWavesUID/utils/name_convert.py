@@ -38,17 +38,21 @@ def add_dictionaries(dict1, dict2):
 
 def load_alias_data():
     global char_alias_data, weapon_alias_data, sonata_alias_data, echo_alias_data
-    with open(CHAR_ALIAS, "r", encoding="UTF-8") as f:
-        char_alias_data = msgjson.decode(f.read(), type=Dict[str, List[str]])
+    if CHAR_ALIAS.exists():
+        with open(CHAR_ALIAS, "r", encoding="UTF-8") as f:
+            char_alias_data = msgjson.decode(f.read(), type=Dict[str, List[str]])
 
-    with open(WEAPON_ALIAS, "r", encoding="UTF-8") as f:
-        weapon_alias_data = msgjson.decode(f.read(), type=Dict[str, List[str]])
+    if WEAPON_ALIAS.exists():
+        with open(WEAPON_ALIAS, "r", encoding="UTF-8") as f:
+            weapon_alias_data = msgjson.decode(f.read(), type=Dict[str, List[str]])
 
-    with open(SONATA_ALIAS, "r", encoding="UTF-8") as f:
-        sonata_alias_data = msgjson.decode(f.read(), type=Dict[str, List[str]])
+    if SONATA_ALIAS.exists():
+        with open(SONATA_ALIAS, "r", encoding="UTF-8") as f:
+            sonata_alias_data = msgjson.decode(f.read(), type=Dict[str, List[str]])
 
-    with open(ECHO_ALIAS, "r", encoding="UTF-8") as f:
-        echo_alias_data = msgjson.decode(f.read(), type=Dict[str, List[str]])
+    if ECHO_ALIAS.exists():
+        with open(ECHO_ALIAS, "r", encoding="UTF-8") as f:
+            echo_alias_data = msgjson.decode(f.read(), type=Dict[str, List[str]])
 
     if CUSTOM_CHAR_ALIAS_PATH.exists():
         try:
