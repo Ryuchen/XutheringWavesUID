@@ -1,7 +1,7 @@
 import json
 import time
 import asyncio
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Union, Optional, Tuple
 from pathlib import Path
 
 import aiofiles
@@ -38,7 +38,7 @@ from ..utils.calculate import (
     calc_phantom_score,
 )
 from ..utils.char_info_utils import get_all_role_detail_info_list
-from ..utils.database.models import WavesBind
+from ..utils.database.models import WavesBind, WavesUser
 from ..wutheringwaves_config import PREFIX, WutheringWavesConfig
 from ..utils.fonts.waves_fonts import (
     waves_font_12,
@@ -53,21 +53,25 @@ from ..utils.fonts.waves_fonts import (
 from ..utils.resource.RESOURCE_PATH import PLAYER_PATH
 
 
-async def get_practice_rank_token_condition(ev):
-    """检查练度排行的权限配置"""
+async def get_practice_rank_token_condition(ev) -> Tuple[bool, Dict[Tuple[str, str], str]]:
+    """检查练度排行的权限配置，并返回登录用户映射"""
+    tokenLimitFlag = False
+    wavesTokenUsersMap: Dict[Tuple[str, str], str] = {}
+
     # 群组 不限制token
     WavesRankNoLimitGroup = WutheringWavesConfig.get_config("WavesRankNoLimitGroup").data
-    if WavesRankNoLimitGroup and ev.group_id in WavesRankNoLimitGroup:
-        return True
+    if ev.group_id and WavesRankNoLimitGroup and ev.group_id in WavesRankNoLimitGroup:
+        return tokenLimitFlag, wavesTokenUsersMap
 
-    # 群组 自定义的
+    # 群组 自定义的 + 全局 主人定义的
     WavesRankUseTokenGroup = WutheringWavesConfig.get_config("WavesRankUseTokenGroup").data
-    # 全局 主人定义的
     RankUseToken = WutheringWavesConfig.get_config("RankUseToken").data
-    if (WavesRankUseTokenGroup and ev.group_id in WavesRankUseTokenGroup) or RankUseToken:
-        return True
+    if (ev.group_id and WavesRankUseTokenGroup and ev.group_id in WavesRankUseTokenGroup) or RankUseToken:
+        wavesTokenUsers = await WavesUser.get_waves_all_user()
+        wavesTokenUsersMap = {(w.user_id, w.uid): w.cookie for w in wavesTokenUsers}
+        tokenLimitFlag = True
 
-    return False
+    return tokenLimitFlag, wavesTokenUsersMap
 
 
 def calculate_role_phantom_score(role_detail: RoleDetailData) -> float:
@@ -169,6 +173,8 @@ class PracticeRankInfo(BaseModel):
 async def get_all_rank_list_info(
     users: List[WavesBind],
     threshold: int = 175,
+    tokenLimitFlag: bool = False,
+    wavesTokenUsersMap: Optional[Dict[Tuple[str, str], str]] = None,
 ) -> List[PracticeRankInfo]:
     """获取所有用户的练度排行信息（基于声骸分数）
 
@@ -184,6 +190,9 @@ async def get_all_rank_list_info(
 
         # 处理多个uid（用下划线连接）
         for uid in user.uid.split("_"):
+            if tokenLimitFlag and wavesTokenUsersMap is not None:
+                if (user.user_id, uid) not in wavesTokenUsersMap:
+                    continue
             # 首先尝试从charListData.json读取缓存的角色评分
             char_list_data = await load_char_list_data(uid)
 
@@ -266,7 +275,7 @@ async def draw_rank_list(bot: Bot, ev: Event, threshold: int = 175) -> Union[str
     logger.info(f"[draw_practice_rank_list] start: {start_time}")
 
     # 检查权限配置
-    tokenLimitFlag = await get_practice_rank_token_condition(ev)
+    tokenLimitFlag, wavesTokenUsersMap = await get_practice_rank_token_condition(ev)
 
     # 解析参数以获取阈值
     text = ev.text.strip() if ev.text else ""
@@ -290,7 +299,7 @@ async def draw_rank_list(bot: Bot, ev: Event, threshold: int = 175) -> Union[str
         msg.append("")
         return "\n".join(msg)
 
-    rankInfoList = await get_all_rank_list_info(list(users), threshold)
+    rankInfoList = await get_all_rank_list_info(list(users), threshold, tokenLimitFlag, wavesTokenUsersMap)
     if len(rankInfoList) == 0:
         msg = []
         msg.append(f"[鸣潮] 群【{ev.group_id}】暂无练度排行数据")

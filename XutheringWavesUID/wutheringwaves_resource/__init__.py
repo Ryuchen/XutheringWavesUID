@@ -10,6 +10,13 @@ from pathlib import Path
 from ..utils.resource.download_all_resource import download_all_resource, reload_all_modules
 from ..utils.resource.RESOURCE_PATH import BUILD_PATH, BUILD_TEMP, MAP_BUILD_PATH, MAP_BUILD_TEMP
 
+
+def count_files(directory: Path, pattern: str = "*") -> int:
+    """统计目录下指定模式的文件数量"""
+    if not directory.exists():
+        return 0
+    return sum(1 for file in directory.rglob(pattern) if file.is_file())
+
 def get_file_hash(file_path):
     """计算单个文件的哈希值"""
     hash_md5 = hashlib.md5()
@@ -24,9 +31,17 @@ def copy_if_different(src, dst, name):
         logger.debug(f"[鸣潮] {name} 源目录不存在")
         return False
 
+    src_path = Path(src)
+    src_total_files = count_files(src_path, "*")
+    dst_path = Path(dst)
+    if dst_path.exists():
+        dst_py_count = count_files(dst_path, "*.py")
+        if src_total_files and dst_py_count >= src_total_files:
+            return False
+
     needs_update = False
 
-    for src_file in sorted(Path(src).rglob('*')):
+    for src_file in sorted(src_path.rglob('*')):
         if src_file.is_file():
             rel_path = src_file.relative_to(src)
             dst_file = Path(dst) / rel_path

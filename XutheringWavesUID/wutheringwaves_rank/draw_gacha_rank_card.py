@@ -1,5 +1,5 @@
 import asyncio
-from typing import List, Union
+from typing import Dict, List, Union, Tuple, Optional
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -16,7 +16,7 @@ from ..utils.image import (
     add_footer,
     get_waves_bg,
 )
-from ..utils.database.models import WavesBind
+from ..utils.database.models import WavesBind, WavesUser
 from ..wutheringwaves_config import PREFIX, WutheringWavesConfig
 from ..utils.fonts.waves_fonts import (
     waves_font_18,
@@ -63,7 +63,11 @@ class GachaRankCard:
             self.weighted = 1000
 
 
-async def get_all_gacha_rank_info(users: List[WavesBind], bot_id: str) -> List[GachaRankCard]:
+async def get_all_gacha_rank_info(
+    users: List[WavesBind],
+    tokenLimitFlag: bool = False,
+    wavesTokenUsersMap: Optional[Dict[Tuple[str, str], str]] = None,
+) -> List[GachaRankCard]:
     """获取所有用户的抽卡排行信息"""
     rankInfoList = []
 
@@ -71,11 +75,13 @@ async def get_all_gacha_rank_info(users: List[WavesBind], bot_id: str) -> List[G
         if not user.user_id:
             continue
 
-        # 处理多个uid（用下划线连接）
         if not user.uid:
             continue
 
         for uid in user.uid.split("_"):
+            if tokenLimitFlag and wavesTokenUsersMap is not None:
+                if (user.user_id, uid) not in wavesTokenUsersMap:
+                    continue
             try:
                 stats = await get_gacha_stats(uid)
                 if not stats:
@@ -83,7 +89,6 @@ async def get_all_gacha_rank_info(users: List[WavesBind], bot_id: str) -> List[G
 
                 rankInfo = GachaRankCard(user.user_id, uid, stats)
 
-                # 获取配置的最小抽数阈值
                 min_pull = WutheringWavesConfig.get_config("GachaRankMin").data
                 if rankInfo.total_count < min_pull:
                     continue
@@ -96,27 +101,31 @@ async def get_all_gacha_rank_info(users: List[WavesBind], bot_id: str) -> List[G
     return rankInfoList
 
 
-async def get_gacha_rank_token_condition(ev):
-    """检查抽卡排行的权限配置"""
+async def get_gacha_rank_token_condition(ev) -> Tuple[bool, Dict[Tuple[str, str], str]]:
+    """检查抽卡排行的权限配置，并返回登录用户映射"""
+    tokenLimitFlag = False
+    wavesTokenUsersMap: Dict[Tuple[str, str], str] = {}
+
     # 群组 不限制token
     WavesRankNoLimitGroup = WutheringWavesConfig.get_config("WavesRankNoLimitGroup").data
-    if WavesRankNoLimitGroup and ev.group_id in WavesRankNoLimitGroup:
-        return True
+    if ev.group_id and WavesRankNoLimitGroup and ev.group_id in WavesRankNoLimitGroup:
+        return tokenLimitFlag, wavesTokenUsersMap
 
-    # 群组 自定义的
+    # 群组 自定义的 + 全局 主人定义的
     WavesRankUseTokenGroup = WutheringWavesConfig.get_config("WavesRankUseTokenGroup").data
-    # 全局 主人定义的
     RankUseToken = WutheringWavesConfig.get_config("RankUseToken").data
-    if (WavesRankUseTokenGroup and ev.group_id in WavesRankUseTokenGroup) or RankUseToken:
-        return True
+    if (ev.group_id and WavesRankUseTokenGroup and ev.group_id in WavesRankUseTokenGroup) or RankUseToken:
+        wavesTokenUsers = await WavesUser.get_waves_all_user()
+        wavesTokenUsersMap = {(w.user_id, w.uid): w.cookie for w in wavesTokenUsers}
+        tokenLimitFlag = True
 
-    return False
+    return tokenLimitFlag, wavesTokenUsersMap
 
 
 async def draw_gacha_rank_card(bot, ev: Event) -> Union[str, bytes]:
     """绘制抽卡排行"""
     # 检查权限配置
-    tokenLimitFlag = await get_gacha_rank_token_condition(ev)
+    tokenLimitFlag, wavesTokenUsersMap = await get_gacha_rank_token_condition(ev)
 
     # 获取配置的最小抽数阈值
     min_pull = WutheringWavesConfig.get_config("GachaRankMin").data
@@ -140,7 +149,7 @@ async def draw_gacha_rank_card(bot, ev: Event) -> Union[str, bytes]:
             msg.append(f"当前排行开启了登录验证，请使用命令【{PREFIX}登录】登录后此功能！")
         return "\n".join(msg)
 
-    rankInfoList = await get_all_gacha_rank_info(list(users), ev.bot_id)
+    rankInfoList = await get_all_gacha_rank_info(list(users), tokenLimitFlag, wavesTokenUsersMap)
     if len(rankInfoList) == 0:
         msg = []
         msg.append(f"[鸣潮] 群【{ev.group_id}】暂无抽卡排行数据")
@@ -241,7 +250,6 @@ async def draw_gacha_rank_card(bot, ev: Event) -> Union[str, bytes]:
     tasks = [get_avatar(rank_info.user_id) for _, rank_info in rankInfoList_display]
     results = await asyncio.gather(*tasks)
 
-    # 导入必要的图片资源 - 使用bar2.png，不对其进行resize
     bar = Image.open(TEXT_PATH / "bar2.png")
 
     # 绘制排行条目
@@ -250,7 +258,6 @@ async def draw_gacha_rank_card(bot, ev: Event) -> Union[str, bytes]:
         role_avatar = temp[1]
         y_pos = header_height + 130 + rank_temp_index * item_spacing
 
-        # 创建条目背景 - 不对bar进行resize，使用原始尺寸
         role_bg = bar.copy()
         role_bg.paste(role_avatar, (100, 0), role_avatar)
         role_bg_draw = ImageDraw.Draw(role_bg)

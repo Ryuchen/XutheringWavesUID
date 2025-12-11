@@ -70,8 +70,8 @@ def _dynamic_load_and_register(attr_name, register_cls, force_reload=False):
             global_var_name = f"{attr_name.split('_')[0]}_{char_id}"
             current_globals[global_var_name] = target_obj
 
-        except ImportError as e:
-            logger.warning(f"[Warning] 模块 {module_path} 未找到，跳过加载 {char_id} 的数据: {e}")
+        except ImportError:
+            logger.warning(f"[Warning] 模块 {module_path} 未找到，请等待下载完成后再进行其他操作，除非遇到下载问题。")
         except Exception as e:
             logger.warning(f"[Warning] Failed to load {module_path} for {char_id}: {e}")
 

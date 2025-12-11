@@ -1,6 +1,8 @@
 line-length = 120
 target-version = "py310"
 
+exclude = ["waves_build"]
+
 [lint]
 select = ["E", "F", "I", "W"]
 ignore = ["E501", "E402", "F403"]

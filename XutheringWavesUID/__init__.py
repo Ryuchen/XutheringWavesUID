@@ -6,10 +6,10 @@ from pathlib import Path
 
 from gsuid_core.sv import Plugins
 from gsuid_core.logger import logger
+from gsuid_core.data_store import get_res_path
 
 Plugins(name="XutheringWavesUID", force_prefix=["ww"], allow_empty_prefix=False)
 
-from gsuid_core.data_store import get_res_path
 
 DATA_PATH = get_res_path()
 PLAYERS_PATH = DATA_PATH / "XutheringWavesUID" / "players"
@@ -37,7 +37,8 @@ if PLAYERS_PATH.exists():
             backup_count += 1
         except Exception as e:
             logger.warning(f"[XutheringWavesUID] 备份抽卡记录失败 {player_dir.name}: {e}")
-    logger.info(f"[XutheringWavesUID] 抽卡记录备份完成，共 {backup_count} 个玩家")
+    if backup_count > 0:
+        logger.info(f"[XutheringWavesUID] 抽卡记录备份完成，共 {backup_count} 个玩家")
 
 
 # 此次迁移是因为初次实现抽卡排行时，uid字段拿错导致的下划线连接多uid
@@ -60,8 +61,6 @@ if PLAYERS_PATH.exists():
 if "WutheringWavesUID" in str(Path(__file__)):
     logger.error("请修改插件文件夹名称为 XutheringWavesUID 以支持后续指令更新")
 
-from gsuid_core.data_store import get_res_path
-
 MAIN_PATH = get_res_path()
 if not Path(MAIN_PATH / "XutheringWavesUID").exists() and Path(MAIN_PATH / "WutheringWavesUID").exists():
     logger.info("存在旧版插件资源，正在进行重命名...")
@@ -82,7 +81,7 @@ if "WutheringWavesUID" in cfg_text and "XutheringWavesUID" not in cfg_text:
     Path(MAIN_PATH / "config_backup.json").unlink()
 elif "WutheringWavesUID" in cfg_text and "XutheringWavesUID" in cfg_text:
     logger.warning(
-        "同时存在 WutheringWavesUID 和 XutheringWavesUID 配置，可保留老的配置文件后重启，请自己编辑 gsuid_core/data/config.json 删除冗余配置"
+        "同时存在 WutheringWavesUID 和 XutheringWavesUID 配置，可保留老的配置文件后重启，请自己编辑 gsuid_core/data/config.json 删除冗余配置（将 XutheringWavesUID 条目删除后将 WutheringWavesUID 改名为 XutheringWavesUID）"
     )
 
 show_cfg_path = MAIN_PATH / "XutheringWavesUID" / "show_config.json"

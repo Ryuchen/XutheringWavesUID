@@ -3,7 +3,7 @@ import copy
 import json
 import time
 import asyncio
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
@@ -44,7 +44,7 @@ from ..utils.api.wwapi import (
     SlashRankItem,
 )
 from ..utils.ascension.char import get_char_model
-from ..utils.database.models import WavesBind
+from ..utils.database.models import WavesBind, WavesUser
 from ..wutheringwaves_config import PREFIX, WutheringWavesConfig
 from ..utils.fonts.waves_fonts import (
     waves_font_12,
@@ -63,21 +63,25 @@ from ..utils.resource.RESOURCE_PATH import SLASH_PATH
 from ..wutheringwaves_abyss.draw_slash_card import COLOR_QUALITY
 
 
-async def get_endless_rank_token_condition(ev):
-    """检查无尽排行的权限配置"""
+async def get_endless_rank_token_condition(ev) -> Tuple[bool, Dict[Tuple[str, str], str]]:
+    """检查无尽排行的权限配置，并返回登录用户映射"""
+    tokenLimitFlag = False
+    wavesTokenUsersMap: Dict[Tuple[str, str], str] = {}
+
     # 群组 不限制token
     WavesRankNoLimitGroup = WutheringWavesConfig.get_config("WavesRankNoLimitGroup").data
-    if WavesRankNoLimitGroup and ev.group_id in WavesRankNoLimitGroup:
-        return True
+    if ev.group_id and WavesRankNoLimitGroup and ev.group_id in WavesRankNoLimitGroup:
+        return tokenLimitFlag, wavesTokenUsersMap
 
-    # 群组 自定义的
+    # 群组 自定义的 + 全局 主人定义的
     WavesRankUseTokenGroup = WutheringWavesConfig.get_config("WavesRankUseTokenGroup").data
-    # 全局 主人定义的
     RankUseToken = WutheringWavesConfig.get_config("RankUseToken").data
-    if (WavesRankUseTokenGroup and ev.group_id in WavesRankUseTokenGroup) or RankUseToken:
-        return True
+    if (ev.group_id and WavesRankUseTokenGroup and ev.group_id in WavesRankUseTokenGroup) or RankUseToken:
+        wavesTokenUsers = await WavesUser.get_waves_all_user()
+        wavesTokenUsersMap = {(w.user_id, w.uid): w.cookie for w in wavesTokenUsers}
+        tokenLimitFlag = True
 
-    return False
+    return tokenLimitFlag, wavesTokenUsersMap
 
 
 TEXT_PATH = Path(__file__).parent / "texture2d"
@@ -434,6 +438,8 @@ class SlashRankListInfo:
 
 async def get_all_slash_rank_info(
     users: List[WavesBind],
+    tokenLimitFlag: bool = False,
+    wavesTokenUsersMap: Optional[Dict[Tuple[str, str], str]] = None,
 ) -> List[SlashRankListInfo]:
     """从本地获取所有用户的无尽排行信息"""
     from ..utils.resource.RESOURCE_PATH import PLAYER_PATH
@@ -446,6 +452,9 @@ async def get_all_slash_rank_info(
 
         # 处理多个uid（用下划线连接）
         for uid in user.uid.split("_"):
+            if tokenLimitFlag and wavesTokenUsersMap is not None:
+                if (user.user_id, uid) not in wavesTokenUsersMap:
+                    continue
             # 从本地读取该用户的无尽数据
             try:
                 slash_data_path = Path(PLAYER_PATH / uid / "slashData.json")
@@ -545,7 +554,7 @@ async def draw_slash_rank_list(bot: Bot, ev: Event):
     logger.info(f"[draw_slash_rank_list] start: {start_time}")
 
     # 检查权限配置
-    tokenLimitFlag = await get_endless_rank_token_condition(ev)
+    tokenLimitFlag, wavesTokenUsersMap = await get_endless_rank_token_condition(ev)
 
     # 获取群里的所有用户
     users = await WavesBind.get_group_all_uid(ev.group_id)
@@ -558,7 +567,7 @@ async def draw_slash_rank_list(bot: Bot, ev: Event):
         msg.append("")
         return "\n".join(msg)
 
-    rankInfoList = await get_all_slash_rank_info(list(users))
+    rankInfoList = await get_all_slash_rank_info(list(users), tokenLimitFlag, wavesTokenUsersMap)
     if len(rankInfoList) == 0:
         msg = []
         msg.append(f"[鸣潮] 群【{ev.group_id}】暂无无尽排行数据")
