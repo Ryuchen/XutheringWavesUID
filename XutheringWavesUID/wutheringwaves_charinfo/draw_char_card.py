@@ -621,6 +621,8 @@ async def draw_char_detail_img(
         account_info = await waves_api.get_base_info(uid, ck)
         if not account_info.success:
             return account_info.throw_msg()
+        if not account_info.data:
+            return "用户未展示数据"
         account_info = AccountBaseInfo.model_validate(account_info.data)
         force_resource_id = None
     else:
@@ -968,6 +970,8 @@ async def draw_char_score_img(ev: Event, uid: str, char: str, user_id: str, wave
     account_info = await waves_api.get_base_info(uid, ck)
     if not account_info.success:
         return account_info.throw_msg()
+    if not account_info.data:
+        return "用户未展示数据"
     account_info = AccountBaseInfo.model_validate(account_info.data)
     # 获取数据
     avatar, role_detail = await get_role_need(ev, char_id, ck, uid, char_name, waves_id)

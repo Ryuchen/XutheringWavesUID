@@ -61,6 +61,8 @@ async def draw_challenge_img(ev: Event, uid: str, user_id: str) -> Union[bytes, 
     account_info = await waves_api.get_base_info(uid, ck)
     if not account_info.success:
         return account_info.throw_msg()
+    if not account_info.data:
+        return "用户未展示数据"
     account_info = AccountBaseInfo.model_validate(account_info.data)
 
     # 共鸣者信息

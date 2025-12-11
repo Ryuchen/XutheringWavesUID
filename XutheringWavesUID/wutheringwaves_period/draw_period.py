@@ -88,6 +88,8 @@ async def process_uid(uid, ev, period_param: Optional[Union[int, str]]) -> Optio
     account_info = await waves_api.get_base_info(uid, ck)
     if not account_info.success or not account_info.data:
         return None
+    if not account_info.data:
+        return "用户未展示数据"
     account_info = AccountBaseInfo.model_validate(account_info.data)
 
     return {

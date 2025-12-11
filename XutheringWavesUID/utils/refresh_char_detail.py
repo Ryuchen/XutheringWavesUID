@@ -81,6 +81,8 @@ async def send_card(
         account_info = await waves_api.get_base_info(uid, token=token)
         if not account_info.success:
             return account_info.throw_msg()
+        if not account_info.data:
+            return "用户未展示数据"
         account_info = AccountBaseInfo.model_validate(account_info.data)
         if len(waves_data) != 1 and account_info.roleNum != len(save_data):
             logger.warning(
