@@ -204,7 +204,7 @@ def merge_gacha_data(original_data: dict, latest_data: dict) -> dict:
             newest_local_time = _time_to_timestamp(O_5s[-1]["time"])
             L_5s_filtered = [x for x in L_5s if _time_to_timestamp(x["time"]) < newest_local_time]
             logger.debug(
-                f"[GachaHandler] Pool {pool_id}: 本地最新五星时间 {O_5s[min(1, len(O_5s))]['time']}, "
+                f"[GachaHandler] Pool {pool_id}: 本地最早五星时间 {O_5s[min(1, len(O_5s) - 1)]['time']}, "
                 f"过滤后保留 {len(L_5s_filtered)}/{len(L_5s)} 条工坊记录"
             )
             L_5s = L_5s_filtered
