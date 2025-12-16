@@ -35,6 +35,7 @@ ABYSS_TYPE_MAP_REVERSE = {
 
 class RankDetail(BaseModel):
     rank: int
+    inter_rank: str
     user_id: str
     username: str
     alias_name: str

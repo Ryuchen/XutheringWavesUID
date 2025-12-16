@@ -854,14 +854,14 @@ async def draw_char_detail_img(
             damage_bar_draw = ImageDraw.Draw(damage_bar)
             damage_bar_draw.text(
                 (400, 50),
-                "评分排名",
+                "评分排名" if oneRank.data[0].rank > 0 else "估计评分排名",
                 "white",
                 waves_font_24,
                 "rm",
             )
             damage_bar_draw.text(
                 (850, 50),
-                f"{oneRank.data[0].rank}",
+                f"{oneRank.data[0].rank}" if oneRank.data[0].rank > 0 else oneRank.data[0].inter_rank,
                 SPECIAL_GOLD,
                 waves_font_24,
                 "mm",
@@ -877,14 +877,14 @@ async def draw_char_detail_img(
             damage_bar_draw = ImageDraw.Draw(damage_bar)
             damage_bar_draw.text(
                 (400, 50),
-                "伤害排名",
+                "伤害排名" if oneRank.data[1].rank > 0 else "估计伤害排名",
                 "white",
                 waves_font_24,
                 "rm",
             )
             damage_bar_draw.text(
                 (850, 50),
-                f"{oneRank.data[1].rank}",
+                f"{oneRank.data[1].rank}" if oneRank.data[1].rank > 0 else oneRank.data[1].inter_rank,
                 SPECIAL_GOLD,
                 waves_font_24,
                 "mm",
