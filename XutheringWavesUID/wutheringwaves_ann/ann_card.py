@@ -293,7 +293,7 @@ async def ann_detail_card(ann_id: int, is_check_time=False) -> Union[bytes, str,
             drow_height = 0
             imgs.append(img)
     else:
-        if index_end > index_start:
+        if drow_height and index_end > index_start:
             img = await ann_batch_card(post_content[index_start:index_end], drow_height)
             imgs.append(img)
 

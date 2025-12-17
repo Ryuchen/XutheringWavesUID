@@ -20,13 +20,13 @@ from gsuid_core.utils.cookie_manager.qrlogin import get_qrcode_base64
 
 from ..utils.util import get_public_ip
 from ..utils.cache import TimedCache
+from ..utils.api.api import WAVES_GAME_ID
 from ..utils.waves_api import waves_api
 from ..wutheringwaves_user import deal
 from ..utils.database.models import WavesBind, WavesUser
 from ..wutheringwaves_config import PREFIX, WutheringWavesConfig
 from ..utils.resource.RESOURCE_PATH import waves_templates
 from ..wutheringwaves_user.login_succ import login_success_msg
-from ..utils.api.api import WAVES_GAME_ID
 
 cache = TimedCache(timeout=180, maxsize=10)
 
@@ -268,9 +268,7 @@ async def code_login(bot: Bot, ev: Event, text: str, isPage=False):
 async def add_cookie(ev, token, did) -> Union[WavesUser, str, None]:
     ck_res = await deal.add_cookie(ev, token, did)
     if "成功" in ck_res:
-        user = await WavesUser.get_user_by_attr(
-            ev.user_id, ev.bot_id, "cookie", token, game_id=WAVES_GAME_ID
-        )
+        user = await WavesUser.get_user_by_attr(ev.user_id, ev.bot_id, "cookie", token, game_id=WAVES_GAME_ID)
         if user:
             data = await WavesBind.insert_waves_uid(ev.user_id, ev.bot_id, user.uid, ev.group_id, lenth_limit=9)
             if data == 0 or data == -2:

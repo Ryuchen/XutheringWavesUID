@@ -43,8 +43,6 @@ from ..utils.api.model import (
     AccountBaseInfo,
 )
 from ..utils.api.wwapi import ONE_RANK_URL, OneRankRequest, OneRankResponse
-from ..utils.damage.abstract import DamageRankRegister
-from ..utils.damage.utils import comma_separated_number
 from ..utils.calculate import (
     get_calc_map,
     get_max_score,
@@ -56,11 +54,12 @@ from ..utils.calculate import (
 from ..utils.waves_api import waves_api
 from .role_info_change import change_role_detail
 from ..utils.error_reply import WAVES_CODE_102
+from ..utils.damage.utils import comma_separated_number
 from ..utils.name_convert import alias_to_char_name, char_name_to_char_id
 from ..utils.ascension.char import get_char_model
 from ..utils.api.model_other import EnemyDetailData
 from ..utils.char_info_utils import get_all_roleid_detail_info
-from ..utils.damage.abstract import DamageDetailRegister
+from ..utils.damage.abstract import DamageRankRegister, DamageDetailRegister
 from ..wutheringwaves_config import PREFIX
 from ..utils.ascension.weapon import (
     WavesWeaponResult,
@@ -669,9 +668,10 @@ async def draw_char_detail_img(
             logger.exception("角色数据转换错误", e)
             role_detail = temp
 
-
     # 声骸
-    calc, phantom_temp, phantom_score = await ph_card_draw(ph_sum_value, role_detail, isDraw, change_command, enemy_detail)
+    calc, phantom_temp, phantom_score = await ph_card_draw(
+        ph_sum_value, role_detail, isDraw, change_command, enemy_detail
+    )
     calc.role_card = calc.enhance_summation_card_value(calc.phantom_card)
 
     damage_calc_img = None
@@ -744,7 +744,7 @@ async def draw_char_detail_img(
         )
         if oneRank and len(oneRank.data) > 0:
             dd_len += 60 * 2
-            
+
     # 创建背景
     img = await get_card_bg(1200, 1250 + echo_list + ph_sum_value + jineng_len + dd_len, "bg3")
     # 固定位置

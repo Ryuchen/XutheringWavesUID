@@ -36,9 +36,7 @@ async def add_cookie(ev: Event, ck: str, did: str) -> str:
             if data.gameId != WAVES_GAME_ID:
                 continue
 
-            user = await WavesUser.get_user_by_attr(
-                ev.user_id, ev.bot_id, "uid", data.roleId, game_id=WAVES_GAME_ID
-            )
+            user = await WavesUser.get_user_by_attr(ev.user_id, ev.bot_id, "uid", data.roleId, game_id=WAVES_GAME_ID)
 
             succ, bat = await waves_api.get_request_token(
                 data.roleId,
@@ -101,9 +99,7 @@ async def add_cookie(ev: Event, ck: str, did: str) -> str:
             data = KuroWavesUserInfo.model_validate(pgr_role)
             if data.gameId != PGR_GAME_ID:
                 continue
-            pgr_user = await WavesUser.get_user_by_attr(
-                ev.user_id, ev.bot_id, "uid", data.roleId, game_id=PGR_GAME_ID
-            )
+            pgr_user = await WavesUser.get_user_by_attr(ev.user_id, ev.bot_id, "uid", data.roleId, game_id=PGR_GAME_ID)
             if pgr_user:
                 await WavesUser.update_data_by_data(
                     select_data={

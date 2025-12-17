@@ -24,7 +24,7 @@ exec_list.extend(
         'ALTER TABLE WavesUser ADD COLUMN bbs_sign_switch TEXT DEFAULT "off"',
         'ALTER TABLE WavesUser ADD COLUMN bat TEXT DEFAULT ""',
         'ALTER TABLE WavesUser ADD COLUMN did TEXT DEFAULT ""',
-        'ALTER TABLE WavesUser ADD COLUMN game_id INTEGER DEFAULT 3 NOT NULL',
+        "ALTER TABLE WavesUser ADD COLUMN game_id INTEGER DEFAULT 3 NOT NULL",
         'ALTER TABLE WavesBind ADD COLUMN pgr_uid TEXT DEFAULT ""',
         # 2. 数据迁移：使用 pgr_uid 迁移旧数据到新结构
         "UPDATE WavesUser SET uid = COALESCE(NULLIF(uid, ''), pgr_uid) WHERE IFNULL(uid, '') = '' AND IFNULL(pgr_uid, '') != ''",
@@ -32,8 +32,8 @@ exec_list.extend(
         "UPDATE WavesUser SET game_id = CASE WHEN IFNULL(game_id, 0) = 0 THEN 3 ELSE game_id END WHERE IFNULL(pgr_uid, '') = ''",
         "UPDATE WavesUser SET game_id = 3 WHERE game_id IS NULL",
         # 3. 清理：删除 WavesUser 中的废弃字段（WavesBind 保留 pgr_uid 用于绑定战双UID）
-        'ALTER TABLE WavesUser DROP COLUMN pgr_sign_switch',
-        'ALTER TABLE WavesUser DROP COLUMN pgr_uid',
+        "ALTER TABLE WavesUser DROP COLUMN pgr_sign_switch",
+        "ALTER TABLE WavesUser DROP COLUMN pgr_uid",
     ]
 )
 

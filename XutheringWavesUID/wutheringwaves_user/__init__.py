@@ -68,9 +68,7 @@ async def send_waves_add_ck_msg(bot: Bot, ev: Event):
 
     msg = await add_cookie(ev, ck, did)
     if "成功" in msg:
-        user = await WavesUser.get_user_by_attr(
-            ev.user_id, ev.bot_id, "cookie", ck, game_id=WAVES_GAME_ID
-        )
+        user = await WavesUser.get_user_by_attr(ev.user_id, ev.bot_id, "cookie", ck, game_id=WAVES_GAME_ID)
         if user:
             return await login_success_msg(bot, ev, user)
 

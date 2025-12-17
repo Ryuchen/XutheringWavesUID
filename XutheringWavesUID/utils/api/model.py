@@ -465,7 +465,7 @@ class OnlineRole(BaseModel):
     roleIconUrl: str
     starLevel: int
     attributeId: int
-    attributeName: Optional[str]
+    # attributeName: Optional[str]
     weaponTypeId: int
     weaponTypeName: str
     acronym: str

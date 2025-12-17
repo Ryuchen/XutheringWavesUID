@@ -23,8 +23,8 @@ from ..utils.image import (
     get_random_waves_bg,
     get_random_waves_role_pile,
 )
-from ..utils.api.model import DailyData, AccountBaseInfo
 from ..utils.api.api import WAVES_GAME_ID
+from ..utils.api.model import DailyData, AccountBaseInfo
 from ..utils.waves_api import waves_api
 from ..utils.error_reply import ERROR_CODE, WAVES_CODE_102, WAVES_CODE_103
 from ..utils.name_convert import char_name_to_char_id
@@ -149,9 +149,7 @@ async def _draw_stamina_img(ev: Event, valid: Dict) -> Image.Image:
     avatar = await draw_pic_with_ring(ev)
 
     # 随机获得pile
-    user = await WavesUser.get_user_by_attr(
-        ev.user_id, ev.bot_id, "uid", daily_info.roleId, game_id=WAVES_GAME_ID
-    )
+    user = await WavesUser.get_user_by_attr(ev.user_id, ev.bot_id, "uid", daily_info.roleId, game_id=WAVES_GAME_ID)
     pile_id = None
     force_use_bg = False
     force_not_use_bg = False

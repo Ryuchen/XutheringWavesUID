@@ -1,8 +1,8 @@
 from gsuid_core.logger import logger
 from gsuid_core.models import Event
 
-from ..utils.database.models import WavesUser
 from ..utils.constants import WAVES_GAME_ID
+from ..utils.database.models import WavesUser
 
 WAVES_USER_MAP = {"体力背景": "stamina_bg"}
 
