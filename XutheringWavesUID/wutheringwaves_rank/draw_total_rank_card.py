@@ -75,7 +75,7 @@ async def get_rank(item: TotalRankRequest) -> Optional[TotalRankResponse]:
         try:
             res = await client.post(
                 GET_TOTAL_RANK_URL,
-                json=item.dict(),
+                json=item.model_dump(),
                 headers={
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {WavesToken}",

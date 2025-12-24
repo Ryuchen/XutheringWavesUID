@@ -99,7 +99,7 @@ async def get_rank(item: RankItem) -> Optional[RankInfoResponse]:
         try:
             res = await client.post(
                 GET_RANK_URL,
-                json=item.dict(),
+                json=item.model_dump(),
                 headers={
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {WavesToken}",

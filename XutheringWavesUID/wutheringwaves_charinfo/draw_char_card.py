@@ -176,7 +176,7 @@ async def get_one_rank(item: OneRankRequest) -> Optional[OneRankResponse]:
         try:
             res = await client.post(
                 ONE_RANK_URL,
-                json=item.dict(),
+                json=item.model_dump(),
                 headers={
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {WavesToken}",

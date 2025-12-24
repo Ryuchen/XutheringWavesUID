@@ -205,6 +205,22 @@ class Weapon_21010044(WeaponAbstract):
             attr.add_def_percent(calc_percent_expression(dmg), title, msg)
 
 
+class Weapon_21010045(WeaponAbstract):
+    id = 21010045
+    type = 1
+    name = "源能机锋"
+    
+    def env_tune_strain(self, attr: DamageAttribute, isGroup: bool = False):
+        """集谐·偏移"""
+        if attr.char_damage != liberation_damage:
+            return
+        dmg = f"{self.param(1)}"
+        title = self.get_title()
+        msg = f"共鸣解放伤害加成提升{dmg}"
+        attr.add_dmg_bonus(calc_percent_expression(dmg), title, msg)
+        return True
+
+
 class Weapon_21010046(WeaponAbstract):
     id = 21010046
     type = 1
@@ -284,6 +300,20 @@ class Weapon_21010064(WeaponAbstract):
             title = self.get_title()
             msg = f"施放共鸣技能后，每2秒攻击提升{dmg}"
             attr.add_atk_percent(calc_percent_expression(dmg), title, msg)
+
+
+class Weapon_21010066(WeaponAbstract):
+    id = 21010066
+    type = 1
+    name = "宙算仪轨"
+
+    # 防御提升16%。施放共鸣技能时，回复自身8点协奏能量，每20秒可触发1次。造成治疗时，使附近队伍中所有角色的暴击伤害提升20%，持续4秒，同名效果之间不可叠加。
+    def cast_healing(self, attr: DamageAttribute, isGroup: bool = False):
+        """造成治疗"""
+        dmg = f"{self.param(4)}"
+        title = self.get_title()
+        msg = f"使附近队伍中所有角色的暴击伤害提升{dmg}"
+        attr.add_crit_dmg(calc_percent_expression(dmg), title, msg)
 
 
 class Weapon_21010074(WeaponAbstract):
@@ -561,6 +591,22 @@ class Weapon_21020044(WeaponAbstract):
             title = self.get_title()
             msg = f"施放变奏技能时，自身攻击提升{dmg}"
             attr.add_atk_percent(calc_percent_expression(dmg), title, msg)
+
+
+class Weapon_21020045(WeaponAbstract):
+    id = 21020045
+    type = 2
+    name = "镭射切变"
+    
+    def env_tune_strain(self, attr: DamageAttribute, isGroup: bool = False):
+        """集谐·偏移"""
+        if attr.char_damage != skill_damage:
+            return
+        dmg = f"{self.param(1)}"
+        title = self.get_title()
+        msg = f"共鸣技能伤害加成提升{dmg}"
+        attr.add_dmg_bonus(calc_percent_expression(dmg), title, msg)
+        return True
 
 
 class Weapon_21020046(WeaponAbstract):
@@ -887,6 +933,50 @@ class Weapon_21030044(WeaponAbstract):
     name = "无眠烈火"
 
 
+class Weapon_21030045(WeaponAbstract):
+    id = 21030045
+    type = 3
+    name = "相位涟漪"
+
+    def cast_tunebreak(self, attr, isGroup = False):
+        title = self.get_title()
+        dmg = f"{self.param(1)}"
+        msg = f"全属性伤害加成提升{dmg}"
+        attr.add_dmg_bonus(calc_percent_expression(dmg), title, msg)
+
+class Weapon_21030046(WeaponAbstract):
+    id = 21030046
+    type = 3
+    name = "溢彩荧辉"
+    
+    # 攻击提升12%。施放变奏技能或普攻伤害命中时，使自身普攻伤害提高36%，持续4秒。每次自身施放普攻技能期间为目标附加【震谐·偏移】或【集谐·偏移】时，使全队角色造成的全伤害提高8%，最多叠加3层，持续30秒，同名效果之间不可叠加。
+    def cast_attack(self, attr: DamageAttribute, isGroup: bool = False):
+        """普攻命中"""
+        if attr.char_damage != attack_damage:
+            return
+        dmg = f"{self.param(1)}"
+        title = self.get_title()
+        msg = f"普攻伤害提高{dmg}"
+        attr.add_dmg_bonus(calc_percent_expression(dmg), title, msg)
+        return True
+
+    def env_tune_rupture(self, attr: DamageAttribute, isGroup: bool = False):
+        """震谐·偏移"""
+        dmg = f"{self.param(3)}*{self.param(4)}"
+        title = self.get_title()
+        msg = f"附加【震谐·偏移】时，全队伤害提高{dmg}"
+        attr.add_dmg_bonus(calc_percent_expression(dmg), title, msg)
+        return True
+
+    def env_tune_strain(self, attr: DamageAttribute, isGroup: bool = False):
+        """集谐·偏移"""
+        dmg = f"{self.param(3)}*{self.param(4)}"
+        title = self.get_title()
+        msg = f"附加【集谐·偏移】时，全队伤害提高{dmg}"
+        attr.add_dmg_bonus(calc_percent_expression(dmg), title, msg)
+        return True
+
+
 class Weapon_21030053(WeaponAbstract):
     id = 21030053
     type = 3
@@ -1182,6 +1272,21 @@ class Weapon_21040044(WeaponAbstract):
         msg = f"施放变奏技能时，自身共鸣解放伤害加成提升{dmg}"
         attr.add_dmg_bonus(calc_percent_expression(dmg), title, msg)
 
+
+class Weapon_21040045(WeaponAbstract):
+    id = 21040045
+    type = 4
+    name = "脉冲协臂"
+    
+    def env_tune_strain(self, attr: DamageAttribute, isGroup: bool = False):
+        """集谐·偏移"""
+        if attr.char_damage != attack_damage:
+            return
+        dmg = f"{self.param(1)}*{self.param(3)}"
+        title = self.get_title()
+        msg = f"普攻伤害加成提升{dmg}"
+        attr.add_dmg_bonus(calc_percent_expression(dmg), title, msg)
+        return True
 
 class Weapon_21040046(WeaponAbstract):
     id = 21040046
@@ -1524,6 +1629,24 @@ class Weapon_21050044(WeaponAbstract):
             msg = f"施放变奏技能时，自身生命提升{dmg}"
             attr.add_life_percent(calc_percent_expression(dmg), title, msg)
 
+
+class Weapon_21050045(WeaponAbstract):
+    id = 21050045
+    type = 5
+    name = "玻色星仪"
+    
+    def cast_tunebreak(self, attr: DamageAttribute, isGroup: bool = False):
+        dmg = f"{self.param(1)}"
+        title = self.get_title()
+        msg = f"攻击提升{dmg}"
+        attr.add_atk_percent(calc_percent_expression(dmg), title, msg)
+        
+        if attr.char_damage == attack_damage:
+            dmg2 = f"{self.param(3)}"
+            msg2 = f"普攻伤害加成提升{dmg2}"
+            attr.add_dmg_bonus(calc_percent_expression(dmg2), title, msg2)
+            
+        return True
 
 class Weapon_21050046(WeaponAbstract):
     id = 21050046

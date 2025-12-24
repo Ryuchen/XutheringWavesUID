@@ -21,7 +21,6 @@ CACHE_PATH = MAIN_PATH / "cache"
 RESOURCE_PATH = MAIN_PATH / "resource"
 PHANTOM_PATH = RESOURCE_PATH / "phantom"
 MATERIAL_PATH = RESOURCE_PATH / "material"
-FETTER_PATH = RESOURCE_PATH / "fetter"
 AVATAR_PATH = RESOURCE_PATH / "waves_avatar"
 WEAPON_PATH = RESOURCE_PATH / "waves_weapon"
 ROLE_PILE_PATH = RESOURCE_PATH / "role_pile"
@@ -56,6 +55,7 @@ MAP_PATH = RESOURCE_PATH / "map"
 MAP_CHAR_PATH = RESOURCE_PATH / "map" / "character"
 MAP_DETAIL_PATH = RESOURCE_PATH / "map" / "detail_json"
 MAP_CHALLENGE_PATH = RESOURCE_PATH / "map" / "detail_json" / "challenge"
+MAP_FORTE_PATH = RESOURCE_PATH / "map" / "detail_json" / "forte"
 MAP_BUILD_PATH = BUILD_ROOT / "map" / "waves_build"
 MAP_BUILD_TEMP = MAIN_PATH / "build" / "map" / "waves_build"
 MAP_ALIAS_PATH = MAP_PATH / "alias"
@@ -89,7 +89,6 @@ def init_dir():
         RESOURCE_PATH,
         PHANTOM_PATH,
         MATERIAL_PATH,
-        FETTER_PATH,
         AVATAR_PATH,
         WEAPON_PATH,
         ROLE_PILE_PATH,

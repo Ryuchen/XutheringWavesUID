@@ -937,6 +937,106 @@ class Echo_6000170(EchoAbstract):
     name = "梦魇·刺玫菇（稚形）"
 
 
+class Echo_6000174(EchoAbstract):
+    id = 6000174
+    name = "颤栗战士"
+
+
+class Echo_6000175(EchoAbstract):
+    id = 6000175
+    name = "莳植熊蜂"
+
+
+class Echo_6000176(EchoAbstract):
+    id = 6000176
+    name = "矿岩熊蜂"
+
+
+class Echo_6000177(EchoAbstract):
+    id = 6000177
+    name = "岩蛛S4型"
+
+
+class Echo_6000178(EchoAbstract):
+    id = 6000178
+    name = "噼啪啪"
+
+
+class Echo_6000179(EchoAbstract):
+    id = 6000179
+    name = "双极·星升辉铳"
+
+    # 在首位装配该声骸技能时，自身衍射伤害加成提升12.00%，普攻伤害加成提升12.00%
+    def do_equipment_first(self, role_id: int):
+        """首位装备"""
+        return {"衍射伤害加成": "12%", "普攻伤害加成": "12%"}
+
+
+class Echo_6000180(EchoAbstract):
+    id = 6000180
+    name = "双极·渊陨重锋"
+
+    # 在首位装配该声骸技能时，自身导电伤害加成提升12.00%，普攻伤害加成提升12.00%
+    def do_equipment_first(self, role_id: int):
+        """首位装备"""
+        return {"导电伤害加成": "12%", "普攻伤害加成": "12%"}
+
+
+class Echo_6000181(EchoAbstract):
+    id = 6000181
+    name = "莳植机麋"
+
+
+class Echo_6000182(EchoAbstract):
+    id = 6000182
+    name = "矿岩机麋"
+
+
+class Echo_6000183(EchoAbstract):
+    id = 6000183
+    name = "重工铁蹄"
+
+
+class Echo_6000184(EchoAbstract):
+    id = 6000184
+    name = "探隧重机"
+
+
+class Echo_6000185(EchoAbstract):
+    id = 6000185
+    name = "锯袭铁影"
+
+
+class Echo_6000186(EchoAbstract):
+    id = 6000186
+    name = "隐迹铁影"
+
+
+class Echo_6000187(EchoAbstract):
+    id = 6000187
+    name = "霜鳞蜃甲"
+
+
+class Echo_6000188(EchoAbstract):
+    id = 6000188
+    name = "风鳞蜃甲"
+
+
+class Echo_6000189(EchoAbstract):
+    id = 6000189
+    name = "海维夏"
+
+
+class Echo_6000190(EchoAbstract):
+    id = 6000190
+    name = "炉芯机骸"
+
+    # 在首位装配该声骸技能时，自身共鸣效率提升10.00%
+    def do_equipment_first(self, role_id: int):
+        """首位装备"""
+        return {"共鸣效率": "10%"}
+
+
 def register_echo():
     # 自动注册所有以 Echo_ 开头的类
     for name, obj in globals().items():

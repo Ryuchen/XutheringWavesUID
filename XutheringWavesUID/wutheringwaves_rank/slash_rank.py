@@ -149,7 +149,7 @@ async def get_rank(item: SlashRankItem) -> Optional[SlashRankRes]:
         try:
             res = await client.post(
                 GET_SLASH_RANK_URL,
-                json=item.dict(),
+                json=item.model_dump(),
                 headers={
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {WavesToken}",

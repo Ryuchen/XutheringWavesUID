@@ -16,13 +16,12 @@ from ..wutheringwaves_abyss.period import (
 )
 
 sv_waves_guide = SV("鸣潮攻略")
-sv_waves_wiki = SV("鸣潮wiki")
 sv_waves_tower = SV("waves查询深塔信息", priority=4)
 sv_waves_slash_info = SV("waves查询海墟信息", priority=4)
 
 
 @sv_waves_guide.on_regex(
-    rf"^(?P<wiki_name>{PATTERN})(?P<wiki_type>共鸣链|命座|天赋|技能|图鉴|wiki|介绍)$",
+    rf"^(?P<wiki_name>{PATTERN})(?P<wiki_type>共鸣链|命座|天赋|技能|图鉴|wiki|介绍|回路|操作|机制)$",
     block=True,
 )
 async def send_waves_wiki(bot: Bot, ev: Event):
@@ -30,14 +29,20 @@ async def send_waves_wiki(bot: Bot, ev: Event):
     wiki_type = ev.regex_dict.get("wiki_type", "")
 
     at_sender = True if ev.group_id else False
-    if wiki_type in ("共鸣链", "命座", "天赋", "技能"):
+    if wiki_type in ("共鸣链", "命座", "天赋", "技能", "回路", "操作", "机制"):
         char_name = wiki_name
         char_id = char_name_to_char_id(char_name)
         if not char_id:
             msg = f"[鸣潮] wiki【{char_name}】无法找到, 可能暂未适配, 请先检查输入是否正确！\n"
             return await bot.send(msg, at_sender)
 
-        query_role_type = "天赋" if "技能" in wiki_type or "天赋" in wiki_type else "命座"
+        if wiki_type in ("技能", "天赋"):
+            query_role_type = "天赋"
+        elif wiki_type in ("共鸣链", "命座"):
+            query_role_type = "命座"
+        else:
+            query_role_type = wiki_type
+
         img = await draw_char_wiki(char_id, query_role_type)
         if isinstance(img, str):
             msg = f"[鸣潮] wiki【{wiki_name}】无法找到, 可能暂未适配, 请先检查输入是否正确！\n"

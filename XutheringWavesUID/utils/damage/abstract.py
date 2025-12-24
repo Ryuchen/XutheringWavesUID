@@ -135,6 +135,10 @@ class WeaponAbstract(object):
         """施放变奏技能"""
         pass
 
+    def cast_tunebreak(self, attr: DamageAttribute, isGroup: bool = False):
+        """施放谐度破坏技"""
+        pass
+
     def skill_create_healing(self, attr: DamageAttribute, isGroup: bool = False):
         """共鸣技能造成治疗"""
         pass
@@ -145,6 +149,14 @@ class WeaponAbstract(object):
 
     def env_aero_erosion(self, attr: DamageAttribute, isGroup: bool = False):
         """风蚀效应"""
+        pass
+    
+    def env_tune_rupture(self, attr: DamageAttribute, isGroup: bool = False):
+        """震谐·偏移"""
+        pass
+    
+    def env_tune_strain(self, attr: DamageAttribute, isGroup: bool = False):
+        """集谐·偏移"""
         pass
 
     def trigger_shield(self, attr: DamageAttribute, isGroup: bool = False):

@@ -2,697 +2,75 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>404 - 小维找不到页面</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 - 页面未找到</title>
   <link rel="icon" href="https://web-static.kurobbs.com/resource/prod/icon.ico" type="image/x-icon">
   <style>
-    :root {
-      --verina-mint: #66cdaa;
-      --verina-deep: #2e8b57;
-      --verina-text: #1a4030;
-      --verina-gold: #ffd700;
-      --glass-bg: rgba(255, 255, 255, 0.92);
-    }
-
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
-      overflow: hidden;
-    }
-
     body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background-color: #f0f0f0;
+      color: #333;
       display: flex;
       justify-content: center;
       align-items: center;
-      position: relative;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
     }
 
-    /* === 背景层 === */
-    .background-layer {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background-image: url('https://prod-alicdn-community.kurobbs.com/forum/f3bc28108d8b4d7a8bb80265c030965c20240805.png');
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      filter: blur(3px);
-      transform: scale(1.05);
-      z-index: -10;
+    .container {
+      text-align: center;
+      background-color: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      max-width: 90%;
+      width: 400px;
     }
 
-    .background-overlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: linear-gradient(
-        180deg,
-        rgba(255, 248, 220, 0.12) 0%,
-        rgba(144, 238, 144, 0.06) 50%,
-        rgba(34, 139, 34, 0.1) 100%
-      );
-      z-index: -9;
+    h1 {
+      font-size: 4rem;
+      margin: 0;
+      color: #e74c3c;
     }
 
-    /* === 丁达尔光效 === */
-    .tyndall-container {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      pointer-events: none;
-      z-index: 0;
-      overflow: hidden;
+    p {
+      font-size: 1.2rem;
+      margin: 1rem 0;
     }
 
-    .light-glow-top {
-      position: absolute;
-      top: -15%; left: 50%;
-      transform: translateX(-50%);
-      width: 120%; height: 55%;
-      background: radial-gradient(
-        ellipse 90% 70% at 50% 0%,
-        rgba(255, 255, 230, 0.85) 0%,
-        rgba(255, 252, 220, 0.6) 20%,
-        rgba(255, 248, 200, 0.35) 45%,
-        transparent 75%
-      );
-      animation: glowPulse 6s ease-in-out infinite;
-    }
-
-    .light-glow-warm {
-      position: absolute;
-      top: -10%; left: 40%;
-      transform: translateX(-50%);
-      width: 80%; height: 50%;
-      background: radial-gradient(
-        ellipse 70% 60% at 50% 0%,
-        rgba(255, 245, 200, 0.5) 0%,
-        rgba(255, 240, 180, 0.25) 40%,
-        transparent 70%
-      );
-      animation: glowPulseWarm 8s ease-in-out infinite;
-    }
-
-    @keyframes glowPulse {
-      0%, 100% { opacity: 0.9; transform: translateX(-50%) scale(1); }
-      50% { opacity: 1; transform: translateX(-50%) scale(1.03); }
-    }
-
-    @keyframes glowPulseWarm {
-      0%, 100% { opacity: 0.6; }
-      50% { opacity: 0.85; }
-    }
-
-    .light-beam {
-      position: absolute;
-      top: -30%; height: 140%;
-      background: linear-gradient(
-        180deg,
-        rgba(255, 255, 240, 0.95) 0%,
-        rgba(255, 255, 220, 0.7) 15%,
-        rgba(255, 252, 200, 0.45) 35%,
-        rgba(255, 250, 180, 0.2) 60%,
-        rgba(255, 255, 200, 0.05) 85%,
-        transparent 100%
-      );
-      transform-origin: top center;
-      filter: blur(8px);
-    }
-
-    .light-beam:nth-child(1) { left: 5%; width: 200px; transform: rotate(-18deg); opacity: 0.75; animation: beamSway1 14s ease-in-out infinite; }
-    .light-beam:nth-child(2) { left: 20%; width: 140px; transform: rotate(-8deg); opacity: 0.6; animation: beamSway2 18s ease-in-out infinite; filter: blur(12px); }
-    .light-beam:nth-child(3) { left: 42%; width: 250px; transform: rotate(2deg); opacity: 0.9; animation: beamSway3 16s ease-in-out infinite; filter: blur(6px); }
-    .light-beam:nth-child(4) { left: 60%; width: 160px; transform: rotate(10deg); opacity: 0.65; animation: beamSway4 20s ease-in-out infinite; filter: blur(10px); }
-    .light-beam:nth-child(5) { left: 78%; width: 180px; transform: rotate(16deg); opacity: 0.7; animation: beamSway5 15s ease-in-out infinite; }
-
-    @keyframes beamSway1 { 0%, 100% { transform: rotate(-18deg) translateX(0); opacity: 0.75; } 50% { transform: rotate(-14deg) translateX(30px); opacity: 0.55; } }
-    @keyframes beamSway2 { 0%, 100% { transform: rotate(-8deg) translateX(0); opacity: 0.6; } 50% { transform: rotate(-12deg) translateX(-25px); opacity: 0.8; } }
-    @keyframes beamSway3 { 0%, 100% { transform: rotate(2deg) translateX(0); opacity: 0.9; } 50% { transform: rotate(5deg) translateX(20px); opacity: 0.7; } }
-    @keyframes beamSway4 { 0%, 100% { transform: rotate(10deg) translateX(0); opacity: 0.65; } 50% { transform: rotate(6deg) translateX(-30px); opacity: 0.85; } }
-    @keyframes beamSway5 { 0%, 100% { transform: rotate(16deg) translateX(0); opacity: 0.7; } 50% { transform: rotate(20deg) translateX(25px); opacity: 0.5; } }
-
-    .dust-layer {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background-image: 
-        radial-gradient(1px 1px at 20% 30%, rgba(255,255,220,0.8) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 40% 20%, rgba(255,255,200,0.7) 0%, transparent 100%),
-        radial-gradient(1px 1px at 60% 40%, rgba(255,255,220,0.6) 0%, transparent 100%),
-        radial-gradient(2px 2px at 80% 25%, rgba(255,255,180,0.8) 0%, transparent 100%),
-        radial-gradient(1px 1px at 15% 50%, rgba(255,255,220,0.5) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 50% 35%, rgba(255,255,200,0.7) 0%, transparent 100%);
-      animation: dustFloat 30s linear infinite;
-    }
-
-    @keyframes dustFloat {
-      0% { transform: translateY(0) translateX(0); }
-      50% { transform: translateY(20px) translateX(10px); }
-      100% { transform: translateY(0) translateX(0); }
-    }
-
-    /* === 浮动元素层 === */
-    #nature-effects {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      overflow: hidden;
-      pointer-events: none;
-      z-index: 1;
-    }
-
-    .nature-sprite { position: absolute; will-change: transform, opacity; }
-
-    .flower-gold {
-      width: 20px; height: 20px;
-      background: radial-gradient(circle at 50% 50%, #fff8dc 20%, #ffd700 50%, #daa520 100%);
-      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2));
-    }
-
-    .petal-pink {
-      width: 12px; height: 18px;
-      background: linear-gradient(135deg, #ffb7c5 0%, #ffc0cb 50%, #ffb6c1 100%);
-      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-      opacity: 0.85;
-      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
-    }
-
-    .leaf-green {
-      width: 16px; height: 24px;
-      background: linear-gradient(135deg, #90ee90 0%, #66cdaa 50%, #3cb371 100%);
-      border-radius: 50% 80% 50% 80%;
-      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.15));
-    }
-
-    .leaf-dark {
-      width: 18px; height: 26px;
-      background: linear-gradient(135deg, #3cb371 0%, #2e8b57 50%, #228b22 100%);
-      border-radius: 50% 80% 50% 80%;
-      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.15));
-    }
-
-    .maple-leaf {
-      width: 22px; height: 22px;
-      background: linear-gradient(135deg, #98d8aa 0%, #66cdaa 100%);
-      clip-path: polygon(50% 0%, 65% 25%, 100% 30%, 75% 50%, 85% 100%, 50% 75%, 15% 100%, 25% 50%, 0% 30%, 35% 25%);
-      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.15));
-    }
-
-    .light-particle {
-      position: absolute;
-      border-radius: 50%;
-      pointer-events: none;
-      will-change: transform, opacity;
-    }
-
-    .firefly {
-      position: absolute;
-      width: 5px; height: 5px;
-      background: radial-gradient(circle, rgba(255, 255, 200, 1) 0%, rgba(255, 255, 150, 0.6) 50%, transparent 70%);
-      border-radius: 50%;
-      pointer-events: none;
-      will-change: transform, opacity;
-      box-shadow: 0 0 8px 2px rgba(255, 255, 150, 0.5);
-    }
-
-    @keyframes fall {
-      0% { transform: translateY(-50px) translateX(0) rotate(0deg); opacity: 0; }
-      10% { opacity: 1; }
-      100% { transform: translateY(calc(100vh + 50px)) translateX(var(--drift)) rotate(var(--spin)); opacity: 0; }
-    }
-
-    @keyframes fallWavy {
-      0% { transform: translateY(-50px) translateX(0) rotate(0deg); opacity: 0; }
-      10% { opacity: 1; }
-      25% { transform: translateY(25vh) translateX(calc(var(--wave) * 1)) rotate(90deg); }
-      50% { transform: translateY(50vh) translateX(calc(var(--wave) * -0.5)) rotate(180deg); }
-      75% { transform: translateY(75vh) translateX(calc(var(--wave) * 0.7)) rotate(270deg); }
-      100% { transform: translateY(calc(100vh + 50px)) translateX(var(--drift)) rotate(var(--spin)); opacity: 0; }
-    }
-
-    @keyframes floatParticle {
-      0% { transform: translate(0, 0) scale(1); opacity: 0; }
-      20% { opacity: 0.6; }
-      80% { opacity: 0.6; }
-      100% { transform: translate(var(--dx), var(--dy)) scale(0.5); opacity: 0; }
-    }
-
-    @keyframes fireflyFloat {
-      0% { transform: translate(0, 0); opacity: 0; }
-      10% { opacity: 0.9; }
-      25% { transform: translate(var(--f1x), var(--f1y)); opacity: 0.3; }
-      50% { transform: translate(var(--f2x), var(--f2y)); opacity: 1; }
-      75% { transform: translate(var(--f3x), var(--f3y)); opacity: 0.4; }
-      100% { transform: translate(var(--f4x), var(--f4y)); opacity: 0; }
-    }
-
-    /* === 对话框主体 === */
-    .dialog-container {
-      display: flex;
-      align-items: flex-start;
-      gap: 20px;
-      max-width: 650px;
-      width: 92%;
-      position: relative;
-      z-index: 10;
-      animation: floatIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-    }
-
-    @keyframes floatIn {
-      0% { opacity: 0; transform: translateY(30px) scale(0.95); }
-      100% { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    /* 头像部分 */
-    .avatar-wrapper {
-      flex-shrink: 0;
-      animation: avatarBounce 3s ease-in-out infinite;
-    }
-
-    @keyframes avatarBounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
-    }
-
-    .avatar {
-      width: 90px;
-      height: 90px;
-      border-radius: 50%;
-      overflow: hidden;
-      border: 3px solid #fff;
-      box-shadow: 
-        0 4px 15px rgba(46, 139, 87, 0.35),
-        0 0 0 3px rgba(102, 205, 170, 0.3);
-      position: relative;
-    }
-
-    .avatar::after {
-      content: '';
-      position: absolute;
-      top: -4px; left: -4px; right: -4px; bottom: -4px;
-      border-radius: 50%;
-      border: 2px dashed var(--verina-gold);
-      animation: spinRing 20s linear infinite;
-    }
-
-    @keyframes spinRing { 100% { transform: rotate(360deg); } }
-
-    .avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    /* 对话气泡 */
-    .speech-bubble {
-      background: var(--glass-bg);
-      border-radius: 24px;
-      border-top-left-radius: 6px;
-      padding: 32px 36px;
-      position: relative;
-      box-shadow: 
-        0 10px 40px rgba(20, 60, 40, 0.15),
-        0 0 0 1px rgba(255, 255, 255, 0.9) inset,
-        0 0 50px rgba(102, 205, 170, 0.1);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      flex: 1;
-      min-height: 180px;
-    }
-
-    /* 气泡小三角 */
-    .speech-bubble::before {
-      content: '';
-      position: absolute;
-      left: -14px;
-      top: 28px;
-      width: 0;
-      height: 0;
-      border: 14px solid transparent;
-      border-right-color: var(--glass-bg);
-      border-left: 0;
-      filter: drop-shadow(-3px 0 2px rgba(0,0,0,0.05));
-    }
-
-    /* 气泡外发光 */
-    .speech-bubble::after {
-      content: '';
-      position: absolute;
-      top: -2px; left: -2px; right: -2px; bottom: -2px;
-      border-radius: 26px;
-      border-top-left-radius: 8px;
-      background: linear-gradient(135deg, 
-        rgba(255, 215, 0, 0.2) 0%, 
-        rgba(102, 205, 170, 0.15) 50%, 
-        rgba(144, 238, 144, 0.2) 100%
-      );
-      z-index: -1;
-      opacity: 0.5;
-      animation: bubbleGlow 3s ease-in-out infinite;
-    }
-
-    @keyframes bubbleGlow {
-      0%, 100% { opacity: 0.3; }
-      50% { opacity: 0.6; }
-    }
-
-    /* 404 标题 */
-    .error-code {
-      font-size: 5.5rem;
-      font-weight: 900;
-      background: linear-gradient(135deg, var(--verina-deep) 0%, var(--verina-mint) 50%, var(--verina-gold) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin: 0 0 12px 0;
-      line-height: 1;
-      letter-spacing: -3px;
-      text-shadow: 0 4px 20px rgba(102, 205, 170, 0.3);
-    }
-
-    /* 主要文字 */
-    .message-text {
-      font-size: 1.35rem;
-      font-weight: 600;
-      color: var(--verina-text);
-      margin: 0 0 18px 0;
-      line-height: 1.6;
-    }
-
-    /* 倒计时 */
     .countdown {
-      font-size: 1rem;
-      color: #6a8a7a;
-      margin: 0 0 20px 0;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 1rem;
     }
 
-    .countdown::before {
-      content: '🌱';
-      font-size: 1.1rem;
-    }
-
-    /* 跳转按钮 */
-    .redirect-btn {
+    a {
       display: inline-block;
-      padding: 14px 36px;
-      border: none;
-      border-radius: 30px;
-      font-size: 1.05rem;
-      font-weight: 700;
+      background-color: #3498db;
       color: white;
-      cursor: pointer;
       text-decoration: none;
-      background: linear-gradient(90deg, #66cdaa, #3cb371, #e3cf57, #66cdaa);
-      background-size: 300% 100%;
-      animation: breathFlow 4s ease-in-out infinite;
-      box-shadow: 0 6px 20px rgba(46, 139, 87, 0.3);
-      transition: transform 0.2s, box-shadow 0.2s;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s ease;
     }
 
-    .redirect-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(46, 139, 87, 0.4);
-    }
-
-    .redirect-btn:active {
-      transform: translateY(0) scale(0.98);
-    }
-
-    @keyframes breathFlow {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    /* 平板适配 */
-    @media (max-width: 700px) {
-      .dialog-container {
-        max-width: 95%;
-        gap: 16px;
-      }
-
-      .avatar {
-        width: 76px;
-        height: 76px;
-      }
-
-      .speech-bubble {
-        padding: 26px 28px;
-        min-height: 160px;
-      }
-
-      .error-code {
-        font-size: 4.5rem;
-      }
-
-      .message-text {
-        font-size: 1.2rem;
-      }
-    }
-
-    /* 手机端适配 */
-    @media (max-width: 520px) {
-      .dialog-container {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: 0;
-        width: 88%;
-      }
-
-      .avatar-wrapper {
-        margin-bottom: -20px;
-        z-index: 2;
-      }
-
-      .avatar {
-        width: 80px;
-        height: 80px;
-        border-width: 4px;
-      }
-
-      .speech-bubble {
-        border-radius: 24px;
-        padding: 40px 24px 28px 24px;
-        min-height: auto;
-        width: 100%;
-        box-sizing: border-box;
-      }
-
-      .speech-bubble::before {
-        display: none;
-      }
-
-      .error-code {
-        font-size: 4rem;
-        letter-spacing: -2px;
-        margin-bottom: 10px;
-      }
-
-      .message-text {
-        font-size: 1.1rem;
-        margin-bottom: 14px;
-      }
-
-      .countdown {
-        justify-content: center;
-        font-size: 0.95rem;
-        margin-bottom: 18px;
-      }
-
-      .redirect-btn {
-        padding: 12px 32px;
-        font-size: 1rem;
-      }
-    }
-
-    /* 超小屏幕 */
-    @media (max-width: 360px) {
-      .dialog-container {
-        width: 92%;
-      }
-
-      .avatar {
-        width: 70px;
-        height: 70px;
-      }
-
-      .speech-bubble {
-        padding: 36px 18px 24px 18px;
-      }
-
-      .error-code {
-        font-size: 3.2rem;
-      }
-
-      .message-text {
-        font-size: 1rem;
-      }
-
-      .redirect-btn {
-        padding: 11px 28px;
-        font-size: 0.95rem;
-      }
+    a:hover {
+      background-color: #2980b9;
     }
   </style>
 </head>
 <body>
-
-<!-- 背景层 -->
-<div class="background-layer"></div>
-<div class="background-overlay"></div>
-
-<!-- 丁达尔光束 -->
-<div class="tyndall-container">
-  <div class="light-glow-top"></div>
-  <div class="light-glow-warm"></div>
-  <div class="dust-layer"></div>
-  <div class="light-beam"></div>
-  <div class="light-beam"></div>
-  <div class="light-beam"></div>
-  <div class="light-beam"></div>
-  <div class="light-beam"></div>
-</div>
-
-<!-- 花草漂浮层 -->
-<div id="nature-effects"></div>
-
-<!-- 对话框主体 -->
-<div class="dialog-container">
-  <div class="avatar-wrapper">
-    <div class="avatar">
-      <img src="https://prod-alicdn-community.kurobbs.com/headCode/akijueyuan.jpg?x-oss-process=image%2Fformat%2Cwebp%2Fresize%2Cw_264" alt="小维">
-    </div>
-  </div>
-  <div class="speech-bubble">
-    <div class="error-code">404</div>
-    <p class="message-text">没有找到页面呢，那小维带你回家吧~</p>
-    <p class="countdown"><span id="countdownText">3秒后自动跳转</span></p>
-    <a href="https://mc.kurogames.com/main" class="redirect-btn" id="redirectBtn">立即回家</a>
-  </div>
+<div class="container">
+  <h1>404</h1>
+  <p>页面不存在</p>
+  <p class="countdown">3秒后自动跳转</p>
+  <a href="https://mc.kurogames.com/main" id="redirectBtn">立即跳转</a>
 </div>
 
 <script>
-  // === 自然特效系统 ===
-  (function initNatureEffects() {
-    const container = document.getElementById('nature-effects');
-    
-    const spriteTypes = [
-      { className: 'flower-gold', weight: 15, scale: [0.8, 1.3] },
-      { className: 'petal-pink', weight: 14, scale: [0.6, 1.1] },
-      { className: 'leaf-green', weight: 18, scale: [0.7, 1.3] },
-      { className: 'leaf-dark', weight: 12, scale: [0.8, 1.4] },
-      { className: 'maple-leaf', weight: 10, scale: [0.7, 1.2] },
-    ];
-    
-    const totalWeight = spriteTypes.reduce((s, t) => s + t.weight, 0);
-    
-    function getRandomType() {
-      let r = Math.random() * totalWeight;
-      for (const type of spriteTypes) {
-        r -= type.weight;
-        if (r <= 0) return type;
-      }
-      return spriteTypes[0];
-    }
-    
-    function randomBetween(min, max) {
-      return Math.random() * (max - min) + min;
-    }
-    
-    function spawnSprite() {
-      const type = getRandomType();
-      const el = document.createElement('div');
-      el.className = `nature-sprite ${type.className}`;
-      
-      const scale = randomBetween(type.scale[0], type.scale[1]);
-      el.style.transform = `scale(${scale})`;
-      el.style.left = `${Math.random() * 100}%`;
-      
-      const drift = randomBetween(-150, 150) + 'px';
-      const spin = randomBetween(-360, 360) + 'deg';
-      const wave = randomBetween(-80, 80) + 'px';
-      const duration = randomBetween(10, 18);
-      const useWavy = Math.random() > 0.5;
-      
-      el.style.setProperty('--drift', drift);
-      el.style.setProperty('--spin', spin);
-      el.style.setProperty('--wave', wave);
-      el.style.animation = `${useWavy ? 'fallWavy' : 'fall'} ${duration}s linear`;
-      
-      container.appendChild(el);
-      setTimeout(() => el.remove(), duration * 1000);
-    }
-    
-    function spawnLightParticle() {
-      const el = document.createElement('div');
-      el.className = 'light-particle';
-      
-      const size = randomBetween(30, 80);
-      el.style.width = size + 'px';
-      el.style.height = size + 'px';
-      
-      const colors = [
-        'radial-gradient(circle, rgba(255,255,200,0.5) 0%, transparent 70%)',
-        'radial-gradient(circle, rgba(255,248,220,0.4) 0%, transparent 70%)',
-        'radial-gradient(circle, rgba(200,255,200,0.35) 0%, transparent 70%)',
-      ];
-      el.style.background = colors[Math.floor(Math.random() * colors.length)];
-      
-      el.style.left = `${Math.random() * 100}%`;
-      el.style.top = `${Math.random() * 100}%`;
-      
-      el.style.setProperty('--dx', randomBetween(-100, 100) + 'px');
-      el.style.setProperty('--dy', randomBetween(-100, 100) + 'px');
-      
-      const duration = randomBetween(8, 14);
-      el.style.animation = `floatParticle ${duration}s ease-in-out`;
-      
-      container.appendChild(el);
-      setTimeout(() => el.remove(), duration * 1000);
-    }
-    
-    function spawnFirefly() {
-      const el = document.createElement('div');
-      el.className = 'firefly';
-      
-      el.style.left = `${Math.random() * 100}%`;
-      el.style.top = `${randomBetween(20, 80)}%`;
-      
-      el.style.setProperty('--f1x', randomBetween(-60, 60) + 'px');
-      el.style.setProperty('--f1y', randomBetween(-40, 40) + 'px');
-      el.style.setProperty('--f2x', randomBetween(-80, 80) + 'px');
-      el.style.setProperty('--f2y', randomBetween(-60, 60) + 'px');
-      el.style.setProperty('--f3x', randomBetween(-60, 60) + 'px');
-      el.style.setProperty('--f3y', randomBetween(-40, 40) + 'px');
-      el.style.setProperty('--f4x', randomBetween(-100, 100) + 'px');
-      el.style.setProperty('--f4y', randomBetween(-80, 80) + 'px');
-      
-      const duration = randomBetween(6, 12);
-      el.style.animation = `fireflyFloat ${duration}s ease-in-out`;
-      
-      container.appendChild(el);
-      setTimeout(() => el.remove(), duration * 1000);
-    }
-    
-    for (let i = 0; i < 8; i++) setTimeout(spawnSprite, i * 300);
-    for (let i = 0; i < 4; i++) setTimeout(spawnLightParticle, i * 500);
-    for (let i = 0; i < 3; i++) setTimeout(spawnFirefly, i * 700);
-    
-    setInterval(spawnSprite, 600);
-    setInterval(spawnLightParticle, 2500);
-    setInterval(spawnFirefly, 3500);
-  })();
-
-  // === 倒计时跳转逻辑 ===
   let countdown = 3;
-  const countdownElement = document.getElementById('countdownText');
+  const countdownElement = document.querySelector('.countdown');
   const redirectUrl = 'https://mc.kurogames.com/main';
 
   function updateCountdown() {

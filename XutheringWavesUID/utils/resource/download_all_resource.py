@@ -23,7 +23,6 @@ from .RESOURCE_PATH import (
     MAP_DETAIL_PATH,
     WUHEN_GUIDE_PATH,
     JIEXING_GUIDE_PATH,
-    MAP_CHALLENGE_PATH,
     XIAOYANG_GUIDE_PATH,
     JINLINGZI_GUIDE_PATH,
     MOEALKYNE_GUIDE_PATH,
@@ -112,7 +111,6 @@ async def download_all_resource(force: bool = False):
             "resource/map": MAP_PATH,
             "resource/map/character": MAP_CHAR_PATH,
             "resource/map/detail_json": MAP_DETAIL_PATH,
-            "resource/map/detail_json/challenge": MAP_CHALLENGE_PATH,
             "resource/map/alias": MAP_ALIAS_PATH,
         },
         "https://ww.loping151.top",
@@ -120,7 +118,7 @@ async def download_all_resource(force: bool = False):
     )
 
 
-def reload_all_modules():
+async def reload_all_modules():
     # 强制加载所有 map 数据
     from ..name_convert import ensure_data_loaded as ensure_name_convert_loaded
     from ..ascension.char import ensure_data_loaded as ensure_char_loaded
@@ -128,6 +126,7 @@ def reload_all_modules():
     from ..ascension.sonata import ensure_data_loaded as ensure_sonata_loaded
     from ..ascension.weapon import ensure_data_loaded as ensure_weapon_loaded
     from ..map.damage.register import reload_all_register
+    from ..limit_user_card import load_limit_user_card
 
     # 在下载完成后强制加载所有数据
     ensure_name_convert_loaded(force=True)
@@ -137,3 +136,6 @@ def reload_all_modules():
     ensure_sonata_loaded(force=True)
 
     reload_all_register()
+    card_list = await load_limit_user_card()
+    if card_list:
+        logger.info(f"[鸣潮][加载角色极限面板] 数量: {len(card_list)}")

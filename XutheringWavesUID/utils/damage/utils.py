@@ -24,6 +24,9 @@ SONATA_CROWN_OF_VALOR = "荣斗铸锋之冠"
 SONATA_HARMONY = "息界同调之律"
 SONATA_FIREWALL = "焚羽猎魔之影"
 SONATA_SCISSOR = "命理崩毁之弦"
+SONATA_NEONLIGHT = "逆光跃彩之约"
+SONATA_HALO = "星构寻辉之环"
+SONATA_GILDED = "流金溯真之式"
 
 CHAR_ATTR_FREEZING = "冷凝"
 CHAR_ATTR_CELESTIAL = "衍射"
@@ -63,6 +66,8 @@ cast_phantom = "cast_phantom"
 cast_dodge_counter = "cast_dodge_counter"
 # 施放变奏技能
 cast_variation = "cast_variation"
+# 施放谐度破坏技
+cast_tunebreak = "cast_tunebreak"
 # 共鸣技能造成治疗
 skill_create_healing = "skill_create_healing"
 # 造成治疗
@@ -95,6 +100,9 @@ Havoc_Bane_Role_Ids = [1508]
 # 失序彼岸之梦 套装
 Ancient_Role_Ids = [1608]
 
+# 偏谐值累积效率 角色
+Offtune_Buildup_Role_Ids = [1209]
+
 # 异常
 AbnormalType = Literal[
     "SpectroFrazzle",  # 光噪效应
@@ -105,6 +113,11 @@ AbnormalType = Literal[
     "ElectroFlare",  # 电磁效应
 ]
 
+# 偏移
+ShiftingType = Literal[
+    "TuneRupture",  # 震谐·偏移
+    "TuneStrain",  # 集谐·偏移
+]
 
 def skill_damage_calc(skillTree: Optional[Dict], skillTreeId: str, skillParamId: str, skillLevel: int) -> str:
     """

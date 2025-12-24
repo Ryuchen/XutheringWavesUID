@@ -18,6 +18,7 @@ ID_MAPPING = {
     "1206": "1206",
     "1207": "1207",
     "1208": "1208",
+    "1209": "1209",
     "1301": "1301",
     "1302": "1302",
     "1303": "1303",
@@ -41,6 +42,7 @@ ID_MAPPING = {
     "1506": "1506",
     "1507": "1507",
     "1508": "1508",
+    "1509": "1509",
     "1501": "1502",
     "1502": "1502",
     "1601": "1601",
@@ -53,8 +55,10 @@ ID_MAPPING = {
     "1605": "1604",
 }
 
+IMPORT_WARNING_SHOWN = False
 
 def _dynamic_load_and_register(attr_name, register_cls, force_reload=False):
+    global IMPORT_WARNING_SHOWN
     current_globals = globals()
     for char_id, module_suffix in ID_MAPPING.items():
         module_path = f"..waves_build.damage_{module_suffix}"
@@ -71,7 +75,9 @@ def _dynamic_load_and_register(attr_name, register_cls, force_reload=False):
             current_globals[global_var_name] = target_obj
 
         except ImportError:
-            logger.warning(f"[Warning] 模块 {module_path} 未找到，请等待下载完成后再进行其他操作，除非遇到下载问题。")
+            if not IMPORT_WARNING_SHOWN:
+                logger.warning(f"[Warning] 计算模块未找到，请观察下载是否进行，并等待下载完成后再进行其他操作，除非遇到下载问题。")
+                IMPORT_WARNING_SHOWN = True
         except Exception as e:
             logger.warning(f"[Warning] Failed to load {module_path} for {char_id}: {e}")
 

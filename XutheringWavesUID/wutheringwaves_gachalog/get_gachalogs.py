@@ -151,7 +151,7 @@ async def get_new_gachalog_for_file(
         if cardPoolType not in gacha_type_meta_data:
             continue
         gacha_name = cardPoolType
-        gacha_log = [GachaLog(**log.dict()) for log in item]
+        gacha_log = [GachaLog(**log.model_dump()) for log in item]
         new_gacha_log = merge_gacha_logs_by_common_subarray(full_data[gacha_name], gacha_log)
         new[gacha_name] = new_gacha_log
         new_count[gacha_name] = len(new_gacha_log)
@@ -178,7 +178,7 @@ async def save_link_source_gachalogs(uid: str, record_id: str, data: Dict[str, L
         "uid": uid,
         "record_id": record_id,
         "fetch_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "data": {gacha_name: [log.dict() for log in logs] for gacha_name, logs in data.items()},
+        "data": {gacha_name: [log.model_dump() for log in logs] for gacha_name, logs in data.items()},
     }
 
     async with aiofiles.open(path / "link_gacha_logs.json", "w", encoding="UTF-8") as file:
@@ -293,7 +293,7 @@ async def save_gachalogs(
         result[gacha_name] = len(gachalogs_new.get(gacha_name, []))  # type: ignore
 
     result["data"] = {  # type: ignore
-        gacha_name: [log.dict() for log in gachalogs_new.get(gacha_name, [])]
+        gacha_name: [log.model_dump() for log in gachalogs_new.get(gacha_name, [])]
         for gacha_name in gacha_type_meta_data.keys()
     }
 
@@ -380,7 +380,7 @@ async def import_gachalogs(ev: Event, history_url: str, type: str, uid: str, for
             gacha_name = gacha_type_meta_data_reverse.get(item.cardPoolType)
             if not gacha_name:
                 continue
-        import_data[gacha_name].append(GachaLog(**item.dict()))
+        import_data[gacha_name].append(GachaLog(**item.model_dump()))
 
     res = await save_gachalogs(ev, uid, "", import_data=import_data, force_overwrite=force_overwrite)
     return res

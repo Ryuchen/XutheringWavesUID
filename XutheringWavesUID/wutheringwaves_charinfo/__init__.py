@@ -1,12 +1,18 @@
 from PIL import Image
-
 from gsuid_core.sv import SV
 from gsuid_core.bot import Bot
-from gsuid_core.logger import logger
 from gsuid_core.models import Event
+from gsuid_core.logger import logger
 from gsuid_core.utils.image.convert import convert_img
 
 from ..utils.hint import error_reply
+from ..utils.char_info_utils import PATTERN
+from ..utils.database.models import WavesBind
+from ..utils.error_reply import WAVES_CODE_103
+from ..utils.at_help import ruser_id, is_valid_at
+from ..utils.resource.constant import SPECIAL_CHAR
+from ..utils.name_convert import char_name_to_char_id
+from .draw_char_card import draw_char_score_img, draw_char_detail_img
 from .upload_card import (
     delete_custom_card,
     upload_custom_card,
@@ -14,13 +20,6 @@ from .upload_card import (
     delete_all_custom_card,
     compress_all_custom_card,
 )
-from ..utils.at_help import ruser_id, is_valid_at
-from .draw_char_card import draw_char_score_img, draw_char_detail_img
-from ..utils.error_reply import WAVES_CODE_103
-from ..utils.name_convert import char_name_to_char_id
-from ..utils.char_info_utils import PATTERN
-from ..utils.database.models import WavesBind
-from ..utils.resource.constant import SPECIAL_CHAR
 
 waves_upload_char = SV("waves上传面板图", priority=3, pm=1)
 waves_char_card_list = SV("waves面板图列表", priority=3, pm=1)
@@ -38,11 +37,14 @@ TYPE_MAP = {
     "面包": "card",
     "🍞": "card",
     "背景": "bg",
+    "bg": "bg",
+    "mr": "stamina",
+    "每日": "stamina",
     "体力": "stamina",
 }
 
 
-@waves_upload_char.on_regex(rf"^上传(?P<char>{PATTERN})(?P<type>面板|面包|🍞|体力|背景)图$", block=True)
+@waves_upload_char.on_regex(rf"^上传(?P<char>{PATTERN})(?P<type>面板|面包|🍞|体力|每日|mr|背景|bg)图$", block=True)
 async def upload_char_img(bot: Bot, ev: Event):
     char = ev.regex_dict.get("char")
     if not char:
@@ -50,7 +52,7 @@ async def upload_char_img(bot: Bot, ev: Event):
     await upload_custom_card(bot, ev, char, target_type=TYPE_MAP.get(ev.regex_dict.get("type"), "card"))
 
 
-@waves_char_card_list.on_regex(rf"^(?P<char>{PATTERN})(?P<type>面板|面包|🍞|体力|背景)图列表$", block=True)
+@waves_char_card_list.on_regex(rf"^(?P<char>{PATTERN})(?P<type>面板|面包|🍞|体力|每日|mr|背景|bg)图列表$", block=True)
 async def get_char_card_list(bot: Bot, ev: Event):
     char = ev.regex_dict.get("char")
     if not char:
@@ -69,7 +71,7 @@ async def delete_char_card(bot: Bot, ev: Event):
     await delete_custom_card(bot, ev, char, hash_id, target_type=TYPE_MAP.get(ev.regex_dict.get("type"), "card"))
 
 
-@waves_delete_all_card.on_regex(rf"^删除全部(?P<char>{PATTERN})(?P<type>面板|面包|🍞|体力|背景)图$", block=True)
+@waves_delete_all_card.on_regex(rf"^删除全部(?P<char>{PATTERN})(?P<type>面板|面包|🍞|体力|每日|mr|背景|bg)图$", block=True)
 async def delete_all_char_card(bot: Bot, ev: Event):
     char = ev.regex_dict.get("char")
     if not char:

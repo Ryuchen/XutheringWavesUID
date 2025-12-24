@@ -126,6 +126,8 @@ class DamageAttribute:
         char_attr=None,
         sync_strike=False,
         energy_regen=0,
+        offtune_buildup_rate=0,
+        tune_break_boost_points=0,
         char_damage=None,
         enemy_level=90,
         teammate_char_ids: Optional[List[int]] = None,
@@ -194,7 +196,7 @@ class DamageAttribute:
         self.shield_skill_multi = shield_skill_multi
         # 技能倍率加成 (如命座 椿2命 = 1.2）
         self.skill_ratio = skill_ratio
-        # 技能倍率加成（技能描述里
+        # 技能倍率加成（技能描述里）
         self.skill_ratio_in_skill_description = skill_ratio_in_skill_description
         # 伤害加成百分比
         self.dmg_bonus = dmg_bonus
@@ -226,6 +228,10 @@ class DamageAttribute:
         self.sync_strike = sync_strike
         # 共鸣效率
         self.energy_regen = energy_regen
+        # 偏谐值累积效率
+        self.offtune_buildup_rate = offtune_buildup_rate
+        # 谐度破坏增幅提升
+        self.tune_break_boost_points = tune_break_boost_points
         # 效果
         self.effect = []
         # 敌人等级
@@ -242,6 +248,10 @@ class DamageAttribute:
         self.env_aero_erosion_deepen = False
         # 虚湮效应
         self.env_havoc_bane = False
+        # 震谐·偏移
+        self.env_tune_rupture = False
+        # 集谐·偏移
+        self.env_tune_strain = False
         # 触发护盾
         self.trigger_shield = False
         # 声骸结果
@@ -292,6 +302,8 @@ class DamageAttribute:
             f"  协同攻击={self.sync_strike}, \n"
             f"  触发护盾={self.trigger_shield}, \n"
             f"  共鸣效率={self.energy_regen}, \n"
+            f"  偏谐值累积效率={self.offtune_buildup_rate}, \n"
+            f"  谐度破坏增幅提升={self.tune_break_boost_points}, \n"
             f"  声骸={ph_details_str}, \n"
             f"  效果={effect_str}, \n"
             f"  队友={self.teammate_char_ids}, \n"
@@ -512,6 +524,17 @@ class DamageAttribute:
     def add_energy_regen(self, energy_regen: float):
         """增加共鸣效率"""
         self.energy_regen += energy_regen
+        return self
+        
+    def add_offtune_buildup_rate(self, offtune_buildup_rate: float):
+        """增加偏谐值累积效率"""
+        self.offtune_buildup_rate += offtune_buildup_rate
+        return self
+    
+    def add_tune_break_boost_points(self, boost_points: int):
+        """谐度破坏增幅提升"""
+        self.tune_break_boost_points += boost_points
+        return self
 
     def set_dmg_bonus_phantom(self, dmg_bonus_phantom_map: Dict):
         """设置声骸加成"""
@@ -576,6 +599,16 @@ class DamageAttribute:
     def set_env_havoc_bane(self):
         """虚湮效应"""
         self.env_havoc_bane = True
+        return self
+    
+    def set_env_tune_rupture(self):
+        """震谐·偏移"""
+        self.env_tune_rupture = True
+        return self
+    
+    def set_env_tune_strain(self):
+        """集谐·偏移"""
+        self.env_tune_strain = True
         return self
 
     def set_trigger_shield(self):

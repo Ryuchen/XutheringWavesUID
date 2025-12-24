@@ -1,7 +1,10 @@
 import textwrap
-from typing import Dict, Optional
+import re
+import os
+from typing import Dict, Optional, List, Union
 from pathlib import Path
 
+from msgspec import json as msgjson
 from PIL import Image, ImageDraw
 
 from gsuid_core.utils.image.convert import convert_img
@@ -13,6 +16,7 @@ from ..utils.image import (
     get_waves_bg,
     get_role_pile,
 )
+from ..utils.resource.RESOURCE_PATH import MAP_FORTE_PATH
 from ..utils.ascension.char import get_char_model
 from ..utils.ascension.model import (
     Chain,
@@ -36,8 +40,283 @@ async def draw_char_wiki(char_id: str, query_role_type: str):
         return await draw_char_skill(char_id)
     elif query_role_type == "命座":
         return await draw_char_chain(char_id)
-
+    elif query_role_type in ["回路", "操作", "机制"]:
+        return await draw_char_forte(char_id)
     return ""
+
+
+async def draw_char_forte(char_id: str):
+    char_model: Optional[CharacterModel] = get_char_model(char_id)
+    if char_model is None:
+        return ""
+
+    _, char_pile = await get_role_pile(char_id)
+
+    char_pic = char_pile.resize((600, int(600 / char_pile.size[0] * char_pile.size[1])))
+
+    char_bg = Image.open(TEXT_PATH / "title_bg.png")
+    char_bg = char_bg.resize((1000, int(1000 / char_bg.size[0] * char_bg.size[1])))
+    char_bg_draw = ImageDraw.Draw(char_bg)
+    # 名字
+    char_bg_draw.text((580, 120), f"{char_model.name}", "black", waves_font_70, "lm")
+    # 稀有度
+    rarity_pic = Image.open(TEXT_PATH / f"rarity_{char_model.starLevel}.png")
+    rarity_pic = rarity_pic.resize((180, int(180 / rarity_pic.size[0] * rarity_pic.size[1])))
+
+    # 90级别数据
+    max_stats: Stats = char_model.get_max_level_stat()
+    char_stats = await parse_char_stats(max_stats)
+
+    # Forte Data
+    forte_path = MAP_FORTE_PATH / str(char_id) / "forte.json"
+    if not forte_path.exists():
+        return f"Forte file not found at {forte_path}"
+
+    with open(forte_path, "rb") as f:
+        data = msgjson.decode(f.read())
+
+    # Parse and draw forte
+    forte_img = await parse_char_forte_data(data, str(char_id))
+
+    card_img = get_waves_bg(1000, char_bg.size[1] + forte_img.size[1] + 50, "bg6")
+
+    char_bg.alpha_composite(char_pic, (0, -100))
+    char_bg.alpha_composite(char_stats, (580, 340))
+    char_bg.alpha_composite(rarity_pic, (560, 160))
+    card_img.paste(char_bg, (0, -5), char_bg)
+    card_img.alpha_composite(forte_img, (0, 600))
+
+    card_img = add_footer(card_img, 800, 20, color="hakush")
+    card_img = await convert_img(card_img)
+    return card_img
+
+
+async def parse_char_forte_data(data: Dict, char_id: str):
+    # Setup fonts and layout constants
+    y_padding = 20
+    x_padding = 20
+    line_spacing = 10
+    block_line_spacing = 30
+    section_spacing = 40
+    image_width = 1000
+    shadow_radius = 20
+
+    title_color = SPECIAL_GOLD
+    title_font_size = 40
+    title_font = waves_font_origin(title_font_size)
+
+    subtitle_color = "white"
+    subtitle_font_size = 32
+    subtitle_font = waves_font_origin(subtitle_font_size)
+
+    detail_color = "white"
+    detail_color_size = 30
+    detail_font = waves_font_origin(detail_color_size)
+
+    images = []
+
+    # 1. Features Section
+    features = data.get("Features", [])
+    if features:
+        feature_img = await draw_text_block(
+            "角色特点", features, image_width, title_font, detail_font, title_color, detail_color, x_padding, y_padding, shadow_radius, line_spacing
+        )
+        images.append(feature_img)
+
+    # 2. Instructions Section
+    instructions = data.get("Instructions", {})
+    sorted_keys = sorted(instructions.keys())
+
+    for key in sorted_keys:
+        instruction_group = instructions[key]
+        group_name = instruction_group.get("Name", "未命名")
+        desc_map = instruction_group.get("Desc", {})
+        
+        # Sort desc items by key
+        sorted_desc_keys = sorted(desc_map.keys())
+        
+        # Create image for this group
+        group_images = []
+        
+        # Draw Group Title
+        title_img = Image.new("RGBA", (image_width, title_font_size + y_padding * 2), (0,0,0,0))
+        draw_title = ImageDraw.Draw(title_img)
+        # Draw a small indicator or just text
+        draw_title.text((x_padding + shadow_radius, y_padding), group_name, font=title_font, fill=title_color)
+        group_images.append(title_img)
+        
+        for desc_key in sorted_desc_keys:
+            item = desc_map[desc_key]
+            desc_text = item.get("Desc", "")
+            input_list = item.get("InputList", [])
+            image_list = item.get("ImageList", [])
+
+            # Draw Description Text with Icons
+            text_block = await draw_mixed_text(
+                desc_text, input_list, image_width, detail_font, detail_color, x_padding, y_padding, shadow_radius, line_spacing
+            )
+            group_images.append(text_block)
+
+            # Draw Images from ImageList
+            for img_path_str in image_list:
+                img_name = os.path.basename(img_path_str)
+                # If it doesn't end with .png, append it, or check existing files
+                if not img_name.lower().endswith(('.png', '.webp', '.jpg')):
+                     img_name += ".png"
+                
+                local_img_path = MAP_FORTE_PATH / char_id / img_name
+                
+                if local_img_path.exists():
+                    try:
+                        fg_img = Image.open(local_img_path).convert("RGBA")
+                        # Resize to fit width (minus padding)
+                        content_width = image_width - 2 * (x_padding + shadow_radius)
+                        
+                        # Calculate new height to maintain aspect ratio
+                        ratio = content_width / fg_img.width
+                        new_height = int(fg_img.height * ratio)
+                        
+                        fg_img = fg_img.resize((content_width, new_height))
+                        
+                        img_block = Image.new("RGBA", (image_width, new_height + 10), (0,0,0,0))
+                        img_block.paste(fg_img, (x_padding + shadow_radius, 5))
+                        group_images.append(img_block)
+                    except Exception:
+                        pass
+        
+        # Combine group images into one block with background
+        if group_images:
+            total_group_height = sum(img.height for img in group_images) + y_padding * 2 + shadow_radius * 2
+            group_final_img = Image.new("RGBA", (image_width, total_group_height), (0,0,0,0))
+            draw_group = ImageDraw.Draw(group_final_img)
+             # Draw background for the whole group
+            draw_group.rectangle(
+                [shadow_radius, shadow_radius, image_width - shadow_radius, total_group_height - shadow_radius],
+                fill=(0, 0, 0, int(0.3 * 255)),
+            )
+            
+            y_curr = y_padding + shadow_radius
+            for img in group_images:
+                group_final_img.alpha_composite(img, (0, int(y_curr)))
+                y_curr += img.height
+            
+            images.append(group_final_img)
+
+    # Combine all blocks
+    total_height = sum(img.height for img in images) + len(images) * section_spacing
+    final_img = Image.new("RGBA", (image_width, total_height), color=(255, 255, 255, 0))
+
+    y_offset = 0
+    for img in images:
+        final_img.paste(img, (0, y_offset))
+        y_offset += img.height + section_spacing
+
+    return final_img
+
+
+async def draw_text_block(title, lines, width, title_font, content_font, title_color, content_color, x_pad, y_pad, shadow_rad, line_sp):
+    # Calculate height
+    content_lines = []
+    for line in lines:
+        content_lines.extend(textwrap.wrap(line, width=30)) # Approx width
+    
+    header_h = title_font.size + line_sp * 2
+    content_h = len(content_lines) * (content_font.size + line_sp)
+    total_h = header_h + content_h + y_pad * 2 + shadow_rad * 2
+
+    img = Image.new("RGBA", (width, total_h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    draw.rectangle(
+        [shadow_rad, shadow_rad, width - shadow_rad, total_h - shadow_rad],
+        fill=(0, 0, 0, int(0.3 * 255)),
+    )
+
+    curr_y = y_pad + shadow_rad
+    draw.text((x_pad + shadow_rad, curr_y), title, font=title_font, fill=title_color)
+    curr_y += header_h
+
+    for line in content_lines:
+        draw.text((x_pad + shadow_rad, curr_y), line, font=content_font, fill=content_color)
+        curr_y += content_font.size + line_sp
+        
+    return img
+
+
+async def draw_mixed_text(desc_text, input_list, width, font, color, x_pad, y_pad, shadow_rad, line_sp):
+    # Prepare content segments
+    segments = []
+    parts = re.split(r"\{(\d+)\}", desc_text)
+
+    for i, part in enumerate(parts):
+        if i % 2 == 0:
+            # Text part
+            if part:
+                segments.append({"type": "text", "content": part})
+        else:
+            # Index part
+            if part.isdigit():
+                idx = int(part)
+                if idx < len(input_list):
+                    input_name = input_list[idx]
+                    icon_path = MAP_FORTE_PATH / f"{input_name}.webp"
+                    if icon_path.exists():
+                        segments.append({"type": "icon", "content": input_name, "path": icon_path})
+                    else:
+                        segments.append({"type": "text", "content": input_name})
+                else:
+                    segments.append({"type": "text", "content": f"{{{part}}}"})
+            else:
+                segments.append({"type": "text", "content": f"{{{part}}}"})
+
+    # Draw to calculate height first? No, draw directly to a large canvas and crop.
+    temp_h = 2000
+    img = Image.new("RGBA", (width, temp_h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    
+    current_x = x_pad + shadow_rad
+    current_y = 0 # Relative to block
+    max_width = width - shadow_rad - x_pad - shadow_rad
+    row_height = 0
+    font_size = font.size
+
+    for seg in segments:
+        if seg["type"] == "text":
+            text = seg["content"]
+            for char in text:
+                if char == '\n':
+                    current_y += (row_height if row_height > 0 else font_size) + line_sp
+                    current_x = x_pad + shadow_rad
+                    row_height = 0
+                    continue
+
+                bbox = draw.textbbox((0, 0), char, font=font)
+                char_w = bbox[2] - bbox[0]
+                char_h = bbox[3] - bbox[1]
+
+                if current_x + char_w > max_width:
+                    current_y += (row_height if row_height > 0 else font_size) + line_sp
+                    current_x = x_pad + shadow_rad
+                    row_height = 0
+
+                draw.text((current_x, current_y), char, font=font, fill=color)
+                current_x += char_w
+                row_height = max(row_height, char_h)
+
+        elif seg["type"] == "icon":
+            icon_size = font_size + 4
+            if current_x + icon_size > max_width:
+                current_y += (row_height if row_height > 0 else font_size) + line_sp
+                current_x = x_pad + shadow_rad
+                row_height = 0
+
+            icon = Image.open(seg["path"]).convert("RGBA")
+            icon = icon.resize((icon_size, icon_size))
+            img.alpha_composite(icon, (int(current_x), int(current_y)))
+            current_x += icon_size + 2
+            row_height = max(row_height, icon_size)
+
+    final_h = current_y + row_height + line_sp
+    return img.crop((0, 0, width, int(final_h)))
 
 
 async def draw_char_skill(char_id: str):

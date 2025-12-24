@@ -10,6 +10,7 @@ from .utils import (
     skill_damage,
     attack_damage,
     cast_variation,
+    cast_attack,
     liberation_damage,
 )
 from .damage import DamageAttribute
@@ -222,6 +223,56 @@ class Char_1206(CharAbstract):
             title = "布兰特-延奏技能"
             msg = "下一位登场角色共鸣解放伤害加深25%"
             attr.add_dmg_deepen(0.25, title, msg)
+
+
+class Char_1209(CharAbstract):
+    id = 1209
+    name = "莫宁"
+    starLevel = 5
+
+    def _do_buff(
+        self,
+        attr: DamageAttribute,
+        chain: int = 0,
+        resonLevel: int = 1,
+        isGroup: bool = True,
+    ):
+        """获得buff"""
+        title = "莫宁-延奏技能"
+        msg = "队伍中所有角色全伤害加深25%"
+        attr.add_dmg_deepen(0.25, title, msg)
+
+        title = "莫宁-谐振场"
+        msg = "谐振场生效范围内偏谐值累积效率提升50%"
+        attr.add_offtune_buildup_rate(0.5, title, msg)
+
+        title = "莫宁-强谐振场"
+        msg = "强谐振场生效范围内防御提升20%"
+        attr.add_def_percent(0.2, title, msg)
+
+        extra_percent = max(attr.energy_regen - 1, 0) * 100
+        dmg_bonus = min(extra_percent * 0.0025, 0.4)
+        if dmg_bonus > 0 and (attr.env_tune_rupture or attr.env_tune_strain):
+            title = "莫宁-干涉标记"
+            msg = "共鸣效率超过100%时，对干涉标记目标伤害提升"
+            attr.add_dmg_bonus(dmg_bonus, title, msg)
+
+        if chain >= 2:
+            crit_dmg_bonus = min(extra_percent * 0.002, 0.32)
+            if crit_dmg_bonus > 0 and (attr.env_tune_rupture or attr.env_tune_strain):
+                title = "莫宁-二链"
+                msg = "共鸣效率超过100%时，对干涉标记目标暴击伤害提升"
+                attr.add_crit_dmg(crit_dmg_bonus, title, msg)
+
+            title = "莫宁-二链"
+            msg = "谐振场、强谐振场偏谐值累积效率额外提升20%"
+            attr.add_offtune_buildup_rate(0.2, title, msg)
+
+        # 拓界者
+        weapon_clz = WavesWeaponRegister.find_class(21010045)
+        if weapon_clz and attr.env_tune_strain:
+            w = weapon_clz(21010045, 90, 6, resonLevel)
+            w.do_action("cast_healing", attr, isGroup)
 
 
 class Char_1301(CharAbstract):
@@ -622,6 +673,42 @@ class Char_1508(CharAbstract):
             method = getattr(w, "do_action", None)
             if callable(method):
                 method([cast_variation], attr, isGroup)
+
+
+class Char_1509(CharAbstract):
+    id = 1509
+    name = "琳奈"
+    starLevel = 5
+
+    def _do_buff(
+        self,
+        attr: DamageAttribute,
+        chain: int = 0,
+        resonLevel: int = 1,
+        isGroup: bool = True,
+    ):
+        """获得buff"""
+        title = "琳奈-延奏技能"
+        msg = "下一个登场的角色全伤害加深15%"
+        attr.add_dmg_deepen(0.15, title, msg)
+
+        if attr.char_damage == liberation_damage:
+            msg = "下一个登场的角色共鸣解放伤害加深25%"
+            attr.add_dmg_deepen(0.25, title, msg)
+
+        title = "琳奈-爆炸喷涂"
+        msg = "施放共鸣解放时，所有角色伤害加成提升24%"
+        attr.add_dmg_bonus(0.24, title, msg)
+
+        title = "琳奈-视觉冲击"
+        msg = "附近队伍中所有角色谐度破坏增幅提升40点"
+        attr.add_tune_break_boost_points(40, title, msg)
+
+        # 溢彩荧辉
+        weapon_clz = WavesWeaponRegister.find_class(21030046)
+        if weapon_clz:
+            w = weapon_clz(21030046, 90, 6, resonLevel)
+            w.do_action("env_tune_rupture", attr, isGroup) # 反正buff是一样的数值
 
 
 class Char_1601(CharAbstract):

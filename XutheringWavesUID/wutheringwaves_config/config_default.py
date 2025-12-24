@@ -102,6 +102,11 @@ CONFIG_DEFAULT: Dict[str, GSC] = {
         "每天定时删除无效token",
         False,
     ),
+    "ResourceDownloadTime": GsListStrConfig(
+        "自动源更新时间设置 重启生效",
+        "每天自动下载全部资源时间设置（时，分），将在该时间点后一小时内随机时间下载资源，注意可能伴随重启，请避开自动签到",
+        ["22", "0"],
+    ),
     "AnnMinuteCheck": GsIntConfig("公告推送时间检测（单位min）", "公告推送时间检测（单位min）", 10, 60),
     "RefreshInterval": GsIntConfig(
         "刷新面板间隔，重启生效（单位秒）",

@@ -334,6 +334,6 @@ async def waves_login(data: LoginModel):
     if temp is None:
         return {"success": False, "msg": "登录超时"}
 
-    temp.update(data.dict())
+    temp.update(data.model_dump())
     cache.set(data.auth, temp)
     return {"success": True}
