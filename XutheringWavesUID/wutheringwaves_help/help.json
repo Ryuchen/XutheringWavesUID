@@ -470,6 +470,22 @@
         "need_admin": false
       },
       {
+        "name": "角色机制",
+        "desc": "角色机制",
+        "eg": "维里奈技能",
+        "need_ck": false,
+        "need_sk": false,
+        "need_admin": false
+      },
+      {
+        "name": "角色别名",
+        "desc": "角色别名",
+        "eg": "维里奈别名",
+        "need_ck": false,
+        "need_sk": false,
+        "need_admin": false
+      },
+      {
         "name": "武器介绍",
         "desc": "武器介绍",
         "eg": "椿专武介绍",
