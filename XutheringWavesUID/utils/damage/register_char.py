@@ -256,6 +256,11 @@ class Char_1209(CharAbstract):
             title = "莫宁-干涉标记"
             msg = "共鸣效率超过100%时，对干涉标记目标伤害提升"
             attr.add_dmg_bonus(dmg_bonus, title, msg)
+        
+        if attr.char_template == temp_atk:
+            title = "莫宁-合鸣效果-星构寻辉之环"
+            msg = "偏谐值累积效率累计使攻击提升25%"
+            attr.add_atk_percent(0.25, title, msg)
 
         if chain >= 2:
             crit_dmg_bonus = min(extra_percent * 0.002, 0.32)
@@ -704,6 +709,15 @@ class Char_1509(CharAbstract):
         msg = "附近队伍中所有角色谐度破坏增幅提升40点"
         attr.add_tune_break_boost_points(40, title, msg)
 
+        if attr.char_template == temp_atk:
+            title = "琳奈-合鸣效果-逆光跃彩之约"
+            msg = "攻击提升15%，谐度破坏增幅累计提升攻击15%"
+            attr.add_atk_percent(0.3, title, msg)
+
+        title = "琳奈-声骸技能-海维夏"
+        msg = "全属性伤害加成提升10.00%"
+        attr.add_dmg_bonus(0.1, title, msg)
+        
         # 溢彩荧辉
         weapon_clz = WavesWeaponRegister.find_class(21030046)
         if weapon_clz:
