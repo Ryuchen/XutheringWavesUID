@@ -58,7 +58,7 @@ RESOURCE_ROW_ORDER = [
 
 MSG_TOKEN = "特征码登录已全部失效！请使用【{}登录】完成绑定！"
 MSG_TOKEN_EXPIRED = "该特征码[{}]登录已失效！请使用【{}登录】完成绑定！"
-MSG_NO_PERIOD = "该特征码[{}]没有[{}]简报数据~\n用例：{}星声 3.0/12月/上周"
+MSG_NO_PERIOD = "该特征码[{}]没有[{}]简报数据~\n用例：{}星声 3.0版本/本月/上周"
 PREFIX = get_plugin_available_prefix("XutheringWavesUID")
 
 
@@ -86,13 +86,11 @@ def _get_relative_period_node(
 
     suffix = period_param[count:]
     if suffix == "月":
-        if count > 3:
-            return None
+        count = min(count, 2)
         period_seq = period_list.months
         period_type = "month"
     elif suffix == "周":
-        if count > 12:
-            return None
+        count = min(count, 3)
         period_seq = period_list.weeks
         period_type = "week"
     else:

@@ -207,7 +207,7 @@
       {
         "name": "星声统计",
         "desc": "星声",
-        "eg": "星声(5月/2.3版本)",
+        "eg": "星声(2.3版本/本月/上周)",
         "need_ck": true,
         "need_sk": false,
         "need_admin": false
