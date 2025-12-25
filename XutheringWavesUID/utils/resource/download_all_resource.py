@@ -38,7 +38,8 @@ from .RESOURCE_PATH import (
 async def check_speed(plugin_name):
     URL_LIB = {
         "小维1号": "https://ww1.loping151.top/",
-        "小维2号": "https://ww2.loping151.top/"
+        "小维2号": "https://ww2.loping151.top/",
+        "小维3号": "https://ww3.loping151.top/"
     }
 
     async def _measure_speed(client: httpx.AsyncClient, base_url: str) -> float:
