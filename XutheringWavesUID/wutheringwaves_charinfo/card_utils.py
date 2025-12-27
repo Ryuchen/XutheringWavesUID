@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
-from PIL import Image, ImageOps
+from PIL import Image
+from gsuid_core.logger import logger
 
 
 def _import_cv2():
