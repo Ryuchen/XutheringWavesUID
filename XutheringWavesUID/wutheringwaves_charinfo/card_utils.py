@@ -313,7 +313,11 @@ def find_duplicates_for_new_images(
     return result
 
 
-async def send_repeated_custom_cards(bot: Bot, ev: Event) -> None:
+async def send_repeated_custom_cards(
+    bot: Bot,
+    ev: Event,
+    threshold: float = ORB_THRESHOLD,
+) -> None:
     at_sender = True if ev.group_id else False
     groups: List[Tuple[List[Path], Dict[Tuple[Path, Path], float]]] = []
     char_dirs: List[Path] = []
@@ -327,7 +331,7 @@ async def send_repeated_custom_cards(bot: Bot, ev: Event) -> None:
     loop = asyncio.get_running_loop()
     with ThreadPoolExecutor(max_workers=use_cores) as executor:
         tasks = [
-            loop.run_in_executor(executor, find_duplicate_groups_in_dir, d)
+            loop.run_in_executor(executor, find_duplicate_groups_in_dir, d, threshold)
             for d in char_dirs
         ]
         for result in await asyncio.gather(*tasks):

@@ -639,6 +639,14 @@
         "need_admin": true
       },
       {
+        "name": "查看重复面板图",
+        "desc": "查看重复面板图",
+        "eg": "查看重复面板图0.8",
+        "need_ck": false,
+        "need_sk": false,
+        "need_admin": true
+      },
+      {
         "name": "联系主人",
         "desc": "联系主人",
         "eg": "联系主人",

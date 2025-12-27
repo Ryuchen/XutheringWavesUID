@@ -100,8 +100,21 @@ async def compress_char_card(bot: Bot, ev: Event):
     await compress_all_custom_card(bot, ev)
     
     
-@waves_repeated_card.on_fullmatch(("查看重复面板图", "查看重复🍞图", "查看重复背景图", "查看重复体力图", "查看重复card图", "查看重复bg图", "查看重复mr图"), block=True)
+@waves_repeated_card.on_regex(
+    r"^查看重复(?P<type>面板|面包|🍞|背景|体力|card|bg|mr)图(?P<threshold>\s*\d+(?:\.\d+)?)?$",
+    block=True,
+)
 async def repeated_char_card(bot: Bot, ev: Event):
+    threshold = None
+    raw_threshold = ev.regex_dict.get("threshold")
+    if raw_threshold:
+        try:
+            threshold = float(raw_threshold.strip())
+        except ValueError:
+            threshold = None
+    if threshold is None or not (0.5 <= threshold <= 1.0):
+        threshold = None
+
     if _repeated_card_lock.locked():
         return
     await _repeated_card_lock.acquire()
@@ -109,7 +122,10 @@ async def repeated_char_card(bot: Bot, ev: Event):
 
     async def _run() -> None:
         try:
-            await send_repeated_custom_cards(bot, ev)
+            if threshold is not None:
+                await send_repeated_custom_cards(bot, ev, threshold=threshold)
+            else:
+                await send_repeated_custom_cards(bot, ev)
         finally:
             _repeated_card_lock.release()
 
