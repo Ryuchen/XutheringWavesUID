@@ -126,6 +126,7 @@ async def send_waves_slash_info(bot: Bot, ev: Event):
     (
         "无尽总排行",
         "wjzph",
+        "wjzpm",
         "无尽总排行榜",
         "冥海总排行",
         "冥海总排行榜",
@@ -143,6 +144,7 @@ async def send_waves_rank_slash_info(bot: Bot, ev: Event):
     (
         "无尽排行",
         "wjph",
+        "wjpm",
         "无尽排行榜",
         "无尽排名",
         "无尽群排行",

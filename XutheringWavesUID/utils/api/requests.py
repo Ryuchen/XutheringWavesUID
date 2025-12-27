@@ -961,6 +961,8 @@ class WavesApi:
                     retry_data = data.copy() if data else {}
                     retry_data["geeTestData"] = seccode_data
                     return await do_request(retry_data, client)
+                elif isinstance(res_data, dict) and res_data.get("geeTest") is True:
+                    logger.warning(f"url:[{url}] 触发验证码！")
 
                 return response
 

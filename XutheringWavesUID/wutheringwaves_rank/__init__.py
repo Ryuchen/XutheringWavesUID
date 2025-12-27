@@ -14,7 +14,7 @@ sv_waves_rank_total_list = SV("ww练度总排行", priority=0)
 sv_waves_rank_local_list = SV("ww练度排行", priority=0)
 
 
-@sv_waves_rank_list.on_regex(rf"^(?P<char>{PATTERN})(?:排行|排行榜|排名|ph)$", block=True)
+@sv_waves_rank_list.on_regex(rf"^(?P<char>{PATTERN})(?:排行|排行榜|排名|ph|pm)$", block=True)
 async def send_rank_card(bot: Bot, ev: Event):
     if not ev.group_id:
         return await bot.send("请在群聊中使用")
@@ -22,10 +22,10 @@ async def send_rank_card(bot: Bot, ev: Event):
     char = ev.regex_dict.get("char")
 
     rank_type = "伤害"
-    if "评分" in char:
+    if "评分" in char or "pf":
         rank_type = "评分"
 
-    char = char.replace("伤害", "").replace("评分", "").replace("本群", "").replace("群", "")
+    char = char.replace("伤害", "").replace("评分", "").replace("pf", "").replace("本群", "").replace("群", "")
 
     im = await draw_rank_img(bot, ev, char, rank_type)
 
@@ -36,7 +36,7 @@ async def send_rank_card(bot: Bot, ev: Event):
         await bot.send(im)
 
 
-@sv_waves_rank_all_list.on_regex(rf"^(?P<char>{PATTERN})(?:总排行|总排行榜|总排名|zph)(?P<pages>\d+)?$", block=True)
+@sv_waves_rank_all_list.on_regex(rf"^(?P<char>{PATTERN})(?:总排行|总排行榜|总排名|zph|zpm)(?P<pages>\d+)?$", block=True)
 async def send_all_rank_card(bot: Bot, ev: Event):
     char = ev.regex_dict.get("char")
     pages = ev.regex_dict.get("pages")
@@ -65,7 +65,7 @@ async def send_all_rank_card(bot: Bot, ev: Event):
         await bot.send(im)
 
 
-@sv_waves_rank_total_list.on_regex(r"^(练度总排行|练度总排行榜|练度总排名|ldzph)(?P<pages>\d+)?$", block=True)
+@sv_waves_rank_total_list.on_regex(r"^(练度总排行|练度总排行榜|练度总排名|ldzph|ldzpm)(?P<pages>\d+)?$", block=True)
 async def send_total_rank_card(bot: Bot, ev: Event):
     pages = ev.regex_dict.get("pages")
 
@@ -84,7 +84,7 @@ async def send_total_rank_card(bot: Bot, ev: Event):
 
 
 @sv_waves_rank_local_list.on_command(
-    ("练度排行", "群练度排行", "练度群排行", "练度群排行榜", "练度排名", "群练度排名", "练度群排名", "ldph"), block=True
+    ("练度排行", "群练度排行", "练度群排行", "练度群排行榜", "练度排名", "群练度排名", "练度群排名", "ldph", "ldpm"), block=True
 )
 async def send_rank_list_card(bot: Bot, ev: Event):
     if not ev.group_id:

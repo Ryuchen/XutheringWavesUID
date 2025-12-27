@@ -97,7 +97,7 @@ async def send_login(bot: Bot, ev: Event, url):
         im = [
             f"{game_title} 您的id为【{ev.user_id}】",
             "完成后将刷新全部面板，无需立即刷新",
-            f" {url}",
+            f" {url}" if WutheringWavesConfig.get_config("WavesLoginForward").data else url,
             "3分钟内有效",
         ]
 

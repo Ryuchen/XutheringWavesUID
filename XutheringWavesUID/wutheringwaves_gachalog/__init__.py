@@ -263,7 +263,7 @@ async def delete_import_gacha_files(bot: Bot, ev: Event):
 
 
 @sv_gacha_rank.on_command(
-    ("抽卡排行", "抽卡排名", "群抽卡排行", "群抽卡排名"),
+    ("抽卡排行", "抽卡排名", "群抽卡排行", "群抽卡排名", "ckph", "ckpm"),
     block=True,
 )
 async def send_gacha_rank_info(bot: Bot, ev: Event):
