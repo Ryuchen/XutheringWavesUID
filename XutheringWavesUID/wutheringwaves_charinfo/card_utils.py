@@ -17,7 +17,7 @@ def _import_cv2():
         import cv2  # type: ignore
         return cv2
     except Exception:
-        logger.warning("[鸣潮] 未安装opencv-python，请先安装后再使用查重功能。")
+        logger.warning("[鸣潮] 未安装opencv-python，请先安装后再使用相关功能。")
         return None
 
 
