@@ -106,7 +106,7 @@ def get_weapon_detail(
     result.resonLevel = resonLevel
     for i, p in enumerate(weapon_data["param"]):
         _temp = "{" + str(i) + "}"
-        effect = effect.replace(f"{_temp}", str(p[max(resonLevel, len(p)) - 1]))
+        effect = effect.replace(f"{_temp}", str(p[min(resonLevel, len(p)) - 1]))
     result.effect = effect
 
     for stat in result.stats:
