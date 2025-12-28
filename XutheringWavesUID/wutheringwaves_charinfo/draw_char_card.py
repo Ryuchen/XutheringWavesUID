@@ -12,7 +12,6 @@ from gsuid_core.utils.image.convert import convert_img
 from gsuid_core.utils.image.image_tools import get_qq_avatar, crop_center_img
 
 from ..utils import hint
-from ..utils.calc import WuWaCalc
 from ..utils.waves_api import waves_api
 from ..wutheringwaves_config import PREFIX
 from ..utils.error_reply import WAVES_CODE_102
@@ -212,6 +211,7 @@ async def ph_card_draw(
     change_command="",
     enemy_detail: Optional[EnemyDetailData] = None,
 ):
+    from ..utils.calc import WuWaCalc
     char_name = role_detail.role.roleName
 
     phantom_temp = Image.new("RGBA", (1200, 1280 + ph_sum_value))
@@ -1009,6 +1009,7 @@ async def draw_char_detail_img(
 
 
 async def draw_char_score_img(ev: Event, uid: str, char: str, user_id: str, waves_id: Optional[str] = None):
+    from ..utils.calc import WuWaCalc
     char, damageId = parse_text_and_number(char)
 
     char_id = char_name_to_char_id(char)

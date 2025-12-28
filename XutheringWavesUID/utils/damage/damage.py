@@ -1,5 +1,11 @@
 from gsuid_core.logger import logger
 
+class DamageAttribute:
+    pass
+
+def getDamageAttribute():
+    return DamageAttribute
+
 def calc_percent_expression(*args, **kwargs):
     try:
         from ..waves_build.damage import calc_percent_expression as _func
@@ -8,16 +14,14 @@ def calc_percent_expression(*args, **kwargs):
         logger.info("请等待下载完成")
         return 0
 
-def __getattr__(name):
-    if name == "DamageAttribute":
-        try:
-            from ..waves_build.damage import DamageAttribute
-            globals()["DamageAttribute"] = DamageAttribute
-            return DamageAttribute
-        except ImportError:
-            return None
-    
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+def reload_damage_module():
+    global DamageAttribute
+    try:
+        from ..waves_build.damage import DamageAttribute as d
+        DamageAttribute = d
+        globals()["DamageAttribute"] = d
+    except ImportError:
+        return None
     
 def check_char_id(*args, **kwargs):
     try:

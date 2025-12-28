@@ -8,7 +8,6 @@ from gsuid_core.models import Event
 from gsuid_core.utils.image.convert import convert_img
 
 from ..utils import hint
-from ..utils.calc import WuWaCalc
 from ..utils.image import (
     GOLD,
     GREY,
@@ -57,6 +56,7 @@ class WavesEchoRank(BaseModel):
 
 
 async def get_draw_list(ev: Event, uid: str, user_id: str, page: int = 1) -> Union[str, bytes]:
+    from ..utils.calc import WuWaCalc
     _, ck = await waves_api.get_ck_result(uid, user_id, ev.bot_id)
     if not ck:
         return hint.error_reply(WAVES_CODE_102)

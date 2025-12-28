@@ -2,7 +2,6 @@ from typing import Dict, Optional
 
 from pydantic import BaseModel
 
-from .calc import WuWaCalc
 from .calculate import get_calc_map, calc_phantom_score, get_total_score_bg
 from .damage.utils import comma_separated_number
 from .char_info_utils import get_all_role_detail_info
@@ -44,6 +43,7 @@ class WavesCharRank(BaseModel):
 
 
 async def get_waves_char_rank(uid, all_role_detail, need_expected_damage=False):
+    from .calc import WuWaCalc
     if not all_role_detail:
         all_role_detail = await get_all_role_detail_info(uid)
     if isinstance(all_role_detail, Dict):

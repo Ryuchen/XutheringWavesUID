@@ -14,7 +14,6 @@ from gsuid_core.models import Event
 from gsuid_core.utils.image.convert import convert_img
 
 from .slash_rank import get_avatar
-from ..utils.calc import WuWaCalc
 from ..utils.cache import TimedCache
 from ..utils.image import (
     RED,
@@ -83,6 +82,7 @@ def calculate_role_phantom_score(role_detail: RoleDetailData) -> float:
     Returns:
         角色的声骸总分
     """
+    from ..utils.calc import WuWaCalc
     if not role_detail.phantomData or not role_detail.phantomData.equipPhantomList:
         return 0.0
 
@@ -271,6 +271,7 @@ async def get_all_rank_list_info(
 
 
 async def draw_rank_list(bot: Bot, ev: Event, threshold: int = 175) -> Union[str, bytes]:
+    from ..utils.calc import WuWaCalc
     start_time = time.time()
     logger.info(f"[draw_practice_rank_list] start: {start_time}")
 

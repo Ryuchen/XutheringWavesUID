@@ -12,7 +12,6 @@ from gsuid_core.models import Event
 from gsuid_core.utils.image.convert import convert_img
 from gsuid_core.utils.image.image_tools import crop_center_img
 
-from ..utils.calc import WuWaCalc
 from ..utils.util import hide_uid
 from ..utils.cache import TimedCache
 from ..utils.image import (
@@ -83,6 +82,7 @@ class RankInfo(BaseModel):
 
 
 async def get_one_rank_info(user_id, uid, role_detail, rankDetail):
+    from ..utils.calc import WuWaCalc
     equipPhantomList = role_detail.phantomData.equipPhantomList
 
     calc: WuWaCalc = WuWaCalc(role_detail)

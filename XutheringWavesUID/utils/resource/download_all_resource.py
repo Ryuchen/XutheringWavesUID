@@ -204,6 +204,8 @@ async def reload_all_modules():
     from ..ascension.weapon import ensure_data_loaded as ensure_weapon_loaded
     from ..map.damage.register import reload_all_register
     from ..limit_user_card import load_limit_user_card
+    from ..calc import reload_wuwacalc_module
+    from ..damage.damage import reload_damage_module
 
     # 在下载完成后强制加载所有数据
     ensure_name_convert_loaded(force=True)
@@ -211,7 +213,9 @@ async def reload_all_modules():
     ensure_weapon_loaded(force=True)
     ensure_echo_loaded(force=True)
     ensure_sonata_loaded(force=True)
-
+    
+    reload_wuwacalc_module()
+    reload_damage_module()
     reload_all_register()
     card_list = await load_limit_user_card()
     if card_list:
