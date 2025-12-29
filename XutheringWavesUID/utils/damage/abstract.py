@@ -97,7 +97,7 @@ class WeaponAbstract(object):
         return f"{self.name}-{self.weapon_detail.get_resonLevel_name()}"
 
     def param(self, param):
-        return self.weapon_detail.param[param][self.weapon_reson_level - 1]
+        return self.weapon_detail.param[param][min(self.weapon_reson_level), len(param) - 1]
 
     def buff(self, attr: DamageAttribute, isGroup: bool = False):
         """buff"""
