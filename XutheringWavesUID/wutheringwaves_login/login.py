@@ -208,7 +208,7 @@ async def page_login_other(bot: Bot, ev: Event, url):
                     await asyncio.sleep(1)
                     continue
 
-                waves_user = await add_cookie(ev, data["ck"], data["did"])
+                waves_user = await add_cookie(ev, data["ck"], data["did"], is_login=True)
                 cache.delete(user_token)
                 if waves_user and isinstance(waves_user, WavesUser):
                     return await login_success_msg(bot, ev, waves_user)
@@ -255,7 +255,7 @@ async def code_login(bot: Bot, ev: Event, text: str, isPage=False):
         return await bot.send(message=result.throw_msg(), at_sender=at_sender)
 
     token = result.data.get("token", "")
-    waves_user = await add_cookie(ev, token, did)
+    waves_user = await add_cookie(ev, token, did, is_login=True)
     if waves_user and isinstance(waves_user, WavesUser):
         return await login_success_msg(bot, ev, waves_user)
     else:

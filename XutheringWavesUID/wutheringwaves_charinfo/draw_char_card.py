@@ -770,7 +770,7 @@ async def draw_char_detail_img(
 
     # 武器banner
     banner2 = Image.open(TEXT_PATH / "banner2.png")
-    right_image_temp.alpha_composite(banner2, dest=(0, 550))
+    right_image_temp.alpha_composite(banner2, dest=(-9, 550))
 
     # 右侧属性-武器-激活技能
     skill_branch = role_detail.get_skill_branch()
@@ -823,10 +823,10 @@ async def draw_char_detail_img(
     if skill_branch:
         weapon_bg_temp_draw.text((115, 207), f"{weapon_detail.stats[0]['name']}", "white", waves_font_30, "lm")
         weapon_bg_temp_draw.text((115, 257), f"{weapon_detail.stats[1]['name']}", "white", waves_font_30, "lm")
-        weapon_bg_temp_draw.text((500 - 216, 207), f"{weapon_detail.stats[0]['value']}", "white", waves_font_30, "rm")
-        weapon_bg_temp_draw.text((500 - 216, 257), f"{weapon_detail.stats[1]['value']}", "white", waves_font_30, "rm")
-        weapon_bg_temp_draw.text((320, 207), f"{skill_branch.branchName.split('·')[0]}", "white", waves_font_30, "lm")
-        weapon_bg_temp_draw.text((320, 257), f"{skill_branch.branchName.split('·')[1]}", "white", waves_font_30, "lm")
+        weapon_bg_temp_draw.text((115 + 300, 207), f"{weapon_detail.stats[0]['value']}", "white", waves_font_30, "rm")
+        weapon_bg_temp_draw.text((115 + 300, 257), f"{weapon_detail.stats[1]['value']}", "white", waves_font_30, "rm")
+        # weapon_bg_temp_draw.text((320, 207), f"{skill_branch.branchName.split('·')[0]}", "white", waves_font_30, "lm")
+        # weapon_bg_temp_draw.text((320, 257), f"{skill_branch.branchName.split('·')[1]}", "white", waves_font_30, "lm")
         active_skill = await get_attribute_skill(skill_branch.branchName)
         active_skill = active_skill.resize((100, 100))
         weapon_bg_temp.alpha_composite(active_skill, dest=(500-50, 232-50))
@@ -943,7 +943,7 @@ async def draw_char_detail_img(
             )
 
     banner1 = Image.open(TEXT_PATH / "banner4.png")
-    right_image_temp.alpha_composite(banner1, dest=(0, 0))
+    right_image_temp.alpha_composite(banner1, dest=(-9, 0)) # 因为属性图不是居中对称的，banner偏移和属性居中对齐
     sh_bg = Image.open(TEXT_PATH / "prop_bg.png")
     sh_bg_draw = ImageDraw.Draw(sh_bg)
 
@@ -964,9 +964,9 @@ async def draw_char_detail_img(
         
         if index < 4:
             name = name.replace("破坏", "") # 写不下喵
-            sh_bg.alpha_composite(prop_img, (60 + 261 * (index % 2), 40 + (index // 2) * 55))
-            sh_bg_draw.text((115 + 261 * (index % 2), 58 + (index // 2) * 55), f"{name[:6]}", name_color, waves_font_24, "lm")
-            sh_bg_draw.text((530 - 236 * ((index + 1) % 2), 58 + (index // 2) * 55), f"{value}", name_color, waves_font_24, "rm")
+            sh_bg.alpha_composite(prop_img, (60 + 251 * (index % 2), 40 + (index // 2) * 55))
+            sh_bg_draw.text((115 + 251 * (index % 2), 58 + (index // 2) * 55), f"{name[:6]}", name_color, waves_font_24, "lm")
+            sh_bg_draw.text((530 - 251 * ((index + 1) % 2), 58 + (index // 2) * 55), f"{value}", name_color, waves_font_24, "rm")
         else:
             sh_bg.alpha_composite(prop_img, (60, 40 + (index - 2) * 55))
             sh_bg_draw.text((115, 58 + (index - 2) * 55), f"{name[:8]}", name_color, waves_font_24, "lm")
