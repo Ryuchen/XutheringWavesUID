@@ -250,11 +250,11 @@ class Char_1209(CharAbstract):
         msg = "强谐振场生效范围内防御提升20%"
         attr.add_def_percent(0.2, title, msg)
 
-        extra_percent = max(attr.energy_regen - 1, 0) * 100
-        dmg_bonus = min(extra_percent * 0.0025, 0.4)
+        extra_regen = max(attr.energy_regen - 1, 0)
+        dmg_bonus = min(extra_regen * 0.25, 0.4)
         if dmg_bonus > 0 and (attr.env_tune_rupture or attr.env_tune_strain):
             title = "莫宁-干涉标记"
-            msg = "共鸣效率超过100%时，对干涉标记目标伤害提升"
+            msg = "对干涉标记目标伤害提升"
             attr.add_dmg_bonus(dmg_bonus, title, msg)
         
         if attr.char_template == temp_atk:
@@ -263,7 +263,7 @@ class Char_1209(CharAbstract):
             attr.add_atk_percent(0.25, title, msg)
 
         if chain >= 2:
-            crit_dmg_bonus = min(extra_percent * 0.002, 0.32)
+            crit_dmg_bonus = min(extra_regen * 0.2, 0.32)
             if crit_dmg_bonus > 0 and (attr.env_tune_rupture or attr.env_tune_strain):
                 title = "莫宁-二链"
                 msg = "共鸣效率超过100%时，对干涉标记目标暴击伤害提升"
