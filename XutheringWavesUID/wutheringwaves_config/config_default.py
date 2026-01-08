@@ -49,7 +49,7 @@ CONFIG_DEFAULT: Dict[str, GSC] = {
             "all",
             "小羊早睡不遭罪",
             "金铃子攻略组",
-            "結星",
+            "丸子",
             "Moealkyne",
             "小沐XMu",
             "吃我无痕",
