@@ -208,12 +208,12 @@ async def send_card_info(bot: Bot, ev: Event):
 
     buttons = []
     msg, num_updated = await draw_refresh_char_detail_img(bot, ev, user_id, uid, buttons)
-    if num_updated == 1:
-        from ..wutheringwaves_config import PREFIX
-        single_refresh_notice = f"[鸣潮] 本次仅刷新一个角色。如仅需刷新单角色，建议使用“{PREFIX}刷新xx面板”"
-        await bot.send(single_refresh_notice)
     if isinstance(msg, str) or isinstance(msg, bytes):
-        return await bot.send_option(msg, buttons)
+        await bot.send_option(msg, buttons)
+    if num_updated <= 1:
+        from ..wutheringwaves_config import PREFIX
+        single_refresh_notice = f"本次刷新少于2个角色。如仅需刷新单角色，建议使用“{PREFIX}刷新xx面板”"
+        await bot.send(f" {single_refresh_notice}" if ev.group_id else single_refresh_notice, at_sender=ev.group_id is not None)
 
 
 @waves_new_get_one_char_info.on_regex(

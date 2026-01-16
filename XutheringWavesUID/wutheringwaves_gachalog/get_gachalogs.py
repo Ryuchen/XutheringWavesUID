@@ -309,9 +309,10 @@ async def save_gachalogs(
     if all_add == 0:
         im.append(f"🌱UID{uid}没有新增调谐数据!")
     else:
-        im.append(f"✅UID{uid}数据更新成功！")
+        im.append(f"🌱UID{uid}数据更新成功！")
         for k, v in gachalogs_count_add.items():
-            im.append(f"[{k}]新增{v}个数据！")
+            if v > 0:
+                im.append(f"[{k}]新增{v}个数据！")
     im.append(f"可以使用【{PREFIX}抽卡记录】获取全部抽卡数据")
     im = "\n".join(im)
     return im
