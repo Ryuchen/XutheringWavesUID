@@ -55,7 +55,6 @@ async def get_guide(bot: Bot, ev: Event, char_name: str):
             imgs_result.extend(imgs)
     else:
         for guide_name in config:
-            # 检查是否被排除（这里 guide_name 可能是标准名称）
             if guide_name in excluded_providers:
                 continue
 
@@ -65,7 +64,6 @@ async def get_guide(bot: Bot, ev: Event, char_name: str):
                 guide_path = GUIDE_PATH / guide_name
 
             author_name = guide_author_map.get(guide_path.name, guide_path.name)
-            # 再次检查（以防路径名映射后的名称被排除）
             if author_name in excluded_providers:
                 continue
 
