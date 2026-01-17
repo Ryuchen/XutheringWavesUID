@@ -67,6 +67,9 @@ async def send_waves_wiki(bot: Bot, ev: Event):
 @sv_waves_guide.on_regex(rf"^(?P<char>{PATTERN})(?:攻略|gl)$", block=True)
 async def send_role_guide_pic(bot: Bot, ev: Event):
     char_name = ev.regex_dict.get("char", "")
+    if "设置排除" in char_name:
+        # 排除攻略提供方 设置指令，不处理
+        return
 
     # char_id = char_name_to_char_id(char_name)
     # at_sender = True if ev.group_id else False
