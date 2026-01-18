@@ -15,7 +15,7 @@ from .ann_card_render import ann_list_card, ann_detail_card
 from ..utils.waves_api import waves_api
 from ..wutheringwaves_config import WutheringWavesConfig
 from ..utils.resource.RESOURCE_PATH import ANN_CARD_PATH, CALENDAR_PATH, WIKI_CACHE_PATH
-from ..utils.database.models import WavesSubscribe
+from ..utils.database.waves_subscribe import WavesSubscribe
 
 sv_ann = SV("鸣潮公告")
 sv_ann_clear_cache = SV("鸣潮公告缓存清理", pm=0, priority=3)

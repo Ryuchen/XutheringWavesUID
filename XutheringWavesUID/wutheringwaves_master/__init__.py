@@ -4,7 +4,7 @@ from gsuid_core.logger import logger
 from gsuid_core.models import Event
 from gsuid_core.subscribe import gs_subscribe
 
-from ..utils.database.models import WavesSubscribe
+from ..utils.database.waves_subscribe import WavesSubscribe
 
 sv_master = SV("联系主人", pm=0)
 master_name_ann = "联系主人"

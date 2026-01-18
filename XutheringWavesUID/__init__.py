@@ -12,7 +12,7 @@ Plugins(name="XutheringWavesUID", force_prefix=["ww"], allow_empty_prefix=False)
 
 # 安装 Bot 消息发送 Hook
 from .utils.bot_send_hook import install_bot_hooks
-from .utils.database.models import WavesSubscribe
+from .utils.database.waves_subscribe import WavesSubscribe
 
 # 注册 WavesSubscribe 的 hook
 async def waves_bot_check_hook(group_id: str, bot_self_id: str):
