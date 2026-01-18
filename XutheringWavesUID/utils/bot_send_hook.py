@@ -41,7 +41,7 @@ async def _call_target_send_hooks(
     """调用所有注册的 target_send hooks"""
     group_id = target_id if target_type == "group" else None
 
-    logger.debug(f"[BotHook] 调用 {_target_send_hooks.__len__()} 个 target_send hooks, group_id={group_id}, bot_self_id={bot_self_id}")
+    logger.debug(f"[BotHook] 调用 {_target_send_hooks.__len__()} 个 target_send hooks, target_type={target_type}, group_id={group_id}, bot_self_id={bot_self_id}")
 
     for hook in _target_send_hooks:
         try:

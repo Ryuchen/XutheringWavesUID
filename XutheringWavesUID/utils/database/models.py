@@ -489,12 +489,15 @@ class WavesSubscribe(BaseModel, table=True):
 
         current_time = int(time.time())
 
+        logger.debug(f"[WavesSubscribe] check_and_update_bot 被调用: group_id={group_id}, bot_self_id={bot_self_id}")
+
         # 查询现有记录
         sql = select(cls).where(cls.group_id == group_id)
         result = await session.execute(sql)
         existing = result.scalars().first()
 
         if existing:
+            logger.debug(f"[WavesSubscribe] 找到现有记录: group_id={group_id}, existing.bot_self_id={existing.bot_self_id}, new_bot_self_id={bot_self_id}")
             # 检查bot是否变化
             if existing.bot_self_id != bot_self_id:
                 old_bot_self_id = existing.bot_self_id
@@ -532,6 +535,7 @@ class WavesSubscribe(BaseModel, table=True):
                 session.add(existing)
                 return False
         else:
+            logger.debug(f"[WavesSubscribe] 未找到记录，创建新记录: group_id={group_id}, bot_self_id={bot_self_id}")
             # 首次记录
             new_record = cls(
                 bot_id="onebot",
