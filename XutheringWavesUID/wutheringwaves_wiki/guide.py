@@ -47,7 +47,7 @@ async def get_guide(bot: Bot, ev: Event, char_name: str):
         for guide_path in GUIDE_PATH.iterdir():
             # 检查是否被排除
             author_name = guide_author_map.get(guide_path.name, guide_path.name)
-            if author_name in excluded_providers:
+            if author_name in excluded_providers or any(excluded in author_name for excluded in excluded_providers):
                 continue
 
             imgs = await get_guide_pic(
@@ -69,7 +69,7 @@ async def get_guide(bot: Bot, ev: Event, char_name: str):
                 guide_path = GUIDE_PATH / guide_name
 
             author_name = guide_author_map.get(guide_path.name, guide_path.name)
-            if author_name in excluded_providers:
+            if author_name in excluded_providers or any(excluded in author_name for excluded in excluded_providers):
                 continue
 
             imgs = await get_guide_pic(

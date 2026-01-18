@@ -810,7 +810,7 @@ class WavesApi:
 
         self.ann_list_data = []
         for _event in self.event_type.keys():
-            res = await self.get_ann_list_by_type(eventType=_event, pageSize=5)
+            res = await self.get_ann_list_by_type(eventType=_event, pageSize=9)
             if res.success:
                 raw_data = res.model_dump()
                 value = [{**x, "id": int(x["id"])} for x in raw_data["data"]["list"]]
@@ -818,7 +818,7 @@ class WavesApi:
 
         bbs_sub = WutheringWavesConfig.get_config("WavesAnnBBSSub").data
         for bbs_id in bbs_sub:
-            res = await self.get_bbs_list(bbs_id, pageIndex=1, pageSize=5)
+            res = await self.get_bbs_list(bbs_id, pageIndex=1, pageSize=9)
             if not res.success:
                 continue
             raw_data = res.model_dump()
