@@ -83,7 +83,7 @@ async def get_char_card_list(bot: Bot, ev: Event):
 
 
 @waves_delete_char_card.on_regex(
-    rf"^删除(?P<char>{PATTERN})(?P<type>面板|面包|🍞|体力|每日|mr|背景|bg)图(?P<hash_id>[a-zA-Z0-9,，]+)$", block=True
+    rf"^删除(?P<char>{PATTERN})(?P<type>面板|面包|🍞|体力|每日|mr|背景|bg)图\s*(?P<hash_id>[a-zA-Z0-9,，]+)$", block=True
 )
 async def delete_char_card(bot: Bot, ev: Event):
     char = ev.regex_dict.get("char")

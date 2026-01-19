@@ -414,12 +414,23 @@ async def draw_rank_list(bot: Bot, ev: Event, threshold: int = 175) -> Union[str
         elif rank_id == 3:
             rank_color = (185, 106, 217)
 
-        # 排名背景
-        info_rank = Image.new("RGBA", (50, 50), color=(255, 255, 255, 0))
-        rank_draw = ImageDraw.Draw(info_rank)
-        rank_draw.rounded_rectangle([0, 0, 50, 50], radius=8, fill=rank_color + (int(0.9 * 255),))
-        rank_draw.text((25, 25), f"{rank_id}", "white", waves_font_34, "mm")
-        bar_bg.alpha_composite(info_rank, (40, 35))
+        def draw_rank_id(rank_id, size=(50, 50), draw=(24, 24), dest=(40, 30)):
+            info_rank = Image.new("RGBA", size, color=(255, 255, 255, 0))
+            rank_draw = ImageDraw.Draw(info_rank)
+            rank_draw.rounded_rectangle(
+                [0, 0, size[0], size[1]],
+                radius=8,
+                fill=rank_color + (int(0.9 * 255),),
+            )
+            rank_draw.text(draw, f"{rank_id}", "white", waves_font_34, "mm")
+            bar_bg.alpha_composite(info_rank, dest)
+
+        if rank_id > 999:
+            draw_rank_id("999+", size=(100, 50), draw=(50, 24), dest=(10, 35))
+        elif rank_id > 99:
+            draw_rank_id(rank_id, size=(75, 50), draw=(37, 24), dest=(25, 35))
+        else:
+            draw_rank_id(rank_id, size=(50, 50), draw=(24, 24), dest=(40, 35))
 
         # 绘制UID（无标签）
         uid_color = "white"

@@ -17,6 +17,7 @@ from gsuid_core.utils.database.base_models import (
 from gsuid_core.utils.database.models import Subscribe
 
 from .waves_subscribe import WavesSubscribe
+from ...wutheringwaves_config import WutheringWavesConfig
 
 exec_list.extend(
     [
@@ -283,14 +284,36 @@ class WavesUser(User, table=True):
         bot_id: str,
         game_id: Optional[int] = None,
     ):
-        conditions = [
+        # 先查询该用户的这个uid记录，检查is_login状态
+        query_conditions = [
             col(cls.user_id) == user_id,
             col(cls.uid) == uid,
             col(cls.bot_id) == bot_id,
         ]
         if game_id is not None:
-            conditions.append(col(cls.game_id) == game_id)
-        sql = delete(cls).where(and_(*conditions))
+            query_conditions.append(col(cls.game_id) == game_id)
+
+        query_sql = select(cls).where(and_(*query_conditions))
+        query_result = await session.execute(query_sql)
+        user_record = query_result.scalars().first()
+
+        # 如果该记录存在且is_login为True，删除所有相同uid的记录
+        if user_record and user_record.is_login:
+            conditions = [col(cls.uid) == uid]
+            if game_id is not None:
+                conditions.append(col(cls.game_id) == game_id)
+            sql = delete(cls).where(and_(*conditions))
+        else:
+            # 否则只删除当前用户的记录
+            conditions = [
+                col(cls.user_id) == user_id,
+                col(cls.uid) == uid,
+                col(cls.bot_id) == bot_id,
+            ]
+            if game_id is not None:
+                conditions.append(col(cls.game_id) == game_id)
+            sql = delete(cls).where(and_(*conditions))
+
         result = await session.execute(sql)
         return result.rowcount
 
@@ -304,7 +327,14 @@ class WavesUser(User, table=True):
         new_token: str,
         new_did: str,
     ):
-        """根据uid和game_id查找WavesUser，如果is_login为True则更新cookie和did"""
+        """根据uid和game_id查找WavesUser，如果is_login为True且在活跃天数内则更新cookie和did"""
+        import time
+
+        # 获取活跃天数配置
+        active_days = WutheringWavesConfig.get_config("ActiveUserDays").data
+        current_time = int(time.time())
+        threshold_time = current_time - (active_days * 24 * 60 * 60)
+
         sql = (
             update(cls)
             .where(
@@ -312,6 +342,8 @@ class WavesUser(User, table=True):
                     col(cls.uid) == uid,
                     col(cls.game_id) == game_id,
                     col(cls.is_login) == True,
+                    col(cls.last_used_time) != null(),
+                    col(cls.last_used_time) >= threshold_time,
                 )
             )
             .values(cookie=new_token, did=new_did)
