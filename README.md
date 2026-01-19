@@ -1,16 +1,17 @@
 # XutheringWavesUID
 
 <p align="center">
-  <a href="https://github.com/Loping151/XutheringWavesUID"><img src="https://s2.loli.net/2024/10/08/ku3pLJBPoGjfQWq.png" width="256" height="256" alt="XutheringWavesUID"></a>
+  <a href="https://github.com/Loping151/XutheringWavesUID"><img src="./ICON.png" width="256" height="256" alt="XutheringWavesUID"></a>
 <h1 align = "center">XutheringWavesUID</h1>
 
 ## 说明
 
-本插件为 [WutheringWavesUID](https://github.com/tyql688) 的构建版本，加强了评分和伤害计算的保护，确保本地计算的权重和伤害与服务器一致。本插件将继续更新，对于不计划自己编写权重计算和伤害计算的用户，与之前没有任何区别。
+本插件为 [WutheringWavesUID](https://github.com/tyql688) 的构建版本，加强了评分和伤害计算的保护，确保本地计算的权重和伤害与服务器一致。
 
 另外：目前提供可在网页直接使用的web版，无需在社交软件上使用：[WEBUID 传送门](https://ngabbs.com/read.php?tid=45645691)
 
-国际服用户支持识别直出，同时支持小程序、官方面板截图：[用例](https://github.com/Loping151/ScoreEcho)，支持伤害计算功能。
+国际服用户支持识别直出（ww分析帮助），同时支持小程序、库街区截图使用，无需任何登录绑定等操作：[用例](https://github.com/Loping151/ScoreEcho)，支持伤害计算功能。本插件不强行要求用户提供任何登录信息，登录信息仅用于查询更多游戏数据。
+
 <details>
   <summary>用例</summary>
   <p align="center">
@@ -19,36 +20,39 @@
     <img src="https://img.nga.178.com/attachments/mon_202511/30/nqQ1aq-leszKqToS5j-cn.jpg" alt="示例图" width="480" />
     <img src="https://img.nga.178.com/attachments/mon_202511/30/nqQ1aq-l5caZiT1kShs-1ey.jpg" alt="示例图" width="480" />
   </p>
-</details>
+</details><br>
 
 在线使用：[识别计算 传送门](https://scoreecho.loping151.site/)
 
-```bash
-mv gsuid_core/gsuid_core/plugins/WutheringWavesUID ./WutheringWavesUID_bak
-cd gsuid_core/gsuid_core/plugins/
-git clone https://github.com/Loping151/XutheringWavesUID.git
-```
-将继承原有数据和配置。
-
-如果为首次安装：
+git安装：
 ```
 git clone https://github.com/Loping151/XutheringWavesUID.git
 ``` 
 
+如确定要部署，可先进群获取部署帮助和更多简易部署方法。
+
 总排行申请、反馈（仅限主人）：群号 653696746。如不使用QQ平台，可发邮件 wkl@loping151.com 申请计算服务token，要求附带具体使用平台、core信息截图和使用情况和规模说明，支持较少的请求量和用户量，但完全足以小范围使用，一般都欢迎入群。
+
+## 丨拓展
+
+签到功能：[RoverSign](https://github.com/Loping151/RoverSign)
+
+分析功能：[ScoreEcho](https://github.com/Loping151/ScoreEcho)
+
+谁AT我功能：[AT_Tracker](https://github.com/Loping151/AT_Tracker)
 
 ## 丨安装提醒
 
 > **注意：该插件为[早柚核心(gsuid_core)](https://github.com/Genshin-bots/gsuid_core)
 的扩展，具体安装方式可参考[GenshinUID](https://github.com/KimigaiiWuyi/GenshinUID)**
 >
-> **如果已经是最新版本的`gsuid_core`, 可以直接对bot发送`core安装插件XutheringWavesUID`，然后重启core以应用安装**
+> 可以直接对bot发送`core安装插件XutheringWavesUID`，然后重启core以应用安装**
 >
 > **权重和伤害计算更新时，仅需发送 ww下载全部资源 将自动重载，无需重启**
 
 ## 丨其他
 
-+ 本项目仅供学习使用，请勿用于商业用途，禁止将**仅具有本插件功能**的服务进行收费。涉及本插件的一切收费行为与开发者无关，开发者不参与任何收费分成。本插件亦没有付费版本或付费解锁的功能（包括签到、体力图背景更换等）。
++ 本项目仅供学习使用，请勿用于商业用途，禁止将**仅具有本插件功能**的服务进行收费。涉及本插件的一切收费行为与开发者无关，开发者不参与任何收费分成。本插件亦没有付费版本或付费解锁的功能，包括签到仓库和分析仓库。
 
 + 写给一般用户：但仍请考虑到即使仅具有本插件功能，部署也需要少量的服务器或电费。群内已尽可能提供其他技术支持，包含十分低价的流量和免费的网络服务。部署并非零成本的，但绝非高成本的。
 
