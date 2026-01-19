@@ -109,6 +109,35 @@ async def send_config_ev(bot: Bot, ev: Event):
             + "\n".join(f"  - {p}" for p in providers)
         )
         return await bot.send((" " if at_sender else "") + msg, at_sender)
+    elif "抽卡条件" in ev.text:
+        if ev.user_pm > 3:
+            msg = "[鸣潮] 抽卡条件设置需要群管理才可设置"
+            return await bot.send((" " if at_sender else "") + msg, at_sender)
+        if not ev.group_id:
+            msg = "[鸣潮] 请使用群聊进行设置"
+            return await bot.send((" " if at_sender else "") + msg, at_sender)
+
+        from ..utils.gacha_config import load_gacha_config, save_gacha_config, parse_gacha_min_value
+
+        value_text = ev.text.replace("抽卡条件", "").strip()
+        gacha_config = load_gacha_config()
+
+        if not value_text:
+            if str(ev.group_id) in gacha_config:
+                del gacha_config[str(ev.group_id)]
+                save_gacha_config(gacha_config)
+            msg = f"[鸣潮] 群【{ev.group_id}】已清空抽卡条件设置"
+            return await bot.send((" " if at_sender else "") + msg, at_sender)
+
+        min_pull = parse_gacha_min_value(value_text)
+        if min_pull is None:
+            msg = "[鸣潮] 未识别到有效的抽卡阈值"
+            return await bot.send((" " if at_sender else "") + msg, at_sender)
+
+        gacha_config[str(ev.group_id)] = min_pull
+        save_gacha_config(gacha_config)
+        msg = f"[鸣潮] 群【{ev.group_id}】已设置抽卡条件阈值: {min_pull}"
+        return await bot.send((" " if at_sender else "") + msg, at_sender)
     else:
         msg = "请输入正确的设置信息..."
         return await bot.send((" " if at_sender else "") + msg, at_sender)

@@ -11,6 +11,7 @@ sys.path.append(str(MAIN_PATH))
 # 配置文件
 CONFIG_PATH = MAIN_PATH / "config.json"
 GUIDE_CONFIG_PATH = MAIN_PATH / "guide_config.json"
+GACHA_CONFIG_PATH = MAIN_PATH / "gacha_config.json"
 
 # 用户数据保存文件
 PLAYER_PATH = MAIN_PATH / "players"

@@ -615,6 +615,14 @@
                 "need_ck": false,
                 "need_sk": false,
                 "need_admin": true
+            },
+            {
+                "name": "设置抽卡条件",
+                "desc": "设置群抽卡排行阈值",
+                "eg": "设置抽卡条件 1200",
+                "need_ck": false,
+                "need_sk": false,
+                "need_admin": true
             }
         ]
     },

@@ -67,6 +67,7 @@ class GachaRankCard:
 
 async def get_all_gacha_rank_info(
     users: List[WavesBind],
+    min_pull: int,
     tokenLimitFlag: bool = False,
     wavesTokenUsersMap: Optional[Dict[Tuple[str, str], str]] = None,
 ) -> List[GachaRankCard]:
@@ -90,8 +91,6 @@ async def get_all_gacha_rank_info(
                     continue
 
                 rankInfo = GachaRankCard(user.user_id, uid, stats)
-
-                min_pull = WutheringWavesConfig.get_config("GachaRankMin").data
                 if rankInfo.total_count < min_pull:
                     continue
 
@@ -130,7 +129,9 @@ async def draw_gacha_rank_card(bot, ev: Event) -> Union[str, bytes]:
     tokenLimitFlag, wavesTokenUsersMap = await get_gacha_rank_token_condition(ev)
 
     # 获取配置的最小抽数阈值
-    min_pull = WutheringWavesConfig.get_config("GachaRankMin").data
+    from ..utils.gacha_config import get_group_gacha_min
+
+    min_pull = get_group_gacha_min(ev.group_id) or WutheringWavesConfig.get_config("GachaRankMin").data
 
     # 解析参数以获取排序类型
     text = ev.text.strip() if ev.text else ""
@@ -154,7 +155,7 @@ async def draw_gacha_rank_card(bot, ev: Event) -> Union[str, bytes]:
             msg.append(f"当前排行开启了登录验证，请使用命令【{PREFIX}登录】登录后此功能！")
         return "\n".join(msg)
 
-    rankInfoList = await get_all_gacha_rank_info(list(users), tokenLimitFlag, wavesTokenUsersMap)
+    rankInfoList = await get_all_gacha_rank_info(list(users), min_pull, tokenLimitFlag, wavesTokenUsersMap)
     if len(rankInfoList) == 0:
         msg = []
         msg.append(f"[鸣潮] 群【{ev.group_id}】暂无抽卡排行数据")
