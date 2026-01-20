@@ -265,7 +265,13 @@ async def get_all_rank_list_info(
                 if role_details_list is None:
                     continue
 
-                role_details = [r for r in role_details_list if str(r.role.roleId) in valid_role_ids]
+                from ..utils.resource.constant import SPECIAL_CHAR_RANK_MAP
+                role_details = []
+                for r in role_details_list:
+                    role_id_str = str(r.role.roleId)
+                    mapped_id = SPECIAL_CHAR_RANK_MAP.get(role_id_str, role_id_str)
+                    if mapped_id in valid_role_ids:
+                        role_details.append(r)
 
                 rankInfo = PracticeRankInfo(
                     qid=user.user_id,

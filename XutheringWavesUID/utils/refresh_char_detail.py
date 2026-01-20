@@ -211,6 +211,7 @@ async def save_char_list_cache(uid: str, waves_char_rank: Optional[List[WavesCha
             load_char_list_data,
             save_char_list_data,
         )
+        from ..utils.resource.constant import SPECIAL_CHAR_RANK_MAP
 
         # 加载现有的角色评分数据
         existing_char_list_data = await load_char_list_data(uid)
@@ -219,7 +220,14 @@ async def save_char_list_cache(uid: str, waves_char_rank: Optional[List[WavesCha
 
         # 只更新改动的角色
         for char_rank in waves_char_rank:
-            existing_char_list_data[str(char_rank.roleId)] = char_rank.score
+            role_id_str = str(char_rank.roleId)
+            mapped_id = SPECIAL_CHAR_RANK_MAP.get(role_id_str, role_id_str)
+            existing_char_list_data[mapped_id] = char_rank.score
+
+        larger_special_ids = [k for k, v in SPECIAL_CHAR_RANK_MAP.items() if k != v]
+        for large_id in larger_special_ids:
+            if large_id in existing_char_list_data:
+                del existing_char_list_data[large_id]
 
         # 保存更新后的数据
         if existing_char_list_data:
