@@ -434,7 +434,7 @@ async def draw_rank_list(bot: Bot, ev: Event, threshold: int = 175) -> Union[str
     text_bar_draw.text((40, 60), "排行说明", GREY, waves_font_28, "lm")
     text_bar_draw.text(
         (185, 50),
-        "1. 综合所有角色的声骸分数。具备声骸套装的角色，全量刷新面板后生效。",
+        "1. 综合所有角色的声骸分数。仅计算本地评分，不考虑套装和共享声骸。",
         SPECIAL_GOLD,
         waves_font_20,
         "lm",
