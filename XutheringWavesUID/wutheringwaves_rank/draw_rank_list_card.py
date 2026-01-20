@@ -38,6 +38,7 @@ from ..utils.calculate import (
 )
 from ..utils.char_info_utils import get_all_role_detail_info_list
 from ..utils.database.models import WavesBind, WavesUser
+from ..utils.database.waves_user_activity import WavesUserActivity
 from ..wutheringwaves_config import PREFIX, WutheringWavesConfig
 from ..utils.fonts.waves_fonts import (
     waves_font_12,
@@ -71,6 +72,57 @@ async def get_practice_rank_token_condition(ev) -> Tuple[bool, Dict[Tuple[str, s
         tokenLimitFlag = True
 
     return tokenLimitFlag, wavesTokenUsersMap
+
+
+async def filter_active_group_users(
+    users: List[WavesBind],
+    bot_id: str,
+    bot_self_id: Optional[str] = None,
+) -> List[WavesBind]:
+    active_days = WutheringWavesConfig.get_config("ActiveUserDays").data
+    if not users or not active_days:
+        return users
+
+    fallback_platform = bot_id
+    fallback_bot_self_id = bot_self_id or ""
+    user_pairs = {
+        (user.user_id, user.bot_id or fallback_platform, fallback_bot_self_id)
+        for user in users
+        if user.user_id
+    }
+    if not user_pairs:
+        return []
+
+    semaphore = asyncio.Semaphore(50)
+
+    async def check(user_id: str, platform: str, check_bot_self_id: str):
+        async with semaphore:
+            try:
+                import time
+
+                last_active_time = await WavesUserActivity.get_user_last_active_time(
+                    user_id, platform, check_bot_self_id
+                )
+                current_time = int(time.time())
+                threshold_time = current_time - (active_days * 24 * 60 * 60)
+                if last_active_time is None:
+                    is_active = False
+                    reason = "no_record"
+                elif last_active_time < threshold_time:
+                    is_active = False
+                    reason = "expired"
+                else:
+                    is_active = True
+                    reason = "active"
+            except Exception:
+                is_active = False
+            return user_id, is_active
+
+    results = await asyncio.gather(
+        *(check(user_id, platform, check_bot_self_id) for user_id, platform, check_bot_self_id in user_pairs)
+    )
+    active_user_ids = {user_id for user_id, is_active in results if is_active}
+    return [user for user in users if user.user_id in active_user_ids]
 
 
 def calculate_role_phantom_score(role_detail: RoleDetailData) -> float:
@@ -291,6 +343,7 @@ async def draw_rank_list(bot: Bot, ev: Event, threshold: int = 175) -> Union[str
 
     # 获取群里的所有用户
     users = await WavesBind.get_group_all_uid(ev.group_id)
+    users = await filter_active_group_users(list(users), ev.bot_id, ev.bot_self_id)
     if not users:
         msg = []
         msg.append(f"[鸣潮] 群【{ev.group_id}】暂无练度排行数据")
@@ -378,7 +431,7 @@ async def draw_rank_list(bot: Bot, ev: Event, threshold: int = 175) -> Union[str
         waves_font_20,
         "lm",
     )
-    text_bar_draw.text((185, 85), "2. 显示声骸分数最高的前8个角色", SPECIAL_GOLD, waves_font_20, "lm")
+    text_bar_draw.text((185, 85), "2. 仅显示近期活跃用户，至多显示声骸分数最高的前8个角色", SPECIAL_GOLD, waves_font_20, "lm")
 
     # 备注 - 排行标准，根据阈值动态生成文案
     temp_notes = f"排行标准：以所有角色声骸分数总和（角色分数>={threshold}（{threshold_label}级））为排序的综合排名"

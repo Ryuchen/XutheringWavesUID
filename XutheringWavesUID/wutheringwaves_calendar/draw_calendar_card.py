@@ -2,6 +2,7 @@ import random
 import asyncio
 from pathlib import Path
 from datetime import datetime, timedelta
+import re
 
 from PIL import Image, ImageDraw
 from PIL.ImageFile import ImageFile
@@ -26,6 +27,46 @@ from ..utils.resource.RESOURCE_PATH import CALENDAR_PATH
 
 TEXT_PATH = Path(__file__).parent / "texture2d"
 time_icon = Image.open(TEXT_PATH / "time_icon.png")
+
+_CALENDAR_DATE_PATTERNS = (
+    re.compile(r"(\\d{4})(\\d{2})(\\d{2})"),  # YYYYMMDD
+    re.compile(r"(\\d{2})-(\\d{2})-(\\d{2})"),  # YY-MM-DD
+)
+
+
+def _parse_calendar_date(name: str) -> datetime | None:
+    for pattern in _CALENDAR_DATE_PATTERNS:
+        match = pattern.search(name)
+        if not match:
+            continue
+        y, m, d = map(int, match.groups())
+        if pattern is _CALENDAR_DATE_PATTERNS[1]:
+            y += 2000
+        try:
+            return datetime(y, m, d)
+        except ValueError:
+            return None
+    return None
+
+
+def get_latest_calendar_image(now: datetime) -> Path | None:
+    if not CALENDAR_PATH.exists():
+        return None
+
+    best_date = None
+    best_path = None
+    for file_path in CALENDAR_PATH.iterdir():
+        if not file_path.is_file():
+            continue
+        if file_path.suffix.lower() not in {".png", ".jpg", ".jpeg"}:
+            continue
+        date = _parse_calendar_date(file_path.name)
+        if not date or date >= now:
+            continue
+        if best_date is None or date > best_date:
+            best_date = date
+            best_path = file_path
+    return best_path
 
 
 def tower_node(now: datetime):
@@ -267,7 +308,9 @@ async def draw_calendar_img(ev: Event, uid: str):
 
     img = add_footer(img)
 
-    kuro_calendar_path = CALENDAR_PATH / "calendar.png"
+    kuro_calendar_path = get_latest_calendar_image(now)
+    if kuro_calendar_path is None:
+        kuro_calendar_path = CALENDAR_PATH / "calendar.png"
     if kuro_calendar_path.exists():
         try:
             custom_calendar = Image.open(kuro_calendar_path).convert("RGBA")

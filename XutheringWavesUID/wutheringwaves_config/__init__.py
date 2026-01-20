@@ -75,7 +75,7 @@ async def send_config_ev(bot: Bot, ev: Event):
             msg = "[鸣潮] 请使用群聊进行设置"
             return await bot.send((" " if at_sender else "") + msg, at_sender)
 
-        from ..utils.guide_config import (
+        from .guide_config import (
             load_guide_config,
             save_guide_config,
             parse_provider_names,
@@ -117,7 +117,7 @@ async def send_config_ev(bot: Bot, ev: Event):
             msg = "[鸣潮] 请使用群聊进行设置"
             return await bot.send((" " if at_sender else "") + msg, at_sender)
 
-        from ..utils.gacha_config import load_gacha_config, save_gacha_config, parse_gacha_min_value
+        from .gacha_config import load_gacha_config, save_gacha_config, parse_gacha_min_value
 
         value_text = ev.text.replace("抽卡条件", "").strip()
         gacha_config = load_gacha_config()

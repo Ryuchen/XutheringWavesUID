@@ -22,7 +22,7 @@ class WavesSubscribe(BaseModel, table=True):
     __table_args__: Dict[str, Any] = {"extend_existing": True}
 
     group_id: str = Field(default="", title="群组ID", unique=True)
-    bot_self_id: str = Field(default="", title="当前Bot Self ID")
+    bot_self_id: str = Field(default="", title="BotSelfID")
     updated_at: Optional[int] = Field(default=None, title="最后更新时间")
 
     @classmethod

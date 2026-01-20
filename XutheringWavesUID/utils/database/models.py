@@ -17,9 +17,11 @@ from gsuid_core.utils.database.base_models import (
 from gsuid_core.utils.database.models import Subscribe
 
 from .waves_subscribe import WavesSubscribe
+from .waves_user_activity import WavesUserActivity
 
 exec_list.extend(
     [
+        'ALTER TABLE WavesUserActivity ADD COLUMN bot_self_id TEXT DEFAULT ""',
         'ALTER TABLE WavesUser ADD COLUMN pgr_uid TEXT DEFAULT ""',
         'ALTER TABLE WavesUser ADD COLUMN record_id TEXT DEFAULT ""',
         'ALTER TABLE WavesUser ADD COLUMN platform TEXT DEFAULT ""',
@@ -487,9 +489,21 @@ class WavesPushAdmin(GsAdminModel):
 class WavesSubscribeAdmin(GsAdminModel):
     pk_name = "group_id"
     page_schema = PageSchema(
-        label="鸣潮Bot-群组绑定",
+        label="鸣潮发送-群组绑定",
         icon="fa fa-link",
     )  # type: ignore
 
     # 配置管理模型
     model = WavesSubscribe
+
+
+@site.register_admin
+class WavesUserActivityAdmin(GsAdminModel):
+    pk_name = "id"
+    page_schema = PageSchema(
+        label="鸣潮用户活跃度",
+        icon="fa fa-clock-o",
+    )  # type: ignore
+
+    # 配置管理模型
+    model = WavesUserActivity

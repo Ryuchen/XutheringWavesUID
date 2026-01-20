@@ -39,6 +39,7 @@ from ..utils.name_convert import alias_to_char_name, char_name_to_char_id
 from ..utils.char_info_utils import get_all_role_detail_info_list
 from ..utils.damage.abstract import DamageRankRegister
 from ..utils.database.models import WavesBind, WavesUser
+from ..utils.database.waves_user_activity import WavesUserActivity
 from ..wutheringwaves_config import PREFIX, WutheringWavesConfig
 from ..utils.fonts.waves_fonts import (
     waves_font_14,
@@ -264,6 +265,57 @@ async def get_waves_token_condition(ev):
     return flag, wavesTokenUsersMap
 
 
+async def filter_active_group_users(
+    users: List[WavesBind],
+    bot_id: str,
+    bot_self_id: Optional[str] = None,
+) -> List[WavesBind]:
+    active_days = WutheringWavesConfig.get_config("ActiveUserDays").data
+    if not users or not active_days:
+        return users
+
+    fallback_platform = bot_id
+    fallback_bot_self_id = bot_self_id or ""
+    user_pairs = {
+        (user.user_id, user.bot_id or fallback_platform, fallback_bot_self_id)
+        for user in users
+        if user.user_id
+    }
+    if not user_pairs:
+        return []
+
+    semaphore = asyncio.Semaphore(50)
+
+    async def check(user_id: str, platform: str, check_bot_self_id: str):
+        async with semaphore:
+            try:
+                import time
+
+                last_active_time = await WavesUserActivity.get_user_last_active_time(
+                    user_id, platform, check_bot_self_id
+                )
+                current_time = int(time.time())
+                threshold_time = current_time - (active_days * 24 * 60 * 60)
+                if last_active_time is None:
+                    is_active = False
+                    reason = "no_record"
+                elif last_active_time < threshold_time:
+                    is_active = False
+                    reason = "expired"
+                else:
+                    is_active = True
+                    reason = "active"
+            except Exception:
+                is_active = False
+            return user_id, is_active
+
+    results = await asyncio.gather(
+        *(check(user_id, platform, check_bot_self_id) for user_id, platform, check_bot_self_id in user_pairs)
+    )
+    active_user_ids = {user_id for user_id, is_active in results if is_active}
+    return [user for user in users if user.user_id in active_user_ids]
+
+
 async def draw_rank_img(bot: Bot, ev: Event, char: str, rank_type: str) -> Union[str, bytes]:
     char_id = char_name_to_char_id(char)
     if not char_id:
@@ -283,6 +335,7 @@ async def draw_rank_img(bot: Bot, ev: Event, char: str, rank_type: str) -> Union
     logger.info(f"[get_rank_info_for_user] start: {start_time}")
     # 获取群里的所有拥有该角色人的数据
     users = await WavesBind.get_group_all_uid(ev.group_id)
+    users = await filter_active_group_users(list(users), ev.bot_id, ev.bot_self_id)
 
     tokenLimitFlag, wavesTokenUsersMap = await get_waves_token_condition(ev)
     if not users:
@@ -531,7 +584,7 @@ async def draw_rank_img(bot: Bot, ev: Event, char: str, rank_type: str) -> Union
     title_draw.text((20, 420), f"{rank_row_title}", SPECIAL_GOLD, waves_font_16, "lm")
     title_draw.text((90, 420), f"{rank_row}", GREY, waves_font_16, "lm")
     if tokenLimitFlag:
-        rank_row = f"2.使用命令【{PREFIX}登录】登录过的用户"
+        rank_row = f"2.使用命令【{PREFIX}登录】登录过，且近期活跃的用户"
         title_draw.text((90, 438), f"{rank_row}", GREY, waves_font_16, "lm")
 
     if rank_type == "伤害":

@@ -27,8 +27,9 @@ async def set_waves_user_value(ev: Event, func: str, uid: str, value: str):
         == 0
     ):
         if func == "体力背景":
-            if is_valid_char_name(value.replace("官方", "").replace("立绘", "").replace("背景", "").replace("图", "")):
-                value = alias_to_char_name(value) + ("官方" if "官方" in value else "") + ("立绘" if "立绘" in value else "") + ("背景" if "背景" in value else "")
+            pure_value = value.replace("官方", "").replace("立绘", "").replace("背景", "").replace("图", "")
+            if is_valid_char_name(pure_value):
+                value = alias_to_char_name(pure_value) + ("官方" if "官方" in value else "") + ("立绘" if "立绘" in value else "") + ("背景" if "背景" in value else "")
                 return f"设置成功!\n特征码[{uid}]\n当前{func}:{value}\n例:[椿](官方)(立绘/背景)"
             else:
                 return f"未找到对应体力背景!\n请检查输入的角色名称是否正确!"

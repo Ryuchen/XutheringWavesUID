@@ -18,6 +18,7 @@ from ..utils.image import (
     get_waves_bg,
 )
 from ..utils.database.models import WavesBind, WavesUser
+from ..utils.database.waves_user_activity import WavesUserActivity
 from ..wutheringwaves_config import PREFIX, WutheringWavesConfig
 from ..utils.fonts.waves_fonts import (
     waves_font_18,
@@ -123,13 +124,64 @@ async def get_gacha_rank_token_condition(ev) -> Tuple[bool, Dict[Tuple[str, str]
     return tokenLimitFlag, wavesTokenUsersMap
 
 
+async def filter_active_group_users(
+    users: List[WavesBind],
+    bot_id: str,
+    bot_self_id: Optional[str] = None,
+) -> List[WavesBind]:
+    active_days = WutheringWavesConfig.get_config("ActiveUserDays").data
+    if not users or not active_days:
+        return users
+
+    fallback_platform = bot_id
+    fallback_bot_self_id = bot_self_id or ""
+    user_pairs = {
+        (user.user_id, user.bot_id or fallback_platform, fallback_bot_self_id)
+        for user in users
+        if user.user_id
+    }
+    if not user_pairs:
+        return []
+
+    semaphore = asyncio.Semaphore(50)
+
+    async def check(user_id: str, platform: str, check_bot_self_id: str):
+        async with semaphore:
+            try:
+                import time
+
+                last_active_time = await WavesUserActivity.get_user_last_active_time(
+                    user_id, platform, check_bot_self_id
+                )
+                current_time = int(time.time())
+                threshold_time = current_time - (active_days * 24 * 60 * 60)
+                if last_active_time is None:
+                    is_active = False
+                    reason = "no_record"
+                elif last_active_time < threshold_time:
+                    is_active = False
+                    reason = "expired"
+                else:
+                    is_active = True
+                    reason = "active"
+            except Exception:
+                is_active = False
+            return user_id, is_active
+
+    results = await asyncio.gather(
+        *(check(user_id, platform, check_bot_self_id) for user_id, platform, check_bot_self_id in user_pairs)
+    )
+    active_user_ids = {user_id for user_id, is_active in results if is_active}
+    return [user for user in users if user.user_id in active_user_ids]
+
+
 async def draw_gacha_rank_card(bot, ev: Event) -> Union[str, bytes]:
     """绘制抽卡排行"""
     # 检查权限配置
     tokenLimitFlag, wavesTokenUsersMap = await get_gacha_rank_token_condition(ev)
 
     # 获取配置的最小抽数阈值
-    from ..utils.gacha_config import get_group_gacha_min
+    from ..wutheringwaves_config.gacha_config import get_group_gacha_min
 
     min_pull = get_group_gacha_min(ev.group_id) or WutheringWavesConfig.get_config("GachaRankMin").data
 
@@ -147,6 +199,7 @@ async def draw_gacha_rank_card(bot, ev: Event) -> Union[str, bytes]:
 
     # 获取群里的所有用户
     users = await WavesBind.get_group_all_uid(ev.group_id)
+    users = await filter_active_group_users(list(users), ev.bot_id, ev.bot_self_id)
     if not users:
         msg = []
         msg.append(f"[鸣潮] 群【{ev.group_id}】暂无抽卡排行数据")
@@ -221,7 +274,7 @@ async def draw_gacha_rank_card(bot, ev: Event) -> Union[str, bytes]:
     text_bar_draw.text((40, 60), "排行说明", (150, 150, 150), waves_font_28, "lm")
     text_bar_draw.text(
         (185, 50),
-        f"1. 仅显示导入总抽数≥{min_pull}的玩家（至少为前6个月的连续记录）",
+        f"1. 仅显示导入总抽数≥{min_pull}且近期活跃的玩家（至少为前6个月的连续记录）",
         SPECIAL_GOLD,
         waves_font_20,
         "lm",

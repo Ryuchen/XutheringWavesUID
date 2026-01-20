@@ -37,7 +37,7 @@ async def get_guide(bot: Bot, ev: Event, char_name: str):
     # 获取群组排除的攻略提供方
     excluded_providers = []
     if ev.group_id:
-        from ..utils.guide_config import get_excluded_providers
+        from ..wutheringwaves_config.guide_config import get_excluded_providers
 
         excluded_providers = get_excluded_providers(ev.group_id)
 
