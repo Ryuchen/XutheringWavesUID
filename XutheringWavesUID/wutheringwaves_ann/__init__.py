@@ -37,7 +37,7 @@ async def ann_(bot: Bot, ev: Event):
         if user_id in ["飞行雪绒", "爱弥斯"]:
             user_id = "30374418"
         if not user_id.isdigit():
-            raise Exception("用户ID格式不正确")
+            return await bot.send("请输入正确的用户ID")
         img = await ann_list_card(user_id=user_id)
         return await bot.send(img)
 
@@ -54,7 +54,7 @@ async def ann_(bot: Bot, ev: Event):
             else:
                 img = await ann_detail_card(post_id)
         else:
-            img = await ann_detail_card(ann_id)
+            return await bot.send("未找到对应的公告ID，请确认输入是否正确")
 
     return await bot.send(img)  # type: ignore
 
