@@ -440,8 +440,8 @@
 
             <!-- Rogue -->
             <div class="mini-stat">
-                <div class="mini-val" style="color: {{ weekly_rogue.color }};">{{ weekly_rogue.cur }}</div>
-                <div class="mini-label" style="color: {{ weekly_rogue.color }};">千道门扉</div>
+                <div class="mini-val" style="color: {% if weekly_rogue.total and weekly_rogue.cur == weekly_rogue.total %}#fff{% else %}{{ weekly_rogue.color }}{% endif %};">{{ weekly_rogue.cur }}</div>
+                <div class="mini-label" style="color: {% if weekly_rogue.total and weekly_rogue.cur == weekly_rogue.total %}#fff{% else %}{{ weekly_rogue.color }}{% endif %};">千道门扉</div>
             </div>
 
             <!-- Tower -->

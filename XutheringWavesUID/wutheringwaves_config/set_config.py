@@ -27,6 +27,8 @@ async def set_waves_user_value(ev: Event, func: str, uid: str, value: str):
         == 0
     ):
         if func == "体力背景":
+            if not value:
+                return f"已重置体力背景为默认!\n特征码[{uid}]"
             pure_value = value.replace("官方", "").replace("立绘", "").replace("背景", "").replace("图", "")
             if is_valid_char_name(pure_value):
                 value = alias_to_char_name(pure_value) + ("官方" if "官方" in value else "") + ("立绘" if "立绘" in value else "") + ("背景" if "背景" in value else "")
