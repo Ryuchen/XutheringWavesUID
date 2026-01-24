@@ -220,4 +220,4 @@ async def draw_reward_img(uid: str, ck: str, ev: Event):
         return img_bytes
     else:
         logger.warning("[鸣潮] 积分卡片渲染失败")
-        return None
+        return f"UID {uid} 伴行积分：{score_data['total_score']}，{score_data['char_weapon_total_capped']}分（角色{score_data['char_score_raw']}分 + 武器{score_data['weapon_score_raw']}分） + 成就{score_data['achievement_score']}分 + 活跃天数{score_data['active_days_score']}分"
