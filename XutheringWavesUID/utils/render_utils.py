@@ -91,6 +91,7 @@ async def render_html(waves_templates, template_name: str, context: dict) -> Opt
     global _browser_uses, _last_used, _active_contexts
 
     if not PLAYWRIGHT_AVAILABLE or async_playwright is None:
+        logger.warning("[鸣潮] Playwright 未安装，无法渲染，将回退到 PIL 渲染（如有）")
         return None
 
     try:
