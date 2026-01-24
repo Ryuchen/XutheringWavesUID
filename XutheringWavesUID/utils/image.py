@@ -331,7 +331,7 @@ def get_custom_waves_bg(  # 不是所有地方都适合替换为custom，函数�
             if crop and img:
                 img = crop_center_img(img, w, h)
     if not img:
-        img = get_waves_bg(w, h, bg)
+        img = get_waves_bg(w, h, bg, crop=crop)
 
     img = _get_custom_gaussian_blur(img)
     return img
