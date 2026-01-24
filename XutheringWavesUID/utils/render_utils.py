@@ -6,17 +6,22 @@ from typing import Union, Optional
 from pathlib import Path
 
 from gsuid_core.logger import logger
+from gsuid_core.config import core_config, CONFIG_DEFAULT
+from gsuid_core.app_life import app as fastapi_app
+from fastapi.staticfiles import StaticFiles
 from .resource.RESOURCE_PATH import TEMP_PATH
 
-# 获取 templates 目录的绝对路径，用于作为 Playwright 的基准路径
 TEMPLATES_ABS_PATH = Path(__file__).parent.parent / "templates"
 
-def _import_playwright():
-    """导入并返回 playwright async_playwright
+class CORSStaticFiles(StaticFiles):
+    """Custom StaticFiles class to add CORS headers only for served files."""
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, HEAD"
+        return response
 
-    Returns:
-        async_playwright 模块或None（如果未安装）
-    """
+def _import_playwright():
     try:
         from playwright.async_api import async_playwright
         return async_playwright
@@ -39,6 +44,36 @@ _active_contexts = 0
 
 _MAX_BROWSER_USES = 1000
 _BROWSER_IDLE_TTL = 3600
+
+_FONT_CSS_NAME = "fonts.css"
+_FONTS_DIR = TEMP_PATH / "fonts"
+
+
+def _mount_fonts() -> None:
+    try:
+        for route in fastapi_app.routes:
+            if getattr(route, "path", None) == "/waves/fonts":
+                return
+        if _FONTS_DIR.exists():
+            fastapi_app.mount(
+                "/waves/fonts",
+                CORSStaticFiles(directory=_FONTS_DIR),
+                name="wwuid_fonts",
+            )
+        logger.debug("[鸣潮] 已挂载字体静态路由 (CORS Enabled)")
+    except Exception as e:
+        logger.warning(f"[鸣潮] 挂载字体静态路由失败: {e}")
+
+
+def _get_local_base_url() -> str:
+    host = core_config.get_config("HOST") or CONFIG_DEFAULT["HOST"]
+    port = core_config.get_config("PORT") or CONFIG_DEFAULT["PORT"]
+    if host in ("0.0.0.0", "0.0.0.0:"):
+        host = "127.0.0.1"
+    return f"http://{host}:{port}"
+
+
+_mount_fonts()
 
 
 async def _ensure_browser():
@@ -100,11 +135,24 @@ async def render_html(waves_templates, template_name: str, context: dict) -> Opt
 
         try:
             template = waves_templates.get_template(template_name)
+            font_css_path = _FONTS_DIR / _FONT_CSS_NAME
+            
+            base_url = _get_local_base_url()
+            
+            if font_css_path.exists():
+                context.setdefault(
+                    "font_css_url",
+                    f"{base_url}/waves/fonts/{_FONT_CSS_NAME}",
+                )
             html_content = template.render(**context)
             logger.debug(f"[鸣潮] HTML渲染完成: {template_name}")
         except Exception as e:
             logger.error(f"[鸣潮] Template render failed: {e}")
             raise e
+
+        font_css_path = _FONTS_DIR / _FONT_CSS_NAME
+        if not font_css_path.exists():
+            logger.warning("[鸣潮] fonts.css 不存在，继续使用原始字体链接。")
 
         try:
             logger.debug("[鸣潮] 获取复用浏览器实例...")

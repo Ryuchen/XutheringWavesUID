@@ -377,9 +377,10 @@ async def _render_stamina_card(
     rogue_total = account_info.rougeScoreLimit if account_info.rougeScoreLimit else 0
     
     # Tower
-    tower_cur = daily_info.towerData.cur if daily_info.towerData else 0
-    tower_total = daily_info.towerData.total if daily_info.towerData else 0
-    tower_refresh = daily_info.towerData.refreshTimeStamp if daily_info.towerData else 0
+    tower_data = getattr(daily_info, 'towerData', None)
+    tower_cur = tower_data.cur if tower_data else 0
+    tower_total = tower_data.total if tower_data else 0
+    tower_refresh = tower_data.refreshTimeStamp if tower_data else 0
     tower_urgent = False
     if tower_refresh > curr_time:
          remain_days = (datetime.fromtimestamp(tower_refresh) - datetime.now()).days
@@ -390,9 +391,10 @@ async def _render_stamina_card(
          tower_time_text = "已结束"
 
     # Slash Tower (冥歌海墟)
-    slash_cur = daily_info.slashTowerData.cur if daily_info.slashTowerData else 0
-    slash_total = daily_info.slashTowerData.total if daily_info.slashTowerData else 0
-    slash_refresh = daily_info.slashTowerData.refreshTimeStamp if daily_info.slashTowerData else 0
+    slash_data = getattr(daily_info, 'slashTowerData', None)
+    slash_cur = slash_data.cur if slash_data else 0
+    slash_total = slash_data.total if slash_data else 0
+    slash_refresh = slash_data.refreshTimeStamp if slash_data else 0
     slash_urgent = False
     if slash_refresh > curr_time:
          remain_days = (datetime.fromtimestamp(slash_refresh) - datetime.now()).days
