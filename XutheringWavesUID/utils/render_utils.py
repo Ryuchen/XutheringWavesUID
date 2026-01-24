@@ -1,11 +1,16 @@
 import base64
 import asyncio
 import time
+import re
 from typing import Union, Optional
 from pathlib import Path
 
 from gsuid_core.logger import logger
 from .resource.RESOURCE_PATH import TEMP_PATH
+
+# 获取 templates 目录的绝对路径，用于作为 Playwright 的基准路径
+TEMPLATES_ABS_PATH = Path(__file__).parent.parent / "templates"
+
 def _import_playwright():
     """导入并返回 playwright async_playwright
 
