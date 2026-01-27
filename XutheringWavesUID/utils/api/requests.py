@@ -34,6 +34,7 @@ from .api import (
     GACHA_LOG_URL,
     GAME_DATA_URL,
     LOGIN_LOG_URL,
+    MINE_V2_URL,
     REQUEST_TOKEN,
     ROLE_DATA_URL,
     ROLE_LIST_URL,
@@ -854,6 +855,14 @@ class WavesApi:
             "pageSize": pageSize,
         }
         res = await self._waves_request(BBS_LIST, "POST", headers, data=data)
+        return res
+
+    async def get_user_mine_v2(self, token: str):
+        """获取用户信息（库洛币等）"""
+        headers = await get_base_header()
+        headers.update({"token": token})
+        data = {}
+        res = await self._waves_request(MINE_V2_URL, "POST", headers, data=data)
         return res
 
     async def get_wiki_home(self):

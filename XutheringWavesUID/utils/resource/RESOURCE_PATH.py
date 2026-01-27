@@ -77,6 +77,7 @@ CHALLENGE_PATH = OTHER_PATH / "challenge"
 ANN_CARD_PATH = OTHER_PATH / "ann_card"
 POKER_PATH = OTHER_PATH / "poker"
 WIKI_CACHE_PATH = OTHER_PATH / "wiki"
+BBS_PATH = OTHER_PATH / "bbs"
 
 # 基础别名文件路径
 ALIAS_PATH = MAIN_PATH / "alias"
@@ -113,6 +114,7 @@ def init_dir():
         CALENDAR_PATH,
         ANN_CARD_PATH,
         WIKI_CACHE_PATH,
+        BBS_PATH,
         BUILD_PATH,
         BUILD_TEMP,
         MAP_BUILD_PATH,

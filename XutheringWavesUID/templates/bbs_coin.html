@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户信息卡片</title>
+    <style>
+        @import url('{{ font_css_url }}');
+
+        body {
+            margin: 0;
+            padding: 40px 0;
+            background-color: #f4f7f9;
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .container {
+            padding: 20px;
+            background-color: transparent;
+            box-sizing: border-box;
+        }
+
+        .card {
+            width: 420px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 35px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            box-sizing: border-box;
+        }
+
+        .user-section {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            width: 100%;
+            gap: 20px;
+        }
+
+        .avatar-box {
+            position: relative;
+            width: 90px;
+            height: 90px;
+            flex-shrink: 0;
+        }
+
+        .avatar-frame {
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            width: 106px;
+            height: 106px;
+            z-index: 2;
+        }
+
+        .avatar-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            object-fit: cover;
+            z-index: 1;
+            background-color: #eee;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .info-box {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .user-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .user-id {
+            font-size: 14px;
+            color: #95a5a6;
+        }
+
+        .signature {
+            font-size: 13px;
+            color: #7f8c8d;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .asset-card {
+            width: 100%;
+            height: 80px;
+            background: #1f1f1f;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 25px;
+            box-sizing: border-box;
+            color: #ffffff;
+        }
+
+        .asset-text {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .asset-label {
+            font-size: 16px;
+            color: #aaaaaa;
+        }
+
+        .asset-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #dfae5f;
+            font-family: sans-serif;
+            letter-spacing: 1px;
+            line-height: 1;
+        }
+
+        .coin-icon {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 6px rgba(223, 174, 95, 0.3));
+        }
+
+        .footer {
+            margin-top: 5px;
+            margin-bottom: -20px;
+            opacity: 0.5;
+            text-align: center;
+        }
+
+        .footer img {
+            height: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="user-section">
+                <div class="avatar-box">
+                    {% if head_frame_url %}
+                    <img src="{{ head_frame_url }}" class="avatar-frame" alt="frame">
+                    {% endif %}
+                    <img src="{{ head_url }}" class="avatar-img" alt="avatar">
+                </div>
+
+                <div class="info-box">
+                    <div class="user-name">{{ user_name }}</div>
+                    <div class="user-id">ID: {{ user_id }}</div>
+                    {% if signature %}
+                    <div class="signature">{{ signature }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="asset-card">
+                {% if coin_b64 %}
+                <img src="{{ coin_b64 }}" class="coin-icon" alt="coin">
+                {% endif %}
+                <div class="asset-text">
+                    <span class="asset-label">库洛币</span>
+                    <span class="asset-value">{{ gold_num }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            {% if footer_b64 %}
+            <img src="{{ footer_b64 }}" alt="footer">
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
