@@ -177,13 +177,13 @@ async def draw_reward_img(uid: str, ck: str, ev: Event):
         # 计算积分并返回文本
         score_data = await calculate_score(uid, ck)
         if not score_data:
-            return "获取数据失败，请先登录！"
+            return "获取数据失败，请先登录，或尝试刷新面板！"
         return f"UID {uid} 伴行积分：{score_data['total_score']}，{score_data['char_weapon_total_capped']}分（角色{score_data['char_score_raw']}分 + 武器{score_data['weapon_score_raw']}分） + 成就{score_data['achievement_score']}分 + 活跃天数{score_data['active_days_score']}分"
 
     # 计算积分
     score_data = await calculate_score(uid, ck)
     if not score_data:
-        return "获取数据失败，请先登录！"
+        return "获取数据失败，请先登录，或尝试刷新面板！"
 
     account_info = score_data["account_info"]
 
