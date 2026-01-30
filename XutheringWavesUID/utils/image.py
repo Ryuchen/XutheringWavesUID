@@ -403,7 +403,7 @@ async def get_event_avatar(
             img = Image.open(path).convert("RGBA")
 
     if img is None:
-        img = await get_square_avatar(1203)
+        img = await get_square_avatar(1503)
 
     return img
 
