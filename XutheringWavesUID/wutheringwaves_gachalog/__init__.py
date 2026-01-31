@@ -58,7 +58,7 @@ def set_gacha_import_cache(user_id: str, uid: str):
     gacha_import_cache.set(key, int(time.time()) + 10)
 
 
-@sv_get_gachalog_by_link.on_command(("导入抽卡链接", "导入抽卡记录"))
+@sv_get_gachalog_by_link.on_command(("导入抽卡链接", "导入抽卡记录"), block=True)
 async def get_gacha_log_by_link(bot: Bot, ev: Event):
     # 没有uid 就别导了吧
     uid = await WavesBind.get_uid_by_game(ev.user_id, ev.bot_id)
