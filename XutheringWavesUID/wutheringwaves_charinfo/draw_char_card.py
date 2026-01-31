@@ -1283,7 +1283,7 @@ async def draw_char_score_img(ev: Event, uid: str, char: str, user_id: str, wave
                 entry_list.append(value)
             weight_list_temp[i] = ",".join(entry_list)
 
-        await draw_weight(introduce_temp, role_detail.role.roleName, weight_list_temp, calc.calc_temp)
+        introduce_temp = await draw_weight(introduce_temp, role_detail.role.roleName, weight_list_temp, calc.calc_temp)
 
     char_bg = Image.open(TEXT_PATH / "char.png")
     img.paste(char_bg, (1100, 220), char_bg)
@@ -1349,6 +1349,8 @@ async def draw_weight(image, role_name, weight_list_temp, calc_temp):
     draw.text((start_x, 800), text, font=waves_font_24, fill="white")
     text = "当前角色评分标准仅供参考与娱乐，不代表任何官方或权威的评价。"
     draw.text((start_x, 850), text, font=waves_font_24, fill="white")
+
+    return image
 
 
 async def draw_pic_with_ring(ev: Event, is_force_avatar=False, force_resource_id=None):

@@ -40,10 +40,10 @@ from ..utils.fonts.waves_fonts import (
     waves_font_42,
 )
 from ..utils.resource.constant import SPECIAL_CHAR
-from ..wutheringwaves_config.wutheringwaves_config import ShowConfig
+from ..wutheringwaves_config.wutheringwaves_config import ShowConfig, WutheringWavesConfig
 import io
 import base64
-from ..utils.render_utils import render_html
+from ..utils.render_utils import render_html, PLAYWRIGHT_AVAILABLE
 from ..utils.resource.RESOURCE_PATH import waves_templates
 
 
@@ -234,6 +234,26 @@ async def _draw_stamina_img(ev: Event, valid: Dict) -> Image.Image:
         has_bg = False
 
     # 尝试使用HTML渲染
+    use_html_render = WutheringWavesConfig.get_config("UseHtmlRender").data
+    if not PLAYWRIGHT_AVAILABLE or not use_html_render:
+        mr_use_bg = bool(ShowConfig.get_config("MrUseBG"))
+        return await _render_stamina_card_pil(
+            img=img,
+            info=info,
+            base_info_bg=base_info_bg,
+            avatar_ring=avatar_ring,
+            avatar=await draw_pic_with_ring(ev),
+            pile=pile,
+            has_bg=has_bg,
+            daily_info=daily_info,
+            account_info=account_info,
+            sign_in_icon=sign_in_icon,
+            sing_in_text=sing_in_text,
+            active_icon=active_icon,
+            active_text=active_text,
+            mr_use_bg=mr_use_bg,
+        )
+
     try:
         html_res = await _render_stamina_card(
             ev=ev,
@@ -256,6 +276,7 @@ async def _draw_stamina_img(ev: Event, valid: Dict) -> Image.Image:
         logger.exception("[鸣潮][每日信息]HTML渲染失败, 回退到PIL绘制")
 
     # 调用实际的绘制函数
+    mr_use_bg = bool(ShowConfig.get_config("MrUseBG"))
     return await _render_stamina_card_pil(
         img=img,
         info=info,
@@ -270,6 +291,7 @@ async def _draw_stamina_img(ev: Event, valid: Dict) -> Image.Image:
         sing_in_text=sing_in_text,
         active_icon=active_icon,
         active_text=active_text,
+        mr_use_bg=mr_use_bg,
     )
 
 
@@ -496,10 +518,11 @@ async def _render_stamina_card_pil(
     sing_in_text: str,
     active_icon: Image.Image,
     active_text: str,
+    mr_use_bg: bool = False,
 ) -> Image.Image:
     """实际的绘制逻辑"""
     # 处理背景图片
-    if ShowConfig.get_config("MrUseBG") and has_bg:
+    if mr_use_bg and has_bg:
         bg_w, bg_h = pile.size
         target_w, target_h = 1150, 850
         ratio = max(target_w / bg_w, target_h / bg_h)
@@ -581,7 +604,7 @@ async def _render_stamina_card_pil(
 
     max_len = 345
 
-    if ShowConfig.get_config("MrUseBG") and has_bg:
+    if mr_use_bg and has_bg:
         dark_bg_color = (16, 26, 54, int(0.4 * 255))
         # 体力 (Y=115)
         active_draw.rounded_rectangle(
@@ -629,7 +652,7 @@ async def _render_stamina_card_pil(
     status_img.alpha_composite(sign_in_icon, (0, 0))
     status_img_draw.text((50, 20), f"{sing_in_text}", "white", waves_font_30, "lm")
     img.alpha_composite(status_img, (70, 80))
-    if ShowConfig.get_config("MrUseBG") and has_bg:
+    if mr_use_bg and has_bg:
         img.alpha_composite(status_img, (70, 80))
 
     # 活跃状态
@@ -639,24 +662,24 @@ async def _render_stamina_card_pil(
     status_img2.alpha_composite(active_icon, (0, 0))
     status_img2_draw.text((50, 20), f"{active_text}", "white", waves_font_30, "lm")
     img.alpha_composite(status_img2, (70, 140))
-    if ShowConfig.get_config("MrUseBG") and has_bg:
+    if mr_use_bg and has_bg:
         img.alpha_composite(status_img2, (70, 140))
 
     # pile 放在背景上
     # 如果不是自定义背景，则按原样贴立绘
-    if not (ShowConfig.get_config("MrUseBG") and has_bg):
+    if not (mr_use_bg and has_bg):
         img.paste(pile, (550, -150), pile)
 
     # 贴个bar_down
     bar_down_alpha = bar_down.copy()
-    if ShowConfig.get_config("MrUseBG") and has_bg:
+    if mr_use_bg and has_bg:
         bar_down_alpha.putalpha(90)
     img.alpha_composite(bar_down_alpha, (0, 624))
     # if ShowConfig.get_config("MrUseBG") and has_bg:
     #     img.alpha_composite(bar_down, (0, 0))
 
     # info 放在背景上
-    if ShowConfig.get_config("MrUseBG") and has_bg:
+    if mr_use_bg and has_bg:
         img.paste(info, (0, 190), info)
     else:
         img.paste(info, (0, 190), info)

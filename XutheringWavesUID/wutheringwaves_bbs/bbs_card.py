@@ -6,6 +6,7 @@ from ..utils.waves_api import waves_api
 from ..wutheringwaves_config import WutheringWavesConfig
 from ..utils.resource.RESOURCE_PATH import waves_templates, BBS_PATH
 from ..utils.render_utils import (
+    PLAYWRIGHT_AVAILABLE,
     get_footer_b64,
     image_to_base64,
     get_image_b64_with_cache,
@@ -39,7 +40,7 @@ async def kuro_coin_card(cookie: str) -> Union[bytes, str]:
         signature = mine_data.get("signature", "")
 
         use_html_render = WutheringWavesConfig.get_config("UseHtmlRender").data
-        if not use_html_render:
+        if not PLAYWRIGHT_AVAILABLE or not use_html_render:
             # 返回纯文本格式
             text = f"用户名: {user_name}\n"
             if user_id:

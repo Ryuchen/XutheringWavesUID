@@ -15,6 +15,7 @@ from ..utils.render_utils import (
     render_html,
     get_footer_b64,
 )
+from ..wutheringwaves_config import WutheringWavesConfig
 from ..utils.image import (
     get_square_avatar,
     pil_to_b64,
@@ -100,7 +101,8 @@ async def char_alias_list(char_name: str) -> Union[str, bytes]:
     alias_list = [std_char_name] + [alias for alias in alias_list if alias != std_char_name]
 
     # 尝试HTML渲染
-    if PLAYWRIGHT_AVAILABLE:
+    use_html_render = WutheringWavesConfig.get_config("UseHtmlRender").data
+    if PLAYWRIGHT_AVAILABLE and use_html_render:
         try:
             logger.debug(f"[鸣潮] 正在渲染角色【{std_char_name}】的别名列表...")
 

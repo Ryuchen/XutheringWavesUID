@@ -12,6 +12,7 @@ from ..utils.api.model import (
 from ..utils.char_info_utils import get_all_roleid_detail_info_int
 from ..utils.resource.constant import SPECIAL_CHAR_INT_ALL
 from ..utils.render_utils import (
+    PLAYWRIGHT_AVAILABLE,
     render_html,
     get_image_b64_with_cache,
     get_footer_b64,
@@ -173,7 +174,7 @@ async def draw_reward_img(uid: str, ck: str, ev: Event):
     """绘制积分卡片"""
 
     use_html_render = WutheringWavesConfig.get_config("UseHtmlRender").data
-    if not use_html_render:
+    if not PLAYWRIGHT_AVAILABLE or not use_html_render:
         # 计算积分并返回文本
         score_data = await calculate_score(uid, ck)
         if not score_data:
