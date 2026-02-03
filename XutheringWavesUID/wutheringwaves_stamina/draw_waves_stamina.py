@@ -398,7 +398,7 @@ async def _render_stamina_card(
     rogue_cur = account_info.rougeScore if account_info.rougeScore else 0
     rogue_total = account_info.rougeScoreLimit if account_info.rougeScoreLimit else 0
     
-    # Tower
+    # Tower (逆境深塔) - 完成条件: cur == 36
     tower_data = getattr(daily_info, 'towerData', None)
     tower_cur = tower_data.cur if tower_data else 0
     tower_total = tower_data.total if tower_data else 0
@@ -407,21 +407,27 @@ async def _render_stamina_card(
     if tower_refresh > curr_time:
          remain_days = (datetime.fromtimestamp(tower_refresh) - datetime.now()).days
          tower_time_text = f"余 {remain_days} 天"
-         if tower_total and tower_cur < tower_total and remain_days < 7:
+         if tower_cur != 36 and remain_days < 7:
              tower_urgent = True
     else:
          tower_time_text = "已结束"
 
-    # Slash Tower (冥歌海墟)
+    # Slash Tower (冥歌海墟) - 只有name为'冥歌海墟·再生-湍渊'才视为完成
     slash_data = getattr(daily_info, 'slashTowerData', None)
     slash_cur = slash_data.cur if slash_data else 0
     slash_total = slash_data.total if slash_data else 0
     slash_refresh = slash_data.refreshTimeStamp if slash_data else 0
+    slash_name = slash_data.name if slash_data else ""
     slash_urgent = False
     if slash_refresh > curr_time:
          remain_days = (datetime.fromtimestamp(slash_refresh) - datetime.now()).days
          slash_time_text = f"余 {remain_days} 天"
-         if slash_total and slash_cur < slash_total and remain_days < 7:
+         slash_completed = (
+             slash_name == '冥歌海墟·再生-湍渊'
+             and slash_total
+             and slash_cur >= slash_total
+         )
+         if not slash_completed and remain_days < 7:
              slash_urgent = True
     else:
          slash_time_text = "已结束"
