@@ -10,9 +10,10 @@ from gsuid_core.logger import logger
 from aiohttp import ClientTimeout, ContentTypeError
 
 from .captcha import get_solver
+from ..hint import WAVES_ERROR_CODE
 from ..util import timed_async_cache
 from .captcha.base import CaptchaResult
-from ..error_reply import WAVES_CODE_999
+from ..error_reply import WAVES_CODE_999, WAVES_CODE_104
 from .captcha.errors import CaptchaError
 from ...utils.constants import WAVES_GAME_ID
 from ...utils.database.models import WavesUser
@@ -986,6 +987,8 @@ class WavesApi:
                     return await do_request(retry_data, client)
                 elif isinstance(res_data, dict) and res_data.get("geeTest") is True:
                     logger.warning(f"url:[{url}] 触发验证码！")
+                    return KuroApiResp(code=WAVES_CODE_104, msg=WAVES_ERROR_CODE[WAVES_CODE_104], data=res_data)
+                    #return {"code": WAVES_CODE_999, "msg": "验证码破解失败"}
 
                 return response
 

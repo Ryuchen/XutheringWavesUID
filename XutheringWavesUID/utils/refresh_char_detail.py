@@ -314,7 +314,8 @@ async def refresh_char(
     # 处理返回的数据
     for role_detail_info in results:
         if not role_detail_info.success:
-            continue
+            return error_reply(role_detail_info.code, role_detail_info.msg)
+            #continue
 
         role_detail_info = role_detail_info.data
         if (
