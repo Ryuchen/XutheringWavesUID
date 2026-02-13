@@ -64,6 +64,14 @@ git clone https://github.com/Loping151/XutheringWavesUID.git
 
 + [GPL-3.0 License](https://github.com/Loping151/XutheringWavesUID/blob/main/LICENSE)
 
+本仓库仅允许正常、可沟通、具有良知的人部署。以下bot可能使用部分本仓库代码，但不受到本仓库支持，其造成的任何行为与本仓库无关。
+
+<img src="./assets/1.png" alt="😅" width="200" />
+<img src="./assets/2.png" alt="😅" width="200" />
+<img src="./assets/3.png" alt="😅" width="200" />
+
+主要辨识方式：国际服（可自由编造的数据）参与排名、底部具有 岸宝 或 kokos.icu、底部具有《created by MoonShadow1976》
+
 ## 支持设备列表：
 win_amd64: python3.10-3.13<br>
 win_arm64: not yet<br>
@@ -71,7 +79,7 @@ linux_x86_64: python3.10-3.13<br>
 linux_aarch64: python3.10-3.13<br>
 macos_intel: python3.10-3.13<br>
 macos_apple: python3.10-3.13<br>
-android_termux: python3.12<br>
+android_termux: python3.10-3.13<br>
 
 **！本插件所含构建没有任何风险后门！本插件所含构建只读取gsuid_core目录下的文件，只请求非构建部分显示的域名！请随意进行流量检查和读写检查！**
 
