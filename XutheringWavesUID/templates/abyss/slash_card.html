@@ -21,7 +21,6 @@
             position: relative;
         }
 
-        /* 背景层 */
         .bg-layer {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -35,14 +34,12 @@
         }
         .bg-image { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-        /* 主容器 */
         .container {
             position: relative; z-index: 1;
             width: 100%; padding: 40px;
             display: flex; flex-direction: column; gap: 35px;
         }
 
-        /* --- 用户卡片样式 (保持不变) --- */
         .user-card {
             background:
                 radial-gradient(circle at 100% 0%, rgba(212, 177, 99, 0.15) 0%, transparent 40%),
@@ -94,7 +91,6 @@
         .stat-value { font-family: 'Oswald', sans-serif; font-size: 30px; font-weight: 700; color: #fff; line-height: 1.1; background: linear-gradient(180deg, #fff 50%, #d4b163 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .stat-label { font-size: 12px; color: #6d717a; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
 
-        /* --- 头部标题区域 (保持不变) --- */
         .section-container {
             background-color: rgba(20, 22, 26, 0.6);
             backdrop-filter: blur(8px);
@@ -102,7 +98,7 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             padding: 25px 30px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            display: flex; flex-direction: column; gap: 20px;
+            display: flex; flex-direction: column; gap: 8px;
         }
 
         .section-header {
@@ -139,20 +135,18 @@
             font-family: 'Oswald'; color: #888; font-size: 18px; font-weight: bold; margin-left: 15px;
         }
 
-        /* --- 海墟 特有样式 --- */
         .slash-block {
             display: flex; flex-direction: column;
             width: 100%;
-            margin-bottom: 15px;
+            margin-bottom: 4px;
             box-shadow: 0 6px 15px rgba(0,0,0,0.4);
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid rgba(255,255,255,0.08);
         }
 
-        /* 挑战标题条 (难度背景) */
         .slash-header {
-            height: 120px; /* 略微调整高度适配图片 */
+            height: 120px;
             width: 100%;
             background-size: 100% 100%;
             background-position: center;
@@ -195,21 +189,19 @@
             filter: drop-shadow(0 0 10px rgba(212, 177, 99, 0.3));
         }
 
-        /* 队伍行容器 */
         .slash-teams-container {
             display: flex; flex-direction: column;
             background-color: rgba(30, 34, 42, 0.95);
         }
 
-        /* 单个队伍行 */
         .team-row {
             height: 150px;
             width: 100%;
             position: relative;
             display: flex; align-items: center;
-            background-size: 100% 100%; /* 使用role_hang_bg平铺 */
+            background-size: 100% 100%;
             background-repeat: no-repeat;
-            padding: 0 30px 0 0; /* 右侧留白给Buff */
+            padding: 0 30px 0 0;
         }
         
         .team-bg-layer {
@@ -217,24 +209,22 @@
             z-index: 0;
         }
 
-        /* 队伍水印图标 */
         .team-icon-watermark {
             position: absolute;
             left: 20px; top: 50%;
             transform: translateY(-50%);
             width: 100px; height: 100px;
-            opacity: 1; /* 图片本身应该是半透明的 */
+            opacity: 1;
             z-index: 1;
             object-fit: contain;
         }
 
-        /* 队伍左侧信息 (名称+分数) */
         .team-info-left {
             z-index: 2;
             width: 180px;
             display: flex; flex-direction: column;
             justify-content: center;
-            padding-left: 140px; /* 避开水印图标 */
+            padding-left: 140px;
             flex-shrink: 0;
         }
 
@@ -248,11 +238,10 @@
             font-size: 24px; color: #d4b163; font-weight: bold;
         }
 
-        /* 角色列表 (复用 minirolelist 逻辑，但去掉了margin-left: auto，改用flex布局) */
         .role-list {
             z-index: 2;
             display: flex;
-            gap: 20px; /* 略微减小间距适配 */
+            gap: 20px;
             align-items: center;
             flex: 1;
             justify-content: center; 
@@ -260,10 +249,9 @@
             margin-right: 20px;
         }
 
-        /* 角色头像样式 (保持原样) */
         .role-mini {
-            width: 100px; height: 100px; /* 稍微缩小以适应海墟高度 */
-            border-radius: 12px; 
+            width: 135px; height: 135px;
+            border-radius: 12px;
             background: #2a2e35;
             border: 1px solid rgba(255,255,255,0.1);
             position: relative; overflow: hidden;
@@ -283,11 +271,11 @@
             top: 4px; left: 0;
             background: linear-gradient(90deg, rgba(0,0,0,0.85) 0%, transparent 100%);
             color: #fff;
-            font-size: 16px;
-            padding: 2px 8px 2px 6px;
+            font-size: 20px;
+            padding: 3px 10px 3px 6px;
             border-radius: 0 4px 4px 0;
             border-left: 3px solid #d4b163;
-            font-family: 'Oswald', sans-serif; font-weight: bold;
+            font-family: 'Oswald', sans-serif; font-weight: 900;
             box-shadow: 0 2px 4px rgba(0,0,0,0.9); z-index: 2;
             line-height: 1;
         }
@@ -295,9 +283,9 @@
         .role-mini-chain {
             position: absolute;
             bottom: 4px; right: 0;
-            font-size: 14px; 
-            font-weight: 800;
-            padding: 2px 8px 2px 12px;
+            font-size: 18px;
+            font-weight: 900;
+            padding: 3px 10px 3px 14px;
             background: linear-gradient(-90deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 80%, transparent 100%);
             border-radius: 4px 0 0 4px;
             text-align: right;
@@ -316,7 +304,6 @@
         .chain-5 { border-right-color: {{ chain_colors[5] }}; text-shadow: 0 0 8px {{ chain_colors[5] }}; }
         .chain-6 { border-right-color: {{ chain_colors[6] }}; text-shadow: 0 0 12px {{ chain_colors[6] }}, 0 0 5px {{ chain_colors[6] }}; background: linear-gradient(-90deg, rgba(255,200,1, 0.15) 0%, rgba(0,0,0,0.85) 80%, transparent 100%); }
 
-        /* Buff 盒子 */
         .buff-box {
             z-index: 2;
             width: 90px; height: 90px;
