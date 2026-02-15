@@ -315,6 +315,7 @@ class RoleDetailData(BaseModel):
     chainList: List[Chain]
     weaponData: WeaponData
     phantomData: Optional[EquipPhantomData] = None
+    equipPhantomAddPropList: Optional[List[Props]] = None
     skillList: List[SkillData]
     activeBranchId: int = 0
     skillBranchList: Optional[List[SkillBranch]] = None

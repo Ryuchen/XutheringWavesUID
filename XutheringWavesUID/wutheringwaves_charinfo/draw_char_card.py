@@ -1234,7 +1234,8 @@ async def draw_char_score_img(ev: Event, uid: str, char: str, user_id: str, wave
                 ph_bg_draw = ImageDraw.Draw(ph_bg)
 
                 ph_bg_draw.text((70, 50), f"{name[:6]}", name_color, waves_font_24, "lm")
-                ph_bg_draw.text((350, 50), f"{value}", name_color, waves_font_24, "rm")
+                display_value = f"{float(value[:-1]):.1f}%" if isinstance(value, str) and value.endswith("%") else value
+                ph_bg_draw.text((350, 50), f"{display_value}", name_color, waves_font_24, "rm")
 
                 right_image_temp.alpha_composite(ph_bg.resize((500, 125)), (0, (ni + mi * 4) * 70))
 
