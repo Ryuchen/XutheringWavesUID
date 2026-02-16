@@ -786,9 +786,16 @@ class SlashHalf(BaseModel):
 class SlashChallenge(BaseModel):
     challengeId: int  # 挑战ID
     challengeName: str  # 挑战名称
-    halfList: List[SlashHalf] = Field(default_factory=list)  # 半场列表
+    halfList: List[Optional[SlashHalf]] = Field(default_factory=list)  # 半场列表
     rank: Optional[str] = Field(default="")  # 等级
     score: int  # 分数
+
+    @model_validator(mode="before")
+    @classmethod
+    def filter_null_halves(cls, data):
+        if isinstance(data, dict) and "halfList" in data:
+            data["halfList"] = [h for h in data["halfList"] if h is not None]
+        return data
 
     def get_rank(self):
         if not self.rank:
