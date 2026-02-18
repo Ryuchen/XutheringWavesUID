@@ -1,3 +1,4 @@
+import re
 import time
 import random
 import string
@@ -176,6 +177,14 @@ def hide_uid(uid: str) -> str:
     if len(uid) < 2:
         return uid
     return uid[:2] + "*" * 4 + uid[-2:]
+
+
+def clean_tags(text: str) -> str:
+    """清理文本中的XML/HTML标签（如<color>等）"""
+    text = re.sub(r"<color[^>]*>", "", text)
+    text = re.sub(r"</color>", "", text)
+    text = re.sub(r"<[^>]+>", "", text)
+    return text
 
 
 def format_with_defaults(desc: str, params: List[Any], default_value: str = "N/A"):

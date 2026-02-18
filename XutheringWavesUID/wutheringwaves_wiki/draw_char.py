@@ -39,6 +39,8 @@ from .char_wiki_render import (
     PLAYWRIGHT_AVAILABLE,
 )
 
+from ..utils.util import clean_tags
+
 TEXT_PATH = Path(__file__).parent / "texture2d"
 
 
@@ -189,7 +191,7 @@ async def parse_char_forte_data(data: Dict, char_id: str):
         group_image_blocks = []
         for desc_key in sorted_desc_keys:
             item = desc_map[desc_key]
-            desc_text = item.get("Desc", "")
+            desc_text = clean_tags(item.get("Desc", ""))
             input_list = item.get("InputList", [])
             image_list = item.get("ImageList", [])
 
@@ -495,7 +497,7 @@ async def parse_char_chain(data: Dict[int, Chain]):
         item = data[chain_num]
         # 拼接文本
         title = item.name
-        desc = item.get_desc_detail()
+        desc = clean_tags(item.get_desc_detail())
 
         # 分行显示标题
         wrapped_title = textwrap.fill(title, width=20)
@@ -596,7 +598,7 @@ async def parse_char_skill(data: Dict[str, Dict[str, Skill]]):
 
         # 拼接文本
         title = skill_type
-        desc = item.get_desc_detail()
+        desc = clean_tags(item.get_desc_detail())
 
         # 分行显示标题
         wrapped_title = textwrap.fill(title, width=10)
@@ -610,7 +612,7 @@ async def parse_char_skill(data: Dict[str, Dict[str, Skill]]):
             relate_item = data[relate_id]["skill"]
             _type = relate_item.type if relate_item.type else "属性加成"
             relate_title = f"{_type}: {relate_item.name}"
-            relate_desc = relate_item.get_desc_detail()
+            relate_desc = clean_tags(relate_item.get_desc_detail())
             wrapped_relate_desc = wrap_text_with_manual_newlines(relate_desc, width=65)
 
             lines_desc.append(relate_title)

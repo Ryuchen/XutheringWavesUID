@@ -12,6 +12,7 @@ from gsuid_core.logger import logger
 from gsuid_core.models import Event
 from gsuid_core.utils.image.convert import convert_img
 
+from ..utils.util import clean_tags
 from ..utils.image import (
     add_footer,
     get_waves_bg,
@@ -74,12 +75,6 @@ def _load_json(json_path: Path) -> Optional[Dict[str, Any]]:
         logger.error(f"Failed to load json {json_path}: {e}")
         return None
 
-
-def _clean_text(text: str) -> str:
-    """清理文本中的HTML标签"""
-    text = re.sub(r"<color[^>]*>", "", text)
-    text = re.sub(r"</color>", "", text)
-    return text.replace("\n", " ")
 
 
 async def draw_tower_challenge_img(ev: Event, period: Optional[int] = None) -> Union[bytes, str]:
@@ -222,7 +217,7 @@ async def draw_slash_challenge_img(ev: Event, period: Optional[int] = None) -> U
         # 预计算内容高度
         title = endless_data.get("Title", "无尽湍渊")
         desc = endless_data.get("Desc", "")
-        desc = _clean_text(desc).rstrip("。.")
+        desc = clean_tags(desc).rstrip("。.")
 
         # 获取所有Floor的数据
         floors = endless_data.get("Floor", {})
@@ -250,7 +245,7 @@ async def draw_slash_challenge_img(ev: Event, period: Optional[int] = None) -> U
             buff_height += 40
             for b_name, b_desc in buff_data.items():
                 buff_height += 30
-                b_desc = _clean_text(b_desc).rstrip("。.")
+                b_desc = clean_tags(b_desc).rstrip("。.")
                 b_desc_len = len(b_desc)
                 b_lines = math.ceil(b_desc_len / 45)
                 buff_height += b_lines * 22 + 15
@@ -261,7 +256,7 @@ async def draw_slash_challenge_img(ev: Event, period: Optional[int] = None) -> U
             h = 40
 
             # Floor Desc/Buff
-            f_desc = _clean_text(floor_data.get("Desc", "")).rstrip("。.")
+            f_desc = clean_tags(floor_data.get("Desc", "")).rstrip("。.")
             if f_desc:
                 f_desc_lines = math.ceil(len(f_desc) / 45)
                 h += f_desc_lines * 22 + 10
@@ -304,7 +299,7 @@ async def draw_slash_challenge_img(ev: Event, period: Optional[int] = None) -> U
             current_y += 35
 
             for b_name, b_desc in buff_data.items():
-                b_desc = _clean_text(b_desc).rstrip("。.")
+                b_desc = clean_tags(b_desc).rstrip("。.")
                 # Buff Name
                 draw.text((65, current_y), f"◆ {b_name}", (255, 200, 100), waves_font_18, "lm")
                 current_y += 25
@@ -327,7 +322,7 @@ async def draw_slash_challenge_img(ev: Event, period: Optional[int] = None) -> U
             current_y += 30
 
             # Floor Desc
-            f_desc = _clean_text(floor_data.get("Desc", "")).rstrip("。.")
+            f_desc = clean_tags(floor_data.get("Desc", "")).rstrip("。.")
             if f_desc:
                 max_char = 48
                 lines = [f_desc[j : j + max_char] for j in range(0, len(f_desc), max_char)]
@@ -407,7 +402,7 @@ def _calculate_section_height(area_name: str, floor_data: Dict[str, Any], width:
     max_char_buff = 48
 
     for buff_info in list(buffs.values()):
-        buff_desc = _clean_text(buff_info.get("Desc", "")).rstrip("。.")
+        buff_desc = clean_tags(buff_info.get("Desc", "")).rstrip("。.")
         buff_lines += math.ceil(len(buff_desc) / max_char_buff)
 
     monster_rows = (min(len(monsters), 6) + 1) // 2
@@ -458,7 +453,7 @@ def _draw_floor_section(
         current_y += 25
 
         for buff_info in list(buffs.values()):
-            buff_desc = _clean_text(buff_info.get("Desc", "")).rstrip("。.")
+            buff_desc = clean_tags(buff_info.get("Desc", "")).rstrip("。.")
 
             # 分行显示
             max_char = 48

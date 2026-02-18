@@ -24,6 +24,7 @@ from ..utils.fonts.waves_fonts import (
 )
 from ..utils.resource.download_file import get_phantom_img
 from .other_wiki_render import draw_echo_wiki_render
+from ..utils.util import clean_tags
 
 TEXT_PATH = Path(__file__).parent / "texture2d"
 
@@ -76,7 +77,7 @@ async def parse_echo_detail_content(echo_model: EchoModel, card_img):
     image_draw = ImageDraw.Draw(image)
     image_draw.rounded_rectangle([20, 20, 630, 300], radius=20, fill=(0, 0, 0, int(0.3 * 255)))
     title = "技能描述"
-    desc = echo_model.get_skill_detail()
+    desc = clean_tags(echo_model.get_skill_detail())
 
     # 分行显示标题
     wrapped_title = textwrap.fill(title, width=10)
