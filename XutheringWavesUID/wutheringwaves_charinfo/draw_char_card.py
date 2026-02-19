@@ -223,7 +223,7 @@ async def ph_card_draw(
     ph_0 = Image.open(TEXT_PATH / "ph_0.png")
     ph_1 = Image.open(TEXT_PATH / "ph_1.png")
     #  phantom_sum_value = {}
-    calc = WuWaCalc(role_detail, enemy_detail, is_limit=is_limit_query)
+    calc = WuWaCalc(role_detail, enemy_detail, is_limit=is_limit_query or bool(change_command))
     phantom_score = 0  # 初始化声骸评分
     if role_detail.phantomData and role_detail.phantomData.equipPhantomList:
         equipPhantomList = role_detail.phantomData.equipPhantomList
