@@ -420,6 +420,6 @@ async def refresh_char(
         if refresh_type == "all":
             return error_reply(WAVES_CODE_101)
         else:
-            return error_reply(code=-110, msg="库街区暂未查询到角色数据")
+            return error_reply(code=-110, msg="库街区暂未查询到角色数据，应为登陆失效")
 
     return waves_datas
