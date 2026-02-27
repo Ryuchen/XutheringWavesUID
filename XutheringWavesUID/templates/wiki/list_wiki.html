@@ -84,13 +84,17 @@ g<!DOCTYPE html>
             box-shadow: 0 8px 25px rgba(0,0,0,0.4);
         }
 
-        
+
         .weapon-types-row {
             display: grid;
             grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 8px;
             align-items: start;
             width: 100%;
+        }
+
+        .weapon-types-row.single-type {
+            grid-template-columns: 1fr;
         }
 
         .weapon-type-group {
@@ -115,7 +119,7 @@ g<!DOCTYPE html>
             text-align: left;
         }
 
-        
+
         .weapon-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -123,6 +127,11 @@ g<!DOCTYPE html>
             flex: 1;
             align-content: space-between;
             min-height: 0;
+        }
+
+        .single-type .weapon-grid {
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 10px;
         }
 
         .weapon-card {
@@ -289,10 +298,12 @@ g<!DOCTYPE html>
             </div>
 
             {% if list_type == 'weapon' %}
-            <div class="weapon-types-row">
+            <div class="weapon-types-row{% if single_type %} single-type{% endif %}">
                 {% for group in groups %}
                 <div class="weapon-type-group">
+                    {% if not single_type %}
                     <div class="group-title">{{ group.type_name }}</div>
+                    {% endif %}
                     <div class="weapon-grid">
                         {% for weapon in group.weapons %}
                         <div class="weapon-card">

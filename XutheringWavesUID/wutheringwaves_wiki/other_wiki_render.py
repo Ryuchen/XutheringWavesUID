@@ -219,9 +219,16 @@ async def draw_weapon_list_render(weapon_type: str = "") -> Optional[bytes]:
     bg_path = TEXTURE2D_PATH / "bg6.jpg"
     bg_img = Image.open(bg_path).transpose(Image.ROTATE_270)
 
+    single_type = len(groups_data) == 1
+    if single_type:
+        title = f"{groups_data[0]['type_name']}武器一览"
+    else:
+        title = "武器一览"
+
     context = {
         "list_type": "weapon",
-        "title": "武器一览",
+        "title": title,
+        "single_type": single_type,
         "groups": groups_data,
         "bg_url": pil_to_base64(bg_img),
         "footer_url": image_to_base64(TEXTURE2D_PATH / "footer_white.png"),

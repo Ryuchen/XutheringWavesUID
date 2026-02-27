@@ -77,7 +77,7 @@ async def send_role_guide_pic(bot: Bot, ev: Event):
     await get_guide(bot, ev, char_name)
 
 
-@sv_waves_guide.on_regex(rf"^(?P<type>{PATTERN})?(?:武器(?:列表)?|wq(?:lb)?)$", block=True)
+@sv_waves_guide.on_regex(rf"^(?P<type>{PATTERN})?(?:(?:武器)?列表|武器|wq(?:lb)?)$", block=True)
 async def send_weapon_list(bot: Bot, ev: Event):
     weapon_type = ev.regex_dict.get("type", "")
     img = await draw_weapon_list(weapon_type)

@@ -104,7 +104,11 @@ async def _draw_weapon_list_pil(weapon_type: str):
     draw = ImageDraw.Draw(img)
 
     # 绘制标题
-    title = "武器一览"
+    if target_type is not None:
+        type_name = WEAPON_TYPE_ID_MAP.get(target_type, "")
+        title = f"{type_name}武器一览"
+    else:
+        title = "武器一览"
     draw.text((int(width / 2), 30), title, font=waves_font_24, fill=SPECIAL_GOLD, anchor="mt")
     draw.text(
         (int(width / 2), 63),
