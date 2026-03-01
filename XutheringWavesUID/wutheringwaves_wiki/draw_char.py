@@ -704,7 +704,7 @@ async def parse_char_skill_rate(skillLevels: Optional[Dict[str, SkillLevel]]):
         param_values = skillLevel.param[0][5:10]
         if skillLevel.format:
             # 使用 format 字符串格式化每个值
-            formatted_values = [skillLevel.format.format(v) for v in param_values]
+            formatted_values = [f"{v}{skillLevel.format}" for v in param_values]
             row.extend(formatted_values)
         else:
             row.extend(param_values)

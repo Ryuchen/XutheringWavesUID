@@ -248,7 +248,7 @@ async def prepare_char_skill_data(data: Dict[str, Dict[str, Skill]]) -> List[Dic
                 row_values = []
                 param_values = skillLevel.param[0][5:10]
                 if skillLevel.format:
-                    row_values = [skillLevel.format.format(v) for v in param_values]
+                    row_values = [f"{v}{skillLevel.format}" for v in param_values]
                 else:
                     row_values = param_values
                 
