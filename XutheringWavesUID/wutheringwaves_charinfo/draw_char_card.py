@@ -1112,6 +1112,8 @@ async def draw_char_score_img(ev: Event, uid: str, char: str, user_id: str, wave
             role_detail.role.roleName,
             role_detail.role.roleId,
         )
+        if is_limit_query:
+            calc.role_card = calc.enhance_summation_card_value(calc.phantom_card)
 
         for i, _phantom in enumerate(equipPhantomList):
             sh_temp = Image.new("RGBA", (600, 1100))
@@ -1236,16 +1238,17 @@ async def draw_char_score_img(ev: Event, uid: str, char: str, user_id: str, wave
         phantom_temp.alpha_composite(score_temp, dest=(30, 120))
 
         shuxing = f"{role_detail.role.attributeName}伤害加成"
+        panel_data = calc.role_card if is_limit_query and calc.role_card else calc.phantom_card
         for mi, m in enumerate(ph_sort_name):
             for ni, name_default in enumerate(m):
                 name, default_value = name_default
                 if name == "属性伤害加成":
-                    value = calc.phantom_card.get(shuxing, default_value)
+                    value = panel_data.get(shuxing, default_value)
                     prop_img = await get_attribute_prop(shuxing)
                     name_color, _ = get_valid_color(shuxing, value, calc.calc_temp)
                     name = shuxing
                 else:
-                    value = calc.phantom_card.get(name, default_value)
+                    value = panel_data.get(name, default_value)
                     prop_img = await get_attribute_prop(name)
                     name_color, _ = get_valid_color(name, value, calc.calc_temp)
                 prop_img = prop_img.resize((40, 40))

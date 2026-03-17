@@ -564,6 +564,14 @@ class Char_1411(CharAbstract):
                 w = weapon_clz(21020066, 90, 6, resonLevel)
                 w.do_action("cast_variation", attr, isGroup)
 
+        # 套装-轻云出月: 延奏后下一个登场角色攻击+22.5%
+        if attr.char_template == temp_atk:
+            title = "仇远-轻云出月"
+            msg = "延奏后下一个登场角色攻击提升22.5%"
+            attr.add_atk_percent(0.225, title, msg)
+
+        if attr.char_damage == phantom_damage:
+
             # 二链: 竹照额外效果，声骸技能伤害加深30%
             if chain >= 2:
                 title = "仇远-二链"
