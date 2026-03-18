@@ -371,7 +371,7 @@ async def ph_card_draw(
         ph_tips_draw = ImageDraw.Draw(ph_tips)
 
         ph_tips_draw.text((20, 50), t("[提示]评分模板", locale), "white", waves_font_24, "lm")
-        ph_tips_draw.text((350, 50), f"{calc.calc_temp['name']}", (255, 255, 0), waves_font_24, "rm")
+        ph_tips_draw.text((350, 50), t(calc.calc_temp['name'], locale, partial=True), (255, 255, 0), waves_font_24, "rm")
         # phantom_temp.alpha_composite(ph_tips, (40 + 2 * 370, 100 + 4 * 50))
         phantom_temp.alpha_composite(ph_tips, (40 + 2 * 370, 45))
 
@@ -1276,7 +1276,7 @@ async def draw_char_score_img(ev: Event, uid: str, char: str, user_id: str, wave
         ph_tips = ph_1.copy()
         ph_tips_draw = ImageDraw.Draw(ph_tips)
         ph_tips_draw.text((20, 50), t("[提示]评分模板", locale), "white", waves_font_24, "lm")
-        ph_tips_draw.text((350, 50), f"{calc.calc_temp['name']}", (255, 255, 0), waves_font_24, "rm")
+        ph_tips_draw.text((350, 50), t(calc.calc_temp['name'], locale, partial=True), (255, 255, 0), waves_font_24, "rm")
         phantom_temp.alpha_composite(ph_tips, (40 + 2 * 370, 45))
 
         # 简介数据

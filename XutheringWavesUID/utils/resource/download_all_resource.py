@@ -229,3 +229,7 @@ async def reload_all_modules():
     card_list = await load_limit_user_card()
     if card_list:
         logger.info(f"[鸣潮][加载角色极限面板] 数量: {len(card_list)}")
+
+    # 重新加载本地化字典
+    from ..localization import init_localization
+    init_localization()
