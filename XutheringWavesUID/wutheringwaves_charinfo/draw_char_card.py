@@ -262,7 +262,7 @@ async def ph_card_draw(
                 phantom_icon = phantom_icon.resize((100, 100))
                 sh_temp.alpha_composite(phantom_icon, dest=(20, 20))
                 phantomName = t(_phantom.phantomProp.name, locale).replace("·", " ").replace("（", " ").replace("）", "")
-                short_name = phantomName if locale else get_short_name(_phantom.phantomProp.phantomId, phantomName)
+                short_name = phantomName if locale == 'en' else get_short_name(_phantom.phantomProp.phantomId, phantomName)
                 draw_text_with_fallback(sh_temp_draw, (130, 40), f"{short_name}", SPECIAL_GOLD, waves_font_28, "lm")
 
                 # 声骸等级背景
@@ -273,7 +273,7 @@ async def ph_card_draw(
                 sh_temp.alpha_composite(ph_level_img, (128, 58))
 
                 # 声骸分数背景
-                _score_w = 120 if locale else 100
+                _score_w = 120 if locale == 'en' else 100
                 ph_score_img = Image.new("RGBA", (_score_w, 30), (255, 255, 255, 0))
                 ph_score_img_draw = ImageDraw.Draw(ph_score_img)
                 ph_score_img_draw.rounded_rectangle([0, 0, _score_w, 30], radius=8, fill=(186, 55, 42, int(0.8 * 255)))
@@ -331,9 +331,9 @@ async def ph_card_draw(
             score_temp.alpha_composite(sh_score_c)
             score_temp_draw = ImageDraw.Draw(score_temp)
 
-            draw_text_with_fallback(score_temp_draw, (180, 260), t("声骸评级", locale), GREY, waves_font_30 if locale else waves_font_40, "mm")
+            draw_text_with_fallback(score_temp_draw, (180, 260), t("声骸评级", locale), GREY, waves_font_30 if locale == 'en' else waves_font_40, "mm")
             draw_text_with_fallback(score_temp_draw, (180, 380), f"{phantom_score:.2f}分", "white", waves_font_40, "mm")
-            draw_text_with_fallback(score_temp_draw, (180, 440), t("声骸评分", locale), GREY, waves_font_30 if locale else waves_font_40, "mm")
+            draw_text_with_fallback(score_temp_draw, (180, 440), t("声骸评分", locale), GREY, waves_font_30 if locale == 'en' else waves_font_40, "mm")
         else:
             abs_bg = Image.open(TEXT_PATH / "abs.png")
             score_temp = Image.new("RGBA", abs_bg.size)
@@ -492,7 +492,7 @@ async def draw_fixed_img(img, avatar, account_info, role_detail, locale=""):
     if account_info.is_full:
         title_bar = Image.open(TEXT_PATH / "title_bar.png")
         title_bar_draw = ImageDraw.Draw(title_bar)
-        _level_font = waves_font_20 if locale else waves_font_26
+        _level_font = waves_font_20 if locale == 'en' else waves_font_26
         draw_text_with_fallback(title_bar_draw, (510, 125), t("联觉等级", locale), GREY, _level_font, "mm")
         draw_text_with_fallback(title_bar_draw, (510, 78), f"Lv.{account_info.level}", "white", waves_font_42, "mm")
 
@@ -879,8 +879,8 @@ async def draw_char_detail_img(
 
         name = re.sub(r'[",，]+', "", _mz.name) if _mz.name else ""
         name = t(name, locale, partial=True)
-        if locale:
-            # 非中文：缩小字体，超长时换行
+        if locale == 'en':
+            # 英文：缩小字体，超长时换行
             _chain_font = waves_font_12
             if len(name) > 14:
                 mid = len(name) // 2
@@ -1026,7 +1026,7 @@ async def draw_char_detail_img(
         skill_bg.paste(skill_img, (57, 65), skill_img)
 
         skill_bg_draw = ImageDraw.Draw(skill_bg)
-        _skill_font = waves_font_18 if locale else waves_font_25
+        _skill_font = waves_font_18 if locale == 'en' else waves_font_25
         draw_text_with_fallback(skill_bg_draw, (150, 83), t(_skill.skill.type, locale), "white", _skill_font, "lm")
         draw_text_with_fallback(skill_bg_draw, (150, 113), f"Lv.{_skill.level}", "white", waves_font_25, "lm")
 
@@ -1158,7 +1158,7 @@ async def draw_char_score_img(ev: Event, uid: str, char: str, user_id: str, wave
                 phantom_icon = phantom_icon.resize((100, 100))
                 sh_temp.alpha_composite(phantom_icon, dest=(20, 20))
                 phantomName = t(_phantom.phantomProp.name, locale).replace("·", " ").replace("（", " ").replace("）", "")
-                short_name = phantomName if locale else get_short_name(_phantom.phantomProp.phantomId, phantomName)
+                short_name = phantomName if locale == 'en' else get_short_name(_phantom.phantomProp.phantomId, phantomName)
                 draw_text_with_fallback(sh_temp_draw, (130, 40), f"{short_name}", SPECIAL_GOLD, waves_font_28, "lm")
 
                 # 声骸等级背景
@@ -1169,7 +1169,7 @@ async def draw_char_score_img(ev: Event, uid: str, char: str, user_id: str, wave
                 sh_temp.alpha_composite(ph_level_img, (128, 58))
 
                 # 声骸分数背景
-                _score_w = 120 if locale else 100
+                _score_w = 120 if locale == 'en' else 100
                 ph_score_img = Image.new("RGBA", (_score_w, 30), (255, 255, 255, 0))
                 ph_score_img_draw = ImageDraw.Draw(ph_score_img)
                 ph_score_img_draw.rounded_rectangle([0, 0, _score_w, 30], radius=8, fill=(186, 55, 42, int(0.8 * 255)))
@@ -1248,9 +1248,9 @@ async def draw_char_score_img(ev: Event, uid: str, char: str, user_id: str, wave
             score_temp.alpha_composite(sh_score_c)
             score_temp_draw = ImageDraw.Draw(score_temp)
 
-            draw_text_with_fallback(score_temp_draw, (180, 260), t("声骸评级", locale), GREY, waves_font_30 if locale else waves_font_40, "mm")
+            draw_text_with_fallback(score_temp_draw, (180, 260), t("声骸评级", locale), GREY, waves_font_30 if locale == 'en' else waves_font_40, "mm")
             draw_text_with_fallback(score_temp_draw, (180, 380), f"{phantom_score:.2f}分", "white", waves_font_40, "mm")
-            draw_text_with_fallback(score_temp_draw, (180, 440), t("声骸评分", locale), GREY, waves_font_30 if locale else waves_font_40, "mm")
+            draw_text_with_fallback(score_temp_draw, (180, 440), t("声骸评分", locale), GREY, waves_font_30 if locale == 'en' else waves_font_40, "mm")
         else:
             abs_bg = Image.open(TEXT_PATH / "abs.png")
             score_temp = Image.new("RGBA", abs_bg.size)

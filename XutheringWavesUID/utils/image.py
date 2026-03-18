@@ -515,12 +515,14 @@ def draw_text_with_shadow(
     anchor="rm",
 ):
     """描边"""
+    from .fonts.waves_fonts import draw_text_with_fallback
+
     for i in range(-offset[0], offset[0] + 1):
         for j in range(-offset[1], offset[1] + 1):
-            image.text((_x + i, _y + j), text, font=font, fill=shadow_color, anchor=anchor)
+            draw_text_with_fallback(image, (_x + i, _y + j), text, fill=shadow_color, font=font, anchor=anchor)
 
-    image.text((_x, _y), text, font=font, fill=fill_color, anchor=anchor)
-    image.text((_x, _y), text, font=font, fill=fill_color, anchor=anchor)
+    draw_text_with_fallback(image, (_x, _y), text, fill=fill_color, font=font, anchor=anchor)
+    draw_text_with_fallback(image, (_x, _y), text, fill=fill_color, font=font, anchor=anchor)
 
 
 def compress_to_webp(image_path: Path, quality: int = 80, delete_original: bool = False) -> tuple[bool, Path]:
