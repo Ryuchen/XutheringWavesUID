@@ -76,6 +76,7 @@ CALENDAR_PATH = OTHER_PATH / "calendar"
 SLASH_PATH = OTHER_PATH / "slash"
 CHALLENGE_PATH = OTHER_PATH / "challenge"
 ANN_CARD_PATH = OTHER_PATH / "ann_card"
+BAKE_PATH = OTHER_PATH / "bake"
 POKER_PATH = OTHER_PATH / "poker"
 WIKI_CACHE_PATH = OTHER_PATH / "wiki"
 BBS_PATH = OTHER_PATH / "bbs"
@@ -114,6 +115,7 @@ def init_dir():
         OTHER_PATH,
         CALENDAR_PATH,
         ANN_CARD_PATH,
+        BAKE_PATH,
         WIKI_CACHE_PATH,
         BBS_PATH,
         BUILD_PATH,

@@ -27,7 +27,7 @@ from ..utils.render_utils import (
     image_to_base64,
     render_html,
 )
-from ..utils.image import ELEMENT_COLOR_MAP
+from ..utils.image import ELEMENT_COLOR_MAP, pil_to_b64
 from ..utils.resource.download_file import get_material_img
 
 
@@ -60,11 +60,6 @@ def save_wiki_cache(char_id: str, render_type: str, content: bytes) -> None:
 from PIL import Image
 from io import BytesIO
 
-def pil_to_base64(img: Image.Image) -> str:
-    """将PIL Image转换为base64字符串"""
-    buffered = BytesIO()
-    img.save(buffered, format="PNG")
-    return "data:image/png;base64," + base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 async def _get_base_context(char_model: CharacterModel, char_id: str) -> Dict[str, Any]:
     max_stats: Stats = char_model.get_max_level_stat()
@@ -125,7 +120,7 @@ async def _get_base_context(char_model: CharacterModel, char_id: str) -> Dict[st
         try:
             material_img = await get_material_img(material_id)
             if material_img:
-                materials.append(pil_to_base64(material_img))
+                materials.append(pil_to_b64(material_img))
         except Exception:
             pass
 
@@ -135,7 +130,7 @@ async def _get_base_context(char_model: CharacterModel, char_id: str) -> Dict[st
         "element_icon": image_to_base64(element_icon_path),
         "weapon_icon": image_to_base64(weapon_icon_path),
         "rarity_icon": image_to_base64(rarity_path),
-        "bg_url": pil_to_base64(bg_img),
+        "bg_url": pil_to_b64(bg_img),
         "portrait_url": image_to_base64(role_pile_path),
         "hakushin_logo": hakushin_logo,
         "materials": materials,

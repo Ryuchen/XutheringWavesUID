@@ -149,7 +149,7 @@ async def draw_abyss_img(ev: Event, uid: str, user_id: str) -> Union[bytes, str]
                             chain_num = temp.get_chain_num()
 
                         role_avatar = await get_square_avatar(_role.roleId)
-                        role_icon_b64 = pil_to_b64(role_avatar) if role_avatar else ""
+                        role_icon_b64 = pil_to_b64(role_avatar, quality=80, bake=True) if role_avatar else ""
 
                         roles_data.append({
                             "id": _role.roleId,

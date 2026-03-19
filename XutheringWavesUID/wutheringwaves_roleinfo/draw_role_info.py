@@ -104,14 +104,14 @@ async def draw_role_img(uid: str, ck: str, ev: Event):
             if role.roleSkin and role.roleSkin.quality and role.roleSkin.quality > 3:
                 skin_icon_url = role.roleSkin.skinIcon
                 if skin_icon_url:
-                    role_avatar_b64 = await get_image_b64_with_cache(skin_icon_url, SKIN_IMAGE_PATH)
+                    role_avatar_b64 = await get_image_b64_with_cache(skin_icon_url, SKIN_IMAGE_PATH, quality=80)
                     if not role_avatar_b64:
                         role_avatar = await get_square_avatar(role.roleId)
-                        role_avatar_b64 = pil_to_b64(role_avatar) if role_avatar else ""
+                        role_avatar_b64 = pil_to_b64(role_avatar, quality=80, bake=True) if role_avatar else ""
             else:
                 # 使用默认头像
                 role_avatar = await get_square_avatar(role.roleId)
-                role_avatar_b64 = pil_to_b64(role_avatar) if role_avatar else ""
+                role_avatar_b64 = pil_to_b64(role_avatar, quality=80, bake=True) if role_avatar else ""
 
             # 查找角色详细信息
             if role.roleId in SPECIAL_CHAR_INT:
@@ -131,7 +131,7 @@ async def draw_role_img(uid: str, ck: str, ev: Event):
             if temp:
                 # 获取武器图标
                 weapon_icon = await get_square_weapon(temp.weaponData.weapon.weaponId)
-                weapon_icon_b64 = pil_to_b64(weapon_icon) if weapon_icon else ""
+                weapon_icon_b64 = pil_to_b64(weapon_icon, quality=80, bake=True) if weapon_icon else ""
                 chain_num = temp.get_chain_num()
                 chain_name = temp.get_chain_name()
 

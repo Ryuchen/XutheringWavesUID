@@ -82,7 +82,7 @@ async def calculate_score(uid: str, ck: str) -> Optional[Dict]:
 
         # 从本地获取角色头像
         role_avatar = await get_square_avatar(role.roleId)
-        avatar_b64 = pil_to_b64(role_avatar)
+        avatar_b64 = pil_to_b64(role_avatar, quality=80, bake=True)
 
         character_items.append({
             "name": role.roleName,
@@ -114,7 +114,7 @@ async def calculate_score(uid: str, ck: str) -> Optional[Dict]:
         # 获取武器图标 (优先使用本地资源)
         try:
             weapon_pic = await get_square_weapon(weapon.weaponId)
-            icon_b64 = pil_to_b64(weapon_pic)
+            icon_b64 = pil_to_b64(weapon_pic, quality=80, bake=True)
         except Exception:
             # 回退到网络图片
             icon_url = weapon.weaponIcon or ""

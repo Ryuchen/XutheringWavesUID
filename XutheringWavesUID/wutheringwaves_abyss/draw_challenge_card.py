@@ -120,7 +120,7 @@ async def draw_challenge_img(ev: Event, uid: str, user_id: str) -> Union[bytes, 
 
                     # 使用本地头像（和PIL版本一致）
                     role_avatar = await get_square_avatar(role_id)
-                    role_icon_b64 = pil_to_b64(role_avatar) if role_avatar else ""
+                    role_icon_b64 = pil_to_b64(role_avatar, quality=80, bake=True) if role_avatar else ""
 
                     roles_data.append({
                         "id": role_id or "",

@@ -102,7 +102,9 @@ async def ann_list_card(user_id: str = None) -> bytes:
                 if not cover_url and user_info:
                     cover_url = user_info.get("headCodeUrl", "")
 
-                cover_b64 = await get_image_b64_with_cache(cover_url, ANN_CARD_PATH, quality=20) if cover_url else ""
+                cover_b64 = await get_image_b64_with_cache(
+                    cover_url, ANN_CARD_PATH, quality=20, cover_size=(400, 200),
+                ) if cover_url else ""
 
                 post_id = item.get("postId", "") or str(item.get("id", ""))
                 from .utils.post_id_mapper import get_or_create_short_id

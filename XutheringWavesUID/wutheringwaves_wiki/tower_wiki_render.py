@@ -12,7 +12,7 @@ from ..utils.resource.RESOURCE_PATH import (
     MAP_CHALLENGE_PATH,
     waves_templates,
 )
-from ..utils.image import ELEMENT_COLOR_MAP
+from ..utils.image import ELEMENT_COLOR_MAP, pil_to_b64
 from ..utils.resource.download_file import get_phantom_img
 from ..utils.image import get_square_avatar
 from ..utils.name_convert import echo_name_to_echo_id, char_name_to_char_id
@@ -40,10 +40,6 @@ ELEMENT_NAME_MAP = {
 }
 
 
-def pil_to_base64(img: Image.Image) -> str:
-    buffered = BytesIO()
-    img.save(buffered, format="PNG")
-    return "data:image/png;base64," + base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 
 async def get_monster_icon(monster_name: str) -> Optional[str]:
@@ -51,7 +47,7 @@ async def get_monster_icon(monster_name: str) -> Optional[str]:
     if echo_id:
         try:
             img = await get_phantom_img(int(echo_id), "")
-            return pil_to_base64(img)
+            return pil_to_b64(img)
         except Exception:
             return None
     return None
@@ -183,7 +179,7 @@ async def draw_tower_wiki_render(period: Optional[int] = None) -> Optional[bytes
     context = {
         "title": f"逆境深塔 第{period}期",
         "duration": duration,
-        "bg_url": pil_to_base64(bg_img),
+        "bg_url": pil_to_b64(bg_img),
         "theme_color": "#4e7cff", # Blue-ish for Tower
         "left_tower": {
             "name": "残响之塔 (左塔)",
@@ -302,7 +298,7 @@ async def draw_matrix_wiki_render(season: Optional[int] = None) -> Optional[byte
         if char_id:
             try:
                 img = await get_square_avatar(char_id)
-                role_icon = pil_to_base64(img)
+                role_icon = pil_to_b64(img)
             except Exception:
                 pass
 
@@ -325,7 +321,7 @@ async def draw_matrix_wiki_render(season: Optional[int] = None) -> Optional[byte
     context = {
         "title": f"矩阵叠兵 第{season}期",
         "subtitle": level_name,
-        "bg_url": pil_to_base64(bg_img),
+        "bg_url": pil_to_b64(bg_img),
         "theme_color": "#ff6b6b",
         "buffs": buffs,
         "bosses": bosses,
@@ -441,7 +437,7 @@ async def draw_slash_wiki_render(period: Optional[int] = None) -> Optional[bytes
     context = {
         "title": f"冥歌海墟 第{period}期",
         "duration": duration,
-        "bg_url": pil_to_base64(bg_img),
+        "bg_url": pil_to_b64(bg_img),
         "theme_color": "#ffca28", # Gold-ish for Slash
         "desc": desc_lines,
         "global_buffs": global_buffs,

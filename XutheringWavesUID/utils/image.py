@@ -93,9 +93,35 @@ def rgb_to_hex(rgb: Tuple) -> str:
     return "#{:02x}{:02x}{:02x}".format(rgb[0], rgb[1], rgb[2])
 
 
-def pil_to_b64(img: Image.Image) -> str:
-    """将PIL图像转换为base64编码的data URL"""
+def pil_to_b64(img: Image.Image, quality: int = 0, bake: bool = False) -> str:
+    """将PIL图像转换为base64编码的data URL
+
+    quality=0: PNG无损（默认）
+    quality>0: WebP有损压缩（保留透明通道），推荐80
+    bake: 启用烘焙缓存，适合角色立绘等内容不变的图
+    """
+    if bake and quality > 0:
+        import hashlib
+        from .resource.RESOURCE_PATH import BAKE_PATH
+        # 用图片像素哈希前16位 + quality + 尺寸 做 key
+        pixel_hash = hashlib.md5(img.tobytes()[:4096]).hexdigest()[:12]
+        bake_path = BAKE_PATH / f"{pixel_hash}_q{quality}.webp"
+        if bake_path.exists():
+            with open(bake_path, "rb") as f:
+                return "data:image/webp;base64," + base64.b64encode(f.read()).decode('utf-8')
+        buffered = BytesIO()
+        img.save(buffered, format="WEBP", quality=quality)
+        data = buffered.getvalue()
+        try:
+            bake_path.write_bytes(data)
+        except Exception:
+            pass
+        return "data:image/webp;base64," + base64.b64encode(data).decode('utf-8')
+
     buffered = BytesIO()
+    if quality > 0:
+        img.save(buffered, format="WEBP", quality=quality)
+        return "data:image/webp;base64," + base64.b64encode(buffered.getvalue()).decode('utf-8')
     img.save(buffered, format="PNG")
     return "data:image/png;base64," + base64.b64encode(buffered.getvalue()).decode('utf-8')
 
