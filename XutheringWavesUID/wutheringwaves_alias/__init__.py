@@ -11,22 +11,33 @@ sv_list_char_alias = SV("ww角色名别名列表")
 
 
 @sv_add_char_alias.on_regex(
-    rf"^(?P<action>添加|删除)(?P<name>{PATTERN})别名(?P<new_alias>{PATTERN})$",
+    rf"^(?P<action>添加|删除)(?P<name>{PATTERN})别名(?P<aliases>.+)$",
     block=True,
 )
 async def handle_add_char_alias(bot: Bot, ev: Event):
+    import re as _re
     action = ev.regex_dict.get("action")
     if action not in ["添加", "删除"]:
         return
     char_name = ev.regex_dict.get("name")
-    new_alias = ev.regex_dict.get("new_alias")
-    if not char_name or not new_alias:
+    raw = ev.regex_dict.get("aliases", "").strip()
+    if not char_name or not raw:
         return await bot.send("角色名或别名不能为空")
 
-    msg = await action_char_alias(action, char_name, new_alias)
-    if "成功" in msg:
+    alias_list = [a.strip() for a in _re.split(r'[,，\s]+', raw) if a.strip()]
+    if not alias_list:
+        return await bot.send("别名不能为空")
+
+    msgs = []
+    need_reload = False
+    for alias in alias_list:
+        msg = await action_char_alias(action, char_name, alias)
+        msgs.append(msg)
+        if "成功" in msg:
+            need_reload = True
+    if need_reload:
         load_alias_data()
-    await bot.send(msg)
+    await bot.send("\n".join(msgs))
 
 
 @sv_list_char_alias.on_regex(rf"^(?P<name>{PATTERN})别名(列表)?$", block=True)
