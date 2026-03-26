@@ -17,6 +17,8 @@ GET_TOWER_APPEAR_RATE = f"{MAIN_URL}/api/waves/abyss/appear_rate"
 UPLOAD_SLASH_RECORD_URL = f"{MAIN_URL}/top/waves/slash/upload"
 GET_SLASH_APPEAR_RATE = f"{MAIN_URL}/api/waves/slash/appear_rate"
 GET_SLASH_RANK_URL = f"{MAIN_URL}/top/waves/slash/rank"
+UPLOAD_MATRIX_RECORD_URL = f"{MAIN_URL}/top/waves/matrix/upload"
+GET_MATRIX_RANK_URL = f"{MAIN_URL}/top/waves/matrix/rank"
 
 ABYSS_TYPE = Literal["l4", "m4", "r4", "a"]
 
@@ -258,3 +260,79 @@ class SlashRankRes(BaseModel):
     code: int
     message: str
     data: Optional[SlashRankData] = None
+
+
+# ------------------------------------------------------------
+# 矩阵记录
+# ------------------------------------------------------------
+
+
+class MatrixTeamDetail(BaseModel):
+    buff_icon: str  # buff图标
+    buff_name: str  # buff名称
+    buff_id: int  # buffID
+    role_icons: List[str]  # 角色头像URL列表
+    char_ids: List[int] = Field(default_factory=list)  # 匹配出的角色ID列表
+    pass_boss: int  # 击败boss数
+    boss_count: int  # boss总数
+    round: int  # 轮次
+    score: int  # 队伍得分
+
+
+class MatrixDetailRequest(BaseModel):
+    wavesId: str
+    modeId: int  # 模式ID (1=矩阵叠兵, 0=囚笼)
+    rank: int  # 排名
+    score: int  # 总分数
+    teamCount: int = 0  # 使用队伍数
+    teams: List[MatrixTeamDetail]  # 队伍列表
+
+
+# ------------------------------------------------------------
+# 矩阵排行
+# ------------------------------------------------------------
+
+
+class MatrixRankItem(BaseModel):
+    page: int
+    page_num: int
+    waves_id: str
+    version: str
+
+
+class MatrixCharDetail(BaseModel):
+    char_id: int
+    level: int = -1
+    chain: int = -1
+
+
+class MatrixRankTeam(BaseModel):
+    buff_icon: str
+    buff_name: str
+    role_icons: List[str] = Field(default_factory=list)
+    char_detail: List[MatrixCharDetail] = Field(default_factory=list)
+    score: int
+
+
+class MatrixRank(BaseModel):
+    teams: List[MatrixRankTeam]
+    score: int  # 矩阵总分数
+    rank: int  # 总排名
+    team_count: int = 0  # 使用队伍数
+    user_id: str
+    waves_id: str
+    kuro_name: str
+    alias_name: str
+
+
+class MatrixRankData(BaseModel):
+    page: int
+    page_num: int
+    start_date: str
+    rank_list: List[MatrixRank]
+
+
+class MatrixRankRes(BaseModel):
+    code: int
+    message: str
+    data: Optional[MatrixRankData] = None

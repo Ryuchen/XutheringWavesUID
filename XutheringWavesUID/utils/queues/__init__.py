@@ -4,12 +4,13 @@ import httpx
 
 from gsuid_core.logger import logger
 
-from .const import QUEUE_SCORE_RANK, QUEUE_ABYSS_RECORD, QUEUE_SLASH_RECORD
+from .const import QUEUE_SCORE_RANK, QUEUE_ABYSS_RECORD, QUEUE_SLASH_RECORD, QUEUE_MATRIX_RECORD
 from .queues import event_handler, start_dispatcher
 from ..api.wwapi import (
     UPLOAD_URL,
     UPLOAD_ABYSS_RECORD_URL,
     UPLOAD_SLASH_RECORD_URL,
+    UPLOAD_MATRIX_RECORD_URL,
 )
 
 
@@ -101,6 +102,36 @@ async def send_slash_record(item: Any):
             logger.info(f"上传冥海结果: {res.status_code} - {res.text}")
         except Exception as e:
             logger.exception(f"上传冥海失败: {res.text if res else ''} {e}")
+
+
+@event_handler(QUEUE_MATRIX_RECORD)
+async def send_matrix_record(item: Any):
+    if not item:
+        return
+    if not isinstance(item, dict):
+        return
+    from ...wutheringwaves_config import WutheringWavesConfig
+
+    WavesToken = WutheringWavesConfig.get_config("WavesToken").data
+
+    if not WavesToken:
+        return
+
+    async with httpx.AsyncClient() as client:
+        res = None
+        try:
+            res = await client.post(
+                UPLOAD_MATRIX_RECORD_URL,
+                json=item,
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {WavesToken}",
+                },
+                timeout=httpx.Timeout(10),
+            )
+            logger.info(f"上传矩阵结果: {res.status_code} - {res.text}")
+        except Exception as e:
+            logger.exception(f"上传矩阵失败: {res.text if res else ''} {e}")
 
 
 def init_queues():

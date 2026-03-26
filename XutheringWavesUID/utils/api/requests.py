@@ -58,6 +58,8 @@ from .api import (
     ONLINE_LIST_ROLE,
     SLASH_DETAIL_URL,
     TOWER_DETAIL_URL,
+    MATRIX_INDEX_URL,
+    MATRIX_DETAIL_URL,
     VERSION_LIST_URL,
     CALABASH_DATA_URL,
     GACHA_NET_LOG_URL,
@@ -616,6 +618,60 @@ class WavesApi:
         else:
             slash_detail = await self._waves_request(SLASH_DETAIL_URL, "POST", header, data=data)
         return slash_detail
+
+    async def get_matrix_index(self, roleId: str, token: str, serverId: Optional[str] = None):
+        """终焉矩阵 (公开)"""
+        header = await get_base_header()
+        used_headers = await self.get_used_headers(cookie=token, uid=roleId)
+        header.update(used_headers)
+
+        data = {
+            "gameId": WAVES_GAME_ID,
+            "serverId": self.get_server_id(roleId, serverId),
+            "roleId": roleId,
+        }
+        if WutheringWavesConfig.get_config("CacheEverything").data:
+            try:
+                matrix_index = await self._waves_request(MATRIX_INDEX_URL, "POST", header, data=data)
+                matrix_index_path = CACHE_PATH / "matrix_index"
+                matrix_index_path.mkdir(parents=True, exist_ok=True)
+                with open(matrix_index_path / f"{roleId}.json", "w", encoding="utf-8") as f:
+                    f.write(json.dumps(matrix_index.model_dump(), ensure_ascii=False, indent=4))
+            except Exception as e:
+                logger.error(f"获取矩阵索引失败，返回缓存数据 {e}")
+                with open(CACHE_PATH / "matrix_index" / f"{roleId}.json", "r", encoding="utf-8") as f:
+                    matrix_index = json.load(f)
+                matrix_index = KuroApiResp(**matrix_index)
+        else:
+            matrix_index = await self._waves_request(MATRIX_INDEX_URL, "POST", header, data=data)
+        return matrix_index
+
+    async def get_matrix_detail(self, roleId: str, token: str, serverId: Optional[str] = None):
+        """终焉矩阵 (详情)"""
+        header = await get_base_header()
+        used_headers = await self.get_used_headers(cookie=token, uid=roleId)
+        header.update(used_headers)
+
+        data = {
+            "gameId": WAVES_GAME_ID,
+            "serverId": self.get_server_id(roleId, serverId),
+            "roleId": roleId,
+        }
+        if WutheringWavesConfig.get_config("CacheEverything").data:
+            try:
+                matrix_detail = await self._waves_request(MATRIX_DETAIL_URL, "POST", header, data=data)
+                matrix_detail_path = CACHE_PATH / "matrix_detail"
+                matrix_detail_path.mkdir(parents=True, exist_ok=True)
+                with open(matrix_detail_path / f"{roleId}.json", "w", encoding="utf-8") as f:
+                    f.write(json.dumps(matrix_detail.model_dump(), ensure_ascii=False, indent=4))
+            except Exception as e:
+                logger.error(f"获取矩阵详情失败，返回缓存数据 {e}")
+                with open(CACHE_PATH / "matrix_detail" / f"{roleId}.json", "r", encoding="utf-8") as f:
+                    matrix_detail = json.load(f)
+                matrix_detail = KuroApiResp(**matrix_detail)
+        else:
+            matrix_detail = await self._waves_request(MATRIX_DETAIL_URL, "POST", header, data=data)
+        return matrix_detail
 
     async def get_more_activity(self, roleId: str, token: str, serverId: Optional[str] = None):
         """浸梦海床+激斗！向着荣耀之丘"""

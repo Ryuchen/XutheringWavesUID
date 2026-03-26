@@ -74,6 +74,7 @@ CUSTOM_ORB_PATH = MAIN_PATH / "custom_orb"
 OTHER_PATH = MAIN_PATH / "other"
 CALENDAR_PATH = OTHER_PATH / "calendar"
 SLASH_PATH = OTHER_PATH / "slash"
+MATRIX_PATH = OTHER_PATH / "matrix"
 CHALLENGE_PATH = OTHER_PATH / "challenge"
 ANN_CARD_PATH = OTHER_PATH / "ann_card"
 BAKE_PATH = OTHER_PATH / "bake"
@@ -115,6 +116,7 @@ def init_dir():
         CUSTOM_CARD_PATH,
         OTHER_PATH,
         CALENDAR_PATH,
+        MATRIX_PATH,
         ANN_CARD_PATH,
         BAKE_PATH,
         WIKI_CACHE_PATH,

@@ -19,7 +19,7 @@ from ..wutheringwaves_abyss.period import (
 sv_waves_guide = SV("鸣潮攻略", priority=10)
 sv_waves_tower = SV("waves查询深塔信息", priority=4)
 sv_waves_slash_info = SV("waves查询海墟信息", priority=4)
-sv_waves_matrix = SV("waves查询矩阵信息", priority=4)
+sv_waves_matrix_info = SV("waves查询矩阵信息", priority=4)
 
 
 @sv_waves_guide.on_regex(
@@ -153,12 +153,8 @@ async def send_slash_challenge_info(bot: Bot, ev: Event):
         await bot.send(im)
 
 
-@sv_waves_matrix.on_regex(
+@sv_waves_matrix_info.on_regex(
     r"^(?:矩阵|矩陣|jz信息|matrix)(?:(?:信息(?:第)?|第)(?P<period>\d+|下(?:一)?期|下下期|上(?:一)?期|上上期)?|(?P<period_force>\d+|下(?:一)?期|下下期|上(?:一)?期|上上期))期?$",
-    block=True,
-)
-@sv_waves_matrix.on_regex(
-    r"^矩阵$", # 重定向
     block=True,
 )
 async def send_matrix_challenge_info(bot: Bot, ev: Event):

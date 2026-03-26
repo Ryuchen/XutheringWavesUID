@@ -61,6 +61,10 @@ from .battle import (  # noqa: F401
     ExploreCountry,
     SlashChallenge,
     SlashDifficulty,
+    MatrixBuff,
+    MatrixTeam,
+    MatrixMode,
+    MatrixDetail,
 )
 from .calculator import (  # noqa: F401
     Strategy,

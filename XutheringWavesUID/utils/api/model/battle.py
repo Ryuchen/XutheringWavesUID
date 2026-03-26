@@ -169,3 +169,53 @@ class SlashDetail(BaseModel):
     isUnlock: bool  # 是否解锁
     seasonEndTime: int  # 赛季结束时间
     difficultyList: List[SlashDifficulty] = Field(default_factory=list)  # 难度列表
+
+
+# ============================================================
+# 终焉矩阵 (Matrix / newTower)
+# ============================================================
+
+
+class MatrixBuff(BaseModel):
+    """矩阵buff"""
+
+    buffIcon: str = ""  # buff图标
+    buffId: int = 0  # buffID
+    buffName: str = ""  # buff名称
+    desc: str = ""  # buff描述
+
+
+class MatrixTeam(BaseModel):
+    """矩阵队伍"""
+
+    bossCount: int = 0  # 该队伍面对的boss数
+    buffs: List[MatrixBuff] = Field(default_factory=list)  # buff列表
+    passBoss: int = 0  # 击败的boss数
+    roleIcons: List[str] = Field(default_factory=list)  # 角色头像URL列表
+    round: int = 0  # 轮次
+    score: int = 0  # 队伍得分
+
+
+class MatrixMode(BaseModel):
+    """矩阵模式 (modeId=1: 奇点扩张, modeId=0: 稳态协议)"""
+
+    hasRecord: bool = False  # 是否有记录
+    isUnlock: bool = False  # 是否解锁
+    modeId: int = 0  # 模式ID
+    rank: int = 0  # 排名
+    score: int = 0  # 总分数
+    # 以下字段仅在 Detail 接口中返回
+    bossCount: Optional[int] = None  # boss总数
+    passBoss: Optional[int] = None  # 击败boss数
+    round: Optional[int] = None  # 轮次
+    teams: List[MatrixTeam] = Field(default_factory=list)  # 队伍列表
+
+
+class MatrixDetail(BaseModel):
+    """终焉矩阵"""
+
+    isUnlock: bool  # 是否解锁
+    endTime: int = 0  # 赛季结束时间
+    modeDetails: List[MatrixMode] = Field(default_factory=list)  # 模式列表
+    reward: int = 0  # 已领取奖励
+    totalReward: int = 0  # 总奖励

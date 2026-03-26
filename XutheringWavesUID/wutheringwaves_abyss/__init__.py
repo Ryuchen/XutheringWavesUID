@@ -8,6 +8,7 @@ from ..utils.hint import error_reply
 from ..utils.button import WavesButton
 from ..utils.at_help import ruser_id
 from .draw_slash_card import draw_slash_img
+from .draw_matrix_card import draw_matrix_img
 from ..utils.error_reply import WAVES_CODE_103
 from .draw_challenge_card import draw_challenge_img
 from ..utils.database.models import WavesBind
@@ -16,8 +17,11 @@ from ..wutheringwaves_abyss.draw_abyss_card import draw_abyss_img
 sv_waves_abyss = SV("waves查询深渊")
 sv_waves_challenge = SV("waves查询全息")
 sv_waves_slash = SV("waves查询冥海")
+sv_waves_matrix = SV("waves查询矩阵")
 sv_waves_rank_slash = SV("waves冥海总排行", priority=0)
 sv_waves_rank_slash_list = SV("waves无尽排行", priority=0)
+sv_waves_rank_matrix = SV("waves矩阵总排行", priority=0)
+sv_waves_rank_matrix_list = SV("waves矩阵排行", priority=0)
 
 
 @sv_waves_abyss.on_command(
@@ -126,6 +130,34 @@ async def send_waves_slash_info(bot: Bot, ev: Event):
         return await bot.send_option(im, buttons)
 
 
+@sv_waves_matrix.on_command(
+    (
+        "矩阵",
+        "终焉",
+        "终焉矩阵",
+        "矩阵叠兵",
+        "查询矩阵",
+        "奇点扩张",
+        "稳态协议",
+        "囚笼",
+        "jz"
+    ),
+    block=True,
+)
+async def send_waves_matrix_info(bot: Bot, ev: Event):
+    user_id = ruser_id(ev)
+    uid = await WavesBind.get_uid_by_game(user_id, ev.bot_id)
+    if not uid:
+        return await bot.send(error_reply(WAVES_CODE_103))
+
+    im = await draw_matrix_img(ev, uid, user_id)
+    if isinstance(im, str):
+        at_sender = True if ev.group_id else False
+        return await bot.send(f" {im}" if at_sender else im, at_sender)
+    else:
+        return await bot.send(im)
+
+
 @sv_waves_rank_slash.on_command(
     (
         "无尽总排行",
@@ -165,4 +197,44 @@ async def send_waves_rank_slash_list_info(bot: Bot, ev: Event):
     from ..wutheringwaves_rank.slash_rank import draw_slash_rank_list
 
     im = await draw_slash_rank_list(bot, ev)
+    return await bot.send(im)
+
+
+@sv_waves_rank_matrix.on_command(
+    (
+        "矩阵总排行",
+        "jzzph",
+        "jzzpm",
+        "矩阵总排行榜",
+    ),
+    block=True,
+)
+async def send_waves_rank_matrix_info(bot: Bot, ev: Event):
+    from ..wutheringwaves_rank.matrix_rank import draw_all_matrix_rank_card
+
+    im = await draw_all_matrix_rank_card(bot, ev)
+    return await bot.send(im)
+
+
+@sv_waves_rank_matrix_list.on_command(
+    (
+        "矩阵排行",
+        "jzph",
+        "jzpm",
+        "矩阵排行榜",
+        "矩阵排名",
+        "矩阵群排行",
+        "矩阵群排行榜",
+        "矩阵群排名",
+        "群矩阵排行",
+        "群矩阵排名",
+    ),
+    block=True,
+)
+async def send_waves_rank_matrix_list_info(bot: Bot, ev: Event):
+    if not ev.group_id:
+        return await bot.send("请在群聊中使用")
+    from ..wutheringwaves_rank.matrix_rank import draw_matrix_rank_list
+
+    im = await draw_matrix_rank_list(bot, ev)
     return await bot.send(im)
