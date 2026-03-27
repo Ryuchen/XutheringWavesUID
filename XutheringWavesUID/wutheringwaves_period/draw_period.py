@@ -1,3 +1,4 @@
+import re
 import asyncio
 from pathlib import Path
 from typing import Any, Dict, Union, Optional
@@ -59,7 +60,7 @@ RESOURCE_ROW_ORDER = [
 
 MSG_TOKEN = "特征码登录已全部失效！请使用【{}登录】完成绑定！"
 MSG_TOKEN_EXPIRED = "该特征码[{}]登录已失效！请使用【{}登录】完成绑定！"
-MSG_NO_PERIOD = "该特征码[{}]没有[{}]简报数据~\n用例：{}星声 3.0版本/本月/上周"
+MSG_NO_PERIOD = "该特征码[{}]没有[{}]简报数据~\n{}"
 PREFIX = get_plugin_available_prefix("XutheringWavesUID")
 
 
@@ -87,11 +88,9 @@ def _get_relative_period_node(
 
     suffix = period_param[count:]
     if suffix == "月":
-        count = min(count, 2)
         period_seq = period_list.months
         period_type = "month"
     elif suffix == "周":
-        count = min(count, 3)
         period_seq = period_list.weeks
         period_type = "week"
     else:
@@ -106,6 +105,33 @@ def _get_relative_period_node(
     return period_type, period_seq[count]
 
 
+def _build_usage_hint(period_list: PeriodList) -> str:
+    """根据API返回的可用范围动态生成用法提示"""
+    parts = []
+    if period_list.versions:
+        sorted_vers = sorted(period_list.versions, key=lambda x: x.index, reverse=True)
+        parts.append("/".join(v.title for v in sorted_vers))
+    week_count = len(period_list.weeks)
+    month_count = len(period_list.months)
+    if month_count:
+        parts.append("本月")
+    if week_count:
+        parts.append("本周")
+    if month_count > 1:
+        parts.append("上月")
+    if week_count > 1:
+        parts.append("上周")
+    usage = f"用例：{PREFIX}星声 {'/'.join(parts)}" if parts else ""
+    range_parts = []
+    if week_count:
+        range_parts.append(f"往前{week_count - 1}周" if week_count > 1 else "本周")
+    if month_count:
+        range_parts.append(f"往前{month_count - 1}月" if month_count > 1 else "本月")
+    if range_parts:
+        usage += f"\n可查范围：{'、'.join(range_parts)}"
+    return usage
+
+
 async def process_uid(uid, ev, period_param: Optional[Union[int, str]]) -> Optional[Union[Dict[str, Any], str]]:
     ck = await waves_api.get_self_waves_ck(uid, ruser_id(ev), ev.bot_id)
     if not ck:
@@ -116,6 +142,10 @@ async def process_uid(uid, ev, period_param: Optional[Union[int, str]]) -> Optio
         return None
 
     period_list = PeriodList.model_validate(period_list.data)
+
+    # 自动补"版本"后缀：输入 "3.1" → "3.1版本"
+    if isinstance(period_param, str) and re.fullmatch(r'\d+\.\d+', period_param.strip()):
+        period_param = period_param.strip() + "版本"
 
     period_type = "month"
     period_node: Optional[Period] = None
@@ -148,7 +178,8 @@ async def process_uid(uid, ev, period_param: Optional[Union[int, str]]) -> Optio
         period_type = "version"
 
     if not period_node:
-        return MSG_NO_PERIOD.format(uid, period_param, PREFIX)
+        hint = _build_usage_hint(period_list)
+        return MSG_NO_PERIOD.format(uid, period_param, hint)
 
     period_detail = await waves_api.get_period_detail(period_type, period_node.index, uid, ck)
     if not period_detail.success or not period_detail.data:
