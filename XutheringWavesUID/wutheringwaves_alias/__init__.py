@@ -50,7 +50,7 @@ async def handle_list_char_alias(bot: Bot, ev: Event):
     await bot.send(msg)
 
 
-@sv_list_char_alias.on_fullmatch("别名", block=True)
+@sv_list_char_alias.on_fullmatch(("别名", "别名列表"), block=True)
 async def handle_all_char_alias(bot: Bot, ev: Event):
     """Render all character aliases as a single image."""
     from ..utils.name_convert import char_alias_data, alias_to_char_name_list
