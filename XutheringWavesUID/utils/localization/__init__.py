@@ -101,7 +101,8 @@ def t(text: str, locale: Optional[str], partial: bool = False) -> str:
                 entry = LOCALIZATION[orig_key]
         if entry is None:
             return text
-        return entry.get(locale, text)
+        replacement = entry.get(locale)
+        return replacement if replacement else text
     # partial 模式：逐个替换匹配到的子串
     result = text
     for key in _sorted_keys:
