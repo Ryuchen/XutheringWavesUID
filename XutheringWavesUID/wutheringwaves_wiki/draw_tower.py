@@ -1,7 +1,6 @@
 "深塔和海墟挑战信息绘制"
 
 import re
-import json
 import math
 from typing import Any, Dict, Union, Optional
 from pathlib import Path
@@ -12,7 +11,7 @@ from gsuid_core.logger import logger
 from gsuid_core.models import Event
 from gsuid_core.utils.image.convert import convert_img
 
-from ..utils.util import clean_tags
+from ..utils.util import clean_tags, load_json_file
 from ..utils.image import (
     add_footer,
     get_waves_bg,
@@ -64,19 +63,6 @@ ELEMENT_COLOR = {
 }
 
 
-def _load_json(json_path: Path) -> Optional[Dict[str, Any]]:
-    """加载JSON文件"""
-    try:
-        if not json_path.exists():
-            return None
-        with open(json_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        logger.error(f"Failed to load json {json_path}: {e}")
-        return None
-
-
-
 async def draw_tower_challenge_img(ev: Event, period: Optional[int] = None) -> Union[bytes, str]:
     """绘制深塔信息"""
     try:
@@ -100,7 +86,7 @@ async def draw_tower_challenge_img(ev: Event, period: Optional[int] = None) -> U
                 logger.warning("Failed to render tower wiki with playwright, fallback to PIL")
 
         # 加载数据
-        tower_data = _load_json(json_path)
+        tower_data = load_json_file(json_path)
         if not tower_data:
             return f"无法找到深塔第{period}期的数据"
 
@@ -194,7 +180,7 @@ async def draw_slash_challenge_img(ev: Event, period: Optional[int] = None) -> U
                 logger.warning("Failed to render slash wiki with playwright, fallback to PIL")
 
         # 加载数据
-        slash_data = _load_json(json_path)
+        slash_data = load_json_file(json_path)
         if not slash_data:
             return f"无法找到海墟第{period}期的数据"
 
@@ -220,7 +206,7 @@ async def draw_slash_challenge_img(ev: Event, period: Optional[int] = None) -> U
 
         # 加载额外的Buff数据 (可选)
         buff_json_path = MAP_CHALLENGE_PATH / "slash" / f"buff_{period}.json"
-        buff_data = _load_json(buff_json_path)
+        buff_data = load_json_file(buff_json_path)
 
         # 预计算内容高度
         title = endless_data.get("Title", "无尽湍渊")

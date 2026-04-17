@@ -1,4 +1,3 @@
-import json
 import re
 from typing import Dict, Any, Optional
 from pathlib import Path
@@ -8,6 +7,7 @@ from io import BytesIO
 from PIL import Image
 
 from ..wutheringwaves_config import WutheringWavesConfig
+from ..utils.util import load_json_file
 from ..utils.resource.RESOURCE_PATH import (
     MAP_CHALLENGE_PATH,
     waves_templates,
@@ -52,17 +52,6 @@ def get_monster_icon(monster_name: str) -> Optional[str]:
         b64 = img_to_b64(path, quality=75, bake=True, cover_size=(128, 128))
         return b64 if b64 else None
     return None
-
-
-def _load_json(json_path: Path) -> Optional[Dict[str, Any]]:
-    """加载JSON文件"""
-    try:
-        if not json_path.exists():
-            return None
-        with open(json_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return None
 
 
 def _clean_text(text: str) -> str:
@@ -120,7 +109,7 @@ async def draw_tower_wiki_render(period: Optional[int] = None) -> Optional[bytes
 
     # 加载数据
     json_path = MAP_CHALLENGE_PATH / "tower" / f"{period}.json"
-    tower_data = _load_json(json_path)
+    tower_data = load_json_file(json_path)
     if not tower_data:
         return None
 
@@ -211,7 +200,7 @@ async def draw_matrix_wiki_render(season: Optional[int] = None) -> Optional[byte
 
     # 加载数据
     json_path = MAP_CHALLENGE_PATH / "matrix" / f"{season}.json"
-    matrix_data = _load_json(json_path)
+    matrix_data = load_json_file(json_path)
     if not matrix_data:
         return None
 
@@ -340,7 +329,7 @@ async def draw_slash_wiki_render(period: Optional[int] = None) -> Optional[bytes
 
     # 加载数据
     json_path = MAP_CHALLENGE_PATH / "slash" / f"{period}.json"
-    slash_data = _load_json(json_path)
+    slash_data = load_json_file(json_path)
     if not slash_data:
         return None
 
@@ -372,7 +361,7 @@ async def draw_slash_wiki_render(period: Optional[int] = None) -> Optional[bytes
 
     # 加载额外的Buff数据 (可选)
     buff_json_path = MAP_CHALLENGE_PATH / "slash" / f"buff_{period}.json"
-    buff_data = _load_json(buff_json_path)
+    buff_data = load_json_file(buff_json_path)
 
     # 处理全局Buff
     global_buffs = []

@@ -1,14 +1,18 @@
 import re
+import json
 import time
 import random
 import string
 import asyncio
 import inspect
-from typing import Any, Dict, List, TypeVar, Callable, Coroutine, overload
+import textwrap
+from pathlib import Path
+from typing import Any, Dict, List, TypeVar, Callable, Optional, Coroutine, overload
 from functools import wraps
 
 import httpx
 
+from gsuid_core.logger import logger
 from gsuid_core.subscribe import gs_subscribe
 
 
@@ -185,6 +189,24 @@ def clean_tags(text: str) -> str:
     text = re.sub(r"</color>", "", text)
     text = re.sub(r"<[^>]+>", "", text)
     return text
+
+
+def wrap_text_with_manual_newlines(text: str, width: int = 70) -> str:
+    """保留原文 \\n 的前提下按 width 换行"""
+    lines = text.split("\n")
+    return "\n".join(textwrap.fill(line, width=width) for line in lines)
+
+
+def load_json_file(json_path: Path) -> Optional[Dict[str, Any]]:
+    """加载 JSON 文件。文件不存在返回 None；解析或 IO 异常记录日志后返回 None"""
+    try:
+        if not json_path.exists():
+            return None
+        with open(json_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        logger.error(f"Failed to load json {json_path}: {e}")
+        return None
 
 
 def _collapse_repeated_slash_values(text: str) -> str:

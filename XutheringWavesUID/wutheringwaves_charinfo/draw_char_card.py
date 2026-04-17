@@ -103,6 +103,7 @@ from ..utils.image import (
     get_role_pile_with_path,
     get_custom_gaussian_blur,
 )
+from ..utils.imagetool import get_weapon_icon_bg
 
 TEXT_PATH = Path(__file__).parent / "texture2d"
 
@@ -810,7 +811,7 @@ async def draw_char_detail_img(
 
     weapon_icon = await get_square_weapon(weaponData.weapon.weaponId)
     weapon_icon = crop_center_img(weapon_icon, 110, 110)
-    weapon_icon_bg = get_weapon_icon_bg(weaponData.weapon.weaponStarLevel)
+    weapon_icon_bg = get_weapon_icon_bg(weaponData.weapon.weaponStarLevel, TEXT_PATH)
     weapon_icon_bg.paste(weapon_icon, (10, 20), weapon_icon)
 
     weapon_bg_temp_draw = ImageDraw.Draw(weapon_bg_temp)
@@ -1432,14 +1433,6 @@ async def draw_char_with_ring(char_id):
     img.paste(resize_pic, (20, 20), mask)
 
     return img
-
-
-def get_weapon_icon_bg(star: int = 3) -> Image.Image:
-    if star < 3:
-        star = 3
-    bg_path = TEXT_PATH / f"weapon_icon_bg_{star}.png"
-    bg_img = Image.open(bg_path)
-    return bg_img
 
 
 async def generate_online_role_detail(char_id: str):

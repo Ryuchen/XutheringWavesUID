@@ -33,3 +33,10 @@ async def draw_pic(roleId):
     img.paste(resize_pic, (22, 18), mask)
 
     return img
+
+
+def get_weapon_icon_bg(star: int, texture_path: Path) -> Image.Image:
+    """按星级从调用模块的 texture2d 目录读取武器底图"""
+    if star < 3:
+        star = 3
+    return Image.open(texture_path / f"weapon_icon_bg_{star}.png")

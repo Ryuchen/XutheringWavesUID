@@ -24,7 +24,7 @@ from ..utils.fonts.waves_fonts import (
 )
 from ..utils.resource.download_file import get_phantom_img
 from .other_wiki_render import draw_echo_wiki_render
-from ..utils.util import clean_tags
+from ..utils.util import clean_tags, wrap_text_with_manual_newlines
 
 TEXT_PATH = Path(__file__).parent / "texture2d"
 
@@ -145,23 +145,6 @@ async def create_image(echo_id, echo_model: EchoModel):
     card_img = add_footer(card_img, 800, 20, color="white")
     card_img = await convert_img(card_img)
     return card_img
-
-
-def wrap_text_with_manual_newlines(
-    text: str,
-    width: int = 70,
-) -> str:
-    """
-    处理文本，优先保留原始文本中的 \n，再使用 textwrap 进行换行。
-
-    :param text: 原始文本
-    :param width: 自动换行的宽度
-    :return: 处理后的文本
-    """
-    lines = text.split("\n")
-    wrapped_lines = [textwrap.fill(line, width=width) for line in lines]
-    final_text = "\n".join(wrapped_lines)
-    return final_text
 
 
 async def draw_wiki_echo(echo_name: str):

@@ -64,6 +64,7 @@ from ..utils.fonts.waves_fonts import (
     waves_font_44,
 )
 from ..utils.resource.constant import ATTRIBUTE_ID_MAP, SPECIAL_CHAR_NAME, randomize_special_char_id
+from ..utils.imagetool import get_weapon_icon_bg
 
 TEXT_PATH = Path(__file__).parent / "texture2d"
 TITLE_I = Image.open(TEXT_PATH / "title.png")
@@ -275,7 +276,7 @@ async def draw_all_rank_card(bot: Bot, ev: Event, char: str, rank_type: str, pag
 
         weapon_icon = await get_square_weapon(rank.weapon_id)
         weapon_icon = crop_center_img(weapon_icon, 110, 110)
-        weapon_icon_bg = get_weapon_icon_bg(weapon_model.starLevel)
+        weapon_icon_bg = get_weapon_icon_bg(weapon_model.starLevel, TEXT_PATH)
         weapon_icon_bg.paste(weapon_icon, (10, 20), weapon_icon)
 
         weapon_bg_temp_draw = ImageDraw.Draw(weapon_bg_temp)
@@ -400,14 +401,6 @@ async def draw_all_rank_card(bot: Bot, ev: Event, char: str, rank_type: str, pag
 
 def get_chain_name(n: int) -> str:
     return f"{['零', '一', '二', '三', '四', '五', '六'][n]}链"
-
-
-def get_weapon_icon_bg(star: int = 3) -> Image.Image:
-    if star < 3:
-        star = 3
-    bg_path = TEXT_PATH / f"weapon_icon_bg_{star}.png"
-    bg_img = Image.open(bg_path)
-    return bg_img
 
 
 def get_breach(breach: Union[int, None], level: int):

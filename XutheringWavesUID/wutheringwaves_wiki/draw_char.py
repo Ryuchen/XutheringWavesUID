@@ -39,7 +39,7 @@ from .char_wiki_render import (
     PLAYWRIGHT_AVAILABLE,
 )
 
-from ..utils.util import clean_tags
+from ..utils.util import clean_tags, wrap_text_with_manual_newlines
 from ..utils.resource.download_file import get_material_img
 
 TEXT_PATH = Path(__file__).parent / "texture2d"
@@ -801,20 +801,3 @@ async def parse_char_skill_rate(skillLevels: Optional[Dict[str, SkillLevel]]):
                 )
 
     return image
-
-
-def wrap_text_with_manual_newlines(
-    text: str,
-    width: int = 70,
-) -> str:
-    """
-    处理文本，优先保留原始文本中的 \n，再使用 textwrap 进行换行。
-
-    :param text: 原始文本
-    :param width: 自动换行的宽度
-    :return: 处理后的文本
-    """
-    lines = text.split("\n")
-    wrapped_lines = [textwrap.fill(line, width=width) for line in lines]
-    final_text = "\n".join(wrapped_lines)
-    return final_text
