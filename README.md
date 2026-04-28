@@ -96,7 +96,7 @@ https://blog.ovoii.io/posts/notes/wwbot
 <img src="./assets/2.png" alt="😅" width="200" />
 <img src="./assets/3.png" alt="😅" width="200" />
 
-辨识方式：总排行含有 国服 字样，显示总人数，具有明显的付费意图。相关名称：knmissy(“岸宝”“莫宁”及同排行其他Bot)，moonshadow。由于对方强烈要求，现给出解释：(link)[./0428.md]。
+辨识方式：总排行含有 国服 字样，显示总人数，具有明显的付费意图。相关名称：knmissy(“岸宝””莫宁”及同排行其他Bot)，moonshadow。由于对方强烈要求，现给出解释：[link](./assets/0428.md)。
 
 ## 支持设备列表：
 win_amd64: python3.10-3.13<br>
