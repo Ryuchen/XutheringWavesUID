@@ -324,6 +324,8 @@ async def ph_card_draw(
 
         if phantom_score > 0:
             phantom_score = round(phantom_score, 2)
+            if phantom_score > 249.9:
+                phantom_score = 250.0
             _bg = get_total_score_bg(char_name, phantom_score, calc.calc_temp)
             sh_score_bg_c = Image.open(TEXT_PATH / f"sh_score_bg_{_bg}.png")
             score_temp = Image.new("RGBA", sh_score_bg_c.size)
@@ -1245,6 +1247,8 @@ async def draw_char_score_img(ev: Event, uid: str, char: str, user_id: str, wave
 
         if phantom_score > 0:
             phantom_score = round(phantom_score, 2)
+            if phantom_score > 249.9:
+                phantom_score = 250.0
             _bg = get_total_score_bg(char_name, phantom_score, calc.calc_temp)
             sh_score_bg_c = Image.open(TEXT_PATH / f"sh_score_bg_{_bg}.png")
             score_temp = Image.new("RGBA", sh_score_bg_c.size)

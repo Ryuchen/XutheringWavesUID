@@ -53,8 +53,8 @@ async def send_download_resource_msg(bot: Bot, ev: Event):
 
 
 async def startup():
-    # copy_if_different(BUILD_TEMP, BUILD_PATH, "安全工具资源")
-    # copy_if_different(MAP_BUILD_TEMP, MAP_BUILD_PATH, "伤害计算资源")
+    copy_if_different(BUILD_TEMP, BUILD_PATH, "安全工具资源")
+    copy_if_different(MAP_BUILD_TEMP, MAP_BUILD_PATH, "伤害计算资源")
 
     await reload_all_modules()  # 已有资源，先加载，不然检查资源列表太久了
     logger.info("[鸣潮] 等待资源下载完成...")
