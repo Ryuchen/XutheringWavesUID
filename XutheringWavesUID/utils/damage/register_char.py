@@ -119,6 +119,54 @@ class Char_1107(CharAbstract):
     starLevel = 5
 
 
+class Char_1108(CharAbstract):
+    id = 1108
+    name = "绯雪"
+    starLevel = 5
+
+    def _do_buff(
+        self,
+        attr: DamageAttribute,
+        chain: int = 0,
+        resonLevel: int = 1,
+        isGroup: bool = True,
+    ):
+        # 共鸣回路-万世霜天: 绯雪在编队时, 队伍附加的【霜渐效应】改为【霜冻效应】,
+        # 而【霜冻效应】伤害可视为【霜渐效应】伤害, 让队友的霜渐条件 buff 能触发
+        attr.set_env_glacio_chafe()
+        title = f"{self.name}-共鸣回路-万世霜天"
+        msg = "队伍附加【霜冻效应】(可视为【霜渐效应】)"
+        attr.add_effect(title, msg)
+
+        # 四链 - 有如苇草浮沉: 施放共鸣技能·常世身、霜罚·白玉切或霜罚·落华时,
+        # 附近队伍中所有角色造成的伤害提升 20%, 持续 30 秒
+        if chain >= 4:
+            title = f"{self.name}-四链"
+            msg = "队伍中的角色伤害提升20%"
+            attr.add_dmg_bonus(0.2, title, msg)
+
+        # 延奏技能-挽雪照身: 附近队伍中除绯雪以外的角色对拥有【霜渐效应】的敌人
+        # 造成的冷凝伤害加深 20%
+        if attr.char_attr == CHAR_ATTR_FREEZING:
+            title = f"{self.name}-延奏技能-挽雪照身"
+            msg = "对拥有【霜渐效应】的敌人冷凝伤害加深20%"
+            attr.add_dmg_deepen(0.2, title, msg)
+
+        # 套装-雪落无声之愿(绯雪 5pc): 拥有【落雪】时, 施放延奏技能将清除【落雪】,
+        # 使下一个变奏登场角色冷凝伤害提升25%, 持续15秒。
+        if attr.char_attr == CHAR_ATTR_FREEZING:
+            title = f"{self.name}-套装-雪落无声之愿"
+            msg = "施放延奏清除【落雪】, 下一变奏登场角色冷凝伤害+25%"
+            attr.add_dmg_bonus(0.25, title, msg)
+
+        # 六链 - 纵使前路永夜无终: 持有 3 层【雪锈】时, 队伍中登场角色一定范围内
+        # 的目标受到【霜冻效应】的最终伤害提升 25% (仅在结算霜渐/霜冻效应伤害时生效)
+        if chain >= 6 and attr.env_glacio_chafe_deepen:
+            title = f"{self.name}-六链"
+            msg = "3层【雪锈】, 队伍中登场角色对【霜冻效应】伤害加深25%"
+            attr.add_dmg_deepen(0.25, title, msg)
+
+
 class Char_1202(CharAbstract):
     id = 1202
     name = "炽霞"
@@ -285,6 +333,97 @@ class Char_1210(CharAbstract):
     id = 1210
     name = "爱弥斯"
     starLevel = 5
+
+
+class Char_1211(CharAbstract):
+    id = 1211
+    name = "达妮娅"
+    starLevel = 5
+
+    def _do_buff(
+        self,
+        attr: DamageAttribute,
+        chain: int = 0,
+        resonLevel: int = 1,
+        isGroup: bool = True,
+    ):
+        # === 共鸣模态·聚爆 (装配 斑驳粉饰之沫) ===
+        if attr.env_fusion_burst:
+            # 固有技能-蚀刻繁彩: 队伍中角色热熔伤害加成提升 30%
+            if attr.char_attr == CHAR_ATTR_MOLTEN:
+                title = f"{self.name}-固有技能-蚀刻繁彩"
+                msg = "聚爆模态时, 热熔伤害加成提升30%"
+                attr.add_dmg_bonus(0.3, title, msg)
+
+            # 延奏技能-未竟的谎言: 队伍中登场角色周围目标受到【聚爆效应】
+            # 伤害加深 60% (仅在结算聚爆效应伤害时生效)
+            if attr.env_fusion_burst_deepen:
+                title = f"{self.name}-延奏技能-未竟的谎言"
+                msg = "目标受到【聚爆效应】伤害加深60%"
+                attr.add_dmg_deepen(0.6, title, msg)
+
+            # 二链 为何给我安慰: 队伍中角色施加【聚爆效应】后, 热熔伤害加成 +50%
+            if chain >= 2 and attr.char_attr == CHAR_ATTR_MOLTEN:
+                title = f"{self.name}-二链"
+                msg = "施加【聚爆效应】后, 热熔伤害加成提升50%"
+                attr.add_dmg_bonus(0.5, title, msg)
+
+            # 声骸技能-共鸣回响·达妮娅 (6000200):
+            # 施放延奏技能后, 下一个变奏登场角色热熔伤害加成提升 12%
+            if attr.char_attr == CHAR_ATTR_MOLTEN:
+                title = f"{self.name}-声骸技能-共鸣回响·达妮娅"
+                msg = "下一个变奏登场角色热熔伤害加成提升12%"
+                attr.add_dmg_bonus(0.12, title, msg)
+
+            # 套装-斑驳粉饰之沫 (5pc): 添加聚爆效应后施放延奏技能, 下一变奏登场角色
+            # 热熔伤害提升 25%。聚爆模态下达妮娅默认装配该套装, 故此处直接给出。
+            if attr.char_attr == CHAR_ATTR_MOLTEN:
+                title = f"{self.name}-套装-斑驳粉饰之沫"
+                msg = "下一个变奏登场角色热熔伤害提升25%"
+                attr.add_dmg_bonus(0.25, title, msg)
+
+        # === 共鸣模态·集谐 (装配 剪心辑梦之影) ===
+        elif attr.env_tune_strain:
+            # 谐度破坏-一场关于光的默辩: 达妮娅在编队中时, 目标的【集谐·干涉】层数上限+1
+            attr.increment_tune_strain_interfered(1)
+
+            # 固有技能-蚀刻繁彩 (1/2): 集谐模态时, 队伍中角色谐度破坏增幅 +10
+            title = f"{self.name}-固有技能-蚀刻繁彩"
+            msg = "集谐模态时, 谐度破坏增幅提升10点"
+            attr.add_tune_break_boost(10, title, msg)
+
+            # 固有技能-蚀刻繁彩 (2/2): 偏谐值累积效率超 100% 时,
+            # 每超 10% 谐度破坏增幅 +8, 上限 40 点。
+            # 假定与莫宁组队 (+50% 偏谐值累积效率), 直接按上限 +40 计入
+            title = f"{self.name}-固有技能-蚀刻繁彩"
+            msg = "假定满层 (与莫宁组队), 谐度破坏增幅 +40 (上限)"
+            attr.add_tune_break_boost(40, title, msg)
+
+            # 套装-剪心辑梦之影 (5pc): 添加震谐/集谐·偏移时, 队伍中角色谐度破坏增幅 +20。
+            # 集谐模态下达妮娅默认装配该套装, 故此处直接给出。
+            title = f"{self.name}-套装-剪心辑梦之影"
+            msg = "添加震谐/集谐时, 队伍中角色谐度破坏增幅+20"
+            attr.add_tune_break_boost(20, title, msg)
+
+            # 延奏技能-未竟的谎言: 下一登场角色全伤害加深 15%, 在该角色附加【集谐·偏移】
+            # 时提升至 40%。集谐模态下集谐·偏移由队伍持续附加。注意默认了能吃到40。
+            title = f"{self.name}-延奏技能-未竟的谎言"
+            msg = "下一登场角色全伤害加深40%"
+            attr.add_dmg_deepen(0.4, title, msg)
+
+            # 二链 为何给我安慰: 队伍中角色施加【集谐·偏移】后, 谐度破坏增幅 +20
+            if chain >= 2:
+                title = f"{self.name}-二链"
+                msg = "施加【集谐·偏移】后, 谐度破坏增幅提升20点"
+                attr.add_tune_break_boost(20, title, msg)
+
+        # 角色武器 - 赝作的矮星 (21050076): 显式触发 cast_fusion_burst / cast_tune_strain
+        # 队友路径 (isGroup=True) 在钩子内 if not isGroup 守卫拦掉持有者段, 只触发 atk%
+        weapon_id = 21050076
+        weapon_clz = WavesWeaponRegister.find_class(weapon_id)
+        if weapon_clz:
+            w = weapon_clz(weapon_id, 90, 6, resonLevel)
+            w.do_action(["cast_fusion_burst", "cast_tune_strain"], attr, isGroup)
 
 
 class Char_1301(CharAbstract):

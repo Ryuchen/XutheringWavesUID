@@ -4,7 +4,11 @@ from .utils import (
     CHAR_ATTR_MOLTEN,
     CHAR_ATTR_SIERRA,
     CHAR_ATTR_CELESTIAL,
+    CHAR_ATTR_FREEZING,
     Spectro_Frazzle_Role_Ids,
+    Glacio_Chafe_Role_Ids,
+    Fusion_Burst_Role_Ids,
+    Tune_Strain_Role_Ids,
     temp_atk,
     temp_def,
     temp_life,
@@ -15,7 +19,7 @@ from .utils import (
     phantom_damage,
     liberation_damage,
 )
-from .damage import DamageAttribute, calc_percent_expression
+from .damage import DamageAttribute, calc_percent_expression, check_char_id
 from ..damage.abstract import WeaponAbstract, WavesWeaponRegister
 
 
@@ -810,6 +814,47 @@ class Weapon_21020076(WeaponAbstract):
                 title = self.get_title()
                 msg = f"共鸣解放伤害无视目标{dmg}热熔抗性"
                 attr.add_enemy_resistance(-calc_percent_expression(dmg), title, msg)
+
+
+class Weapon_21020086(WeaponAbstract):
+    id = 21020086
+    type = 2
+    name = "灼霜"
+
+    # 攻击提升{0}。自身附加霜渐效应时，冷凝伤害加深{1}，且共鸣解放伤害无视目标{2}的防御，
+    # 且自身为登场角色时，一定范围内的目标受到霜渐效应伤害加深{3}，持续{4}秒，
+    # 每{5}秒可触发{6}次。同名效果之间取最高值。
+    def do_action(
+        self,
+        func_list: Union[List[str], str],
+        attr: DamageAttribute,
+        isGroup: bool = False,
+    ):
+        """自身附加霜渐效应时"""
+        if not check_char_id(attr, Glacio_Chafe_Role_Ids):
+            return
+
+        # 冷凝伤害加深
+        if attr.char_attr == CHAR_ATTR_FREEZING:
+            dmg = f"{self.param(1)}"
+            title = self.get_title()
+            msg = f"自身附加霜渐效应时, 冷凝伤害加深{dmg}"
+            attr.add_dmg_deepen(calc_percent_expression(dmg), title, msg)
+
+        # 共鸣解放伤害无视目标防御
+        if attr.char_damage == liberation_damage:
+            dmg = f"{self.param(2)}"
+            title = self.get_title()
+            msg = f"共鸣解放伤害无视目标{dmg}的防御"
+            attr.add_defense_ignore(calc_percent_expression(dmg), title, msg)
+
+        # 自身为登场角色时, 一定范围内的目标受到霜渐效应伤害加深
+        # 仅在结算霜渐效应伤害时生效
+        if attr.env_glacio_chafe_deepen:
+            dmg = f"{self.param(3)}"
+            title = self.get_title()
+            msg = f"目标受到霜渐效应伤害加深{dmg}"
+            attr.add_dmg_deepen(calc_percent_expression(dmg), title, msg)
 
 
 class Weapon_21030011(WeaponAbstract):
@@ -1874,6 +1919,52 @@ class Weapon_21050074(WeaponAbstract):
         title = self.get_title()
         msg = f"施放共鸣解放时，自身攻击提升{dmg}"
         attr.add_atk_percent(calc_percent_expression(dmg), title, msg)
+
+
+class Weapon_21050076(WeaponAbstract):
+    id = 21050076
+    type = 5
+    name = "赝作的矮星"
+
+    # 攻击提升{0}。附加聚爆效应或集谐·偏移时，共鸣解放伤害加成提升{1}，持续{2}秒。
+    # 该效果生效期间，队伍中的角色附加聚爆效应或集谐·偏移时，该角色攻击提升{3}，持续{4}秒，
+    # 同名效果之间不可叠加。
+    # 钩子在 damage_func 里被显式列出, 调用方不一定保证当前 attr 真处于对应模态,
+    # 所以钩子开头先按 env_* 守卫, 防止集谐模态下也跑一遍聚爆分支
+    def cast_fusion_burst(self, attr: DamageAttribute, isGroup: bool = False):
+        """施加聚爆效应"""
+        if not attr.env_fusion_burst:
+            return
+        if not isGroup and attr.char_damage == liberation_damage:
+            dmg = f"{self.param(1)}"
+            title = self.get_title()
+            msg = f"附加聚爆效应时, 共鸣解放伤害加成提升{dmg}"
+            attr.add_dmg_bonus(calc_percent_expression(dmg), title, msg)
+
+        if attr.char_template == temp_atk:
+            dmg = f"{self.param(3)}"
+            title = self.get_title()
+            msg = f"队伍中角色附加聚爆效应时, 攻击提升{dmg}"
+            attr.add_atk_percent(calc_percent_expression(dmg), title, msg)
+
+    def cast_tune_strain(self, attr: DamageAttribute, isGroup: bool = False):
+        """施加集谐·偏移"""
+        if not attr.env_tune_strain:
+            return
+        # 同名 buff 不可叠加, 已在聚爆分支结算则跳过
+        if attr.env_fusion_burst:
+            return
+        if not isGroup and attr.char_damage == liberation_damage:
+            dmg = f"{self.param(1)}"
+            title = self.get_title()
+            msg = f"附加集谐·偏移时, 共鸣解放伤害加成提升{dmg}"
+            attr.add_dmg_bonus(calc_percent_expression(dmg), title, msg)
+
+        if attr.char_template == temp_atk:
+            dmg = f"{self.param(3)}"
+            title = self.get_title()
+            msg = f"队伍中角色附加集谐·偏移时, 攻击提升{dmg}"
+            attr.add_atk_percent(calc_percent_expression(dmg), title, msg)
 
 
 class Weapon_21050084(WeaponAbstract):

@@ -80,6 +80,21 @@ class WeaponAbstract(object):
         if attr.env_aero_erosion:
             func_list.append("env_aero_erosion")
 
+        if attr.env_havoc_bane:
+            func_list.append("env_havoc_bane")
+
+        if attr.env_fusion_burst:
+            func_list.append("env_fusion_burst")
+
+        if attr.env_glacio_chafe:
+            func_list.append("env_glacio_chafe")
+
+        if attr.env_tune_rupture:
+            func_list.append("env_tune_rupture")
+
+        if attr.env_tune_strain:
+            func_list.append("env_tune_strain")
+
         if attr.env_tune_shifting():
             func_list.append("env_tune_shifting")
 
@@ -142,6 +157,14 @@ class WeaponAbstract(object):
         """施放谐度破坏技"""
         pass
 
+    def cast_fusion_burst(self, attr: DamageAttribute, isGroup: bool = False):
+        """施加聚爆效应"""
+        pass
+
+    def cast_tune_strain(self, attr: DamageAttribute, isGroup: bool = False):
+        """施加集谐·偏移"""
+        pass
+
     def skill_create_healing(self, attr: DamageAttribute, isGroup: bool = False):
         """共鸣技能造成治疗"""
         pass
@@ -154,8 +177,16 @@ class WeaponAbstract(object):
         """风蚀效应"""
         pass
 
+    def env_havoc_bane(self, attr: DamageAttribute, isGroup: bool = False):
+        """虚湮效应"""
+        pass
+
     def env_fusion_burst(self, attr: DamageAttribute, isGroup: bool = False):
         """聚爆效应"""
+        pass
+
+    def env_glacio_chafe(self, attr: DamageAttribute, isGroup: bool = False):
+        """霜渐效应"""
         pass
 
     def env_tune_shifting(self, attr: DamageAttribute, isGroup: bool = False):
