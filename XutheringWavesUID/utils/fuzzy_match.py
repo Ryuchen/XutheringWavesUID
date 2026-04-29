@@ -79,7 +79,7 @@ def fuzzy_suggest(
     query: str,
     candidates: Dict[str, List[str]],
     top_n: int = 1,
-    min_score: float = 0.6,
+    min_score: float = 0.7,
 ) -> List[Tuple[str, float]]:
     """对单个别名表做模糊匹配。
 
@@ -113,14 +113,20 @@ def fuzzy_suggest(
         if best >= min_score:
             scores[canonical] = best
 
-    return sorted(scores.items(), key=lambda x: -x[1])[:top_n]
+    result = sorted(scores.items(), key=lambda x: -x[1])[:top_n]
+    if result:
+        detail = ", ".join(f"{n}:{s:.3f}" for n, s in result)
+        logger.info(f"[鸣潮][fuzzy] {query!r} (py={q_py!r}) → {detail}")
+    else:
+        logger.info(f"[鸣潮][fuzzy] {query!r} (py={q_py!r}) → 无候选 (min_score={min_score})")
+    return result
 
 
 def fuzzy_suggest_multi(
     query: str,
     sources: List[Tuple[str, Dict[str, List[str]]]],
     top_n: int = 3,
-    min_score: float = 0.6,
+    min_score: float = 0.7,
 ) -> List[Tuple[str, str, float]]:
     """跨多个分类并联搜索, 用于不知道用户找的是哪一类的场景。
 
