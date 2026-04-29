@@ -310,13 +310,14 @@ async def send_char_detail_msg(bot: Bot, ev: Event):
     if not res.ok:
         return await bot.send(res.fail_msg())
     char = res.matched
+    from ..wutheringwaves_config import PREFIX
+    canonical_cmd = f"{PREFIX}角色面板{char}"
 
     im = await draw_char_detail_img(ev, uid, char, user_id)
     if isinstance(im, str):
-        return await bot.send(im)
+        return await bot.send(res.with_tip(im, canonical_cmd))
     if isinstance(im, bytes):
-        from ..wutheringwaves_config import PREFIX
-        return await bot.send(res.wrap(im, f"{PREFIX}角色面板{char}"))
+        return await bot.send(res.wrap(im, canonical_cmd))
     
 @waves_new_char_detail.on_regex(
     rf"^(?P<waves_id>\d{{9}})?(?P<char>{PATTERN})(?P<query_type>练度|声骸)$",
@@ -341,13 +342,14 @@ async def send_char_detail_msg2_typo(bot: Bot, ev: Event):
     uid = await WavesBind.get_uid_by_game(user_id, ev.bot_id)
     if not uid:
         return await bot.send(error_reply(WAVES_CODE_103))
+    from ..wutheringwaves_config import PREFIX
+    canonical_cmd = f"{PREFIX}{char}面板"
     im = await draw_char_detail_img(ev, uid, char, user_id, waves_id)
+    tip = res.tip_text(canonical_cmd) or f"[鸣潮] 已按【{canonical_cmd}】查询:"
     if isinstance(im, str):
-        return await bot.send(im, False)
+        return await bot.send(f"{tip}\n{im}", False)
     if isinstance(im, bytes):
-        from ..wutheringwaves_config import PREFIX
         from gsuid_core.segment import MessageSegment
-        tip = f"[鸣潮] 你可能想输入【{PREFIX}{char}面板】, 已按该指令执行:"
         return await bot.send([tip, MessageSegment.image(im)], False)
 
 
@@ -395,7 +397,7 @@ async def send_char_detail_msg2(bot: Bot, ev: Event):
     if is_limit_query:
         im = await draw_char_detail_img(ev, "1", char, ev.user_id, is_limit_query=is_limit_query)
         if isinstance(im, str):
-            return await bot.send(im)
+            return await bot.send(res.with_tip(im, canonical_cmd))
         if isinstance(im, bytes):
             return await bot.send(res.wrap(im, canonical_cmd))
         return
@@ -421,7 +423,7 @@ async def send_char_detail_msg2(bot: Bot, ev: Event):
             change_list_regex=change_list_regex,
         )
         if isinstance(im1, str):
-            return await bot.send(im1, at_sender)
+            return await bot.send(res.with_tip(im1, canonical_cmd), at_sender)
 
         if not isinstance(im1, Image.Image):
             return
@@ -432,7 +434,7 @@ async def send_char_detail_msg2(bot: Bot, ev: Event):
             return await bot.send(error_reply(WAVES_CODE_103))
         im2 = await draw_char_detail_img(ev, uid, char, user_id, waves_id, need_convert_img=False)
         if isinstance(im2, str):
-            return await bot.send(im2, at_sender)
+            return await bot.send(res.with_tip(im2, canonical_cmd), at_sender)
 
         if not isinstance(im2, Image.Image):
             return
@@ -453,7 +455,7 @@ async def send_char_detail_msg2(bot: Bot, ev: Event):
         im = await draw_char_detail_img(ev, uid, char, user_id, waves_id, change_list_regex=change_list_regex)
         at_sender = False
         if isinstance(im, str):
-            return await bot.send(im, at_sender)
+            return await bot.send(res.with_tip(im, canonical_cmd), at_sender)
         if isinstance(im, bytes):
             return await bot.send(res.wrap(im, canonical_cmd), at_sender)
 
@@ -486,7 +488,7 @@ async def send_char_detail_msg2_weight(bot: Bot, ev: Event):
     if is_limit_query:
         im = await draw_char_score_img(ev, "1", char, ev.user_id, is_limit_query=is_limit_query)
         if isinstance(im, str):
-            return await bot.send(im)
+            return await bot.send(res.with_tip(im, canonical_cmd))
         if isinstance(im, bytes):
             return await bot.send(res.wrap(im, canonical_cmd))
         return
@@ -501,6 +503,6 @@ async def send_char_detail_msg2_weight(bot: Bot, ev: Event):
     if isinstance(im, str) and ev.group_id:
         at_sender = True
     if isinstance(im, str):
-        return await bot.send(im, at_sender)
+        return await bot.send(res.with_tip(im, canonical_cmd), at_sender)
     if isinstance(im, bytes):
         return await bot.send(res.wrap(im, canonical_cmd), at_sender)

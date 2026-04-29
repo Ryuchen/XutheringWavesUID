@@ -54,6 +54,13 @@ class CharResolution:
         from gsuid_core.segment import MessageSegment
         return [tip, MessageSegment.image(im)]
 
+    def with_tip(self, msg: str, command: Optional[str] = None) -> str:
+        """字符串版的 wrap: fuzzy 命中时在前面补一行 tip。"""
+        tip = self.tip_text(command)
+        if tip is None:
+            return msg
+        return f"{tip}\n{msg}"
+
 
 def resolve_char(char_name: Optional[str], top_n: int = 3) -> CharResolution:
     if not char_name:

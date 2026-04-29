@@ -48,7 +48,7 @@ async def send_rank_card(bot: Bot, ev: Event):
 
     if isinstance(im, str):
         at_sender = True if ev.group_id else False
-        await bot.send(im, at_sender)
+        await bot.send(res.with_tip(im, canonical_cmd) if res else im, at_sender)
     elif isinstance(im, bytes):
         await bot.send(res.wrap(im, canonical_cmd) if res else im)
 
@@ -90,7 +90,7 @@ async def send_all_rank_card(bot: Bot, ev: Event):
 
     if isinstance(im, str):
         at_sender = True if ev.group_id else False
-        await bot.send(im, at_sender)
+        await bot.send(res.with_tip(im, canonical_cmd) if res else im, at_sender)
     elif isinstance(im, bytes):
         await bot.send(res.wrap(im, canonical_cmd) if res else im)
 
