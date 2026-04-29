@@ -45,7 +45,9 @@ async def check_speed(plugin_name):
         "小维3号": "https://ww3.loping151.top/"
     }
 
-    async def _measure_speed(client: httpx.AsyncClient, base_url: str) -> float:
+    async def _measure_speed(
+        client: httpx.AsyncClient, base_url: str, deadline: float
+    ) -> float:
         test_url = f"{base_url}{plugin_name}/speedtest"
         size = 0
         start = None
@@ -56,6 +58,8 @@ async def check_speed(plugin_name):
                     if start is None:
                         start = time.perf_counter()
                     size += len(chunk)
+                    if time.perf_counter() >= deadline:
+                        break
         except Exception as exc:
             logger.warning(f"[{plugin_name}] 资源测速失败: {test_url} {exc}")
             return 0.0
@@ -66,40 +70,60 @@ async def check_speed(plugin_name):
             return 0.0
         return size / elapsed
 
-    async def _run_speedtest(timeout_seconds: float) -> list[float]:
+    async def _race_speedtest(timeout_seconds: float):
+        deadline = time.perf_counter() + timeout_seconds
         timeout = httpx.Timeout(timeout_seconds)
         async with httpx.AsyncClient(timeout=timeout) as client:
-            tasks = [
-                _measure_speed(client, base_url)
-                for base_url in URL_LIB.values()
-            ]
-            return await asyncio.gather(*tasks)
+            task_meta: dict[asyncio.Task, tuple[str, str]] = {}
+            for tag, base_url in URL_LIB.items():
+                coro = asyncio.wait_for(
+                    _measure_speed(client, base_url, deadline),
+                    timeout=timeout_seconds,
+                )
+                task_meta[asyncio.create_task(coro)] = (tag, base_url)
 
-    speeds = await _run_speedtest(5.0)
-    if all(speed <= 0 for speed in speeds):
+            winner = None
+            pending = set(task_meta.keys())
+            try:
+                while pending:
+                    done, pending = await asyncio.wait(
+                        pending, return_when=asyncio.FIRST_COMPLETED
+                    )
+                    for t in done:
+                        tag, base_url = task_meta[t]
+                        try:
+                            speed = t.result()
+                        except Exception:
+                            speed = 0.0
+                        if speed > 0:
+                            winner = (tag, base_url, speed)
+                            break
+                    if winner is not None:
+                        break
+            finally:
+                for t in task_meta:
+                    if not t.done():
+                        t.cancel()
+                await asyncio.gather(*task_meta.keys(), return_exceptions=True)
+            return winner
+
+    winner = await _race_speedtest(5.0)
+    if winner is None:
         logger.warning(f"[{plugin_name}] 资源测速超时，尝试 20 秒超时重试")
-        speeds = await _run_speedtest(20.0)
+        winner = await _race_speedtest(20.0)
 
-    best_idx = 0
-    best_speed = 0.0
-    for idx, speed in enumerate(speeds):
-        if speed > best_speed:
-            best_speed = speed
-            best_idx = idx
-
-    tags = list(URL_LIB.keys())
-    urls = list(URL_LIB.values())
-    tag = tags[best_idx]
-    url = urls[best_idx]
-    if best_speed > 0:
+    if winner is not None:
+        tag, url, speed = winner
         logger.info(
             f"[{plugin_name}] 资源测速选择: {tag} "
-            f"{best_speed / 1024 / 1024:.2f} MB/s"
+            f"{speed / 1024 / 1024:.2f} MB/s"
         )
-    else:
-        logger.error(f"[{plugin_name}] 资源测速失败！请检查网络连通性！一般而言无需代理")
+        return url, tag
 
-    return url, tag
+    logger.error(f"[{plugin_name}] 资源测速失败！请检查网络连通性！一般而言无需代理")
+    tags = list(URL_LIB.keys())
+    urls = list(URL_LIB.values())
+    return urls[0], tags[0]
 
 
 def get_target_package():
