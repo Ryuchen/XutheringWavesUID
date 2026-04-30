@@ -225,11 +225,22 @@ async def char_tips(bot: Bot, ev: Event):
 
 async def _forward_upload_to_master(bot: Bot, ev: Event):
     from gsuid_core.subscribe import gs_subscribe
-    from .card_utils import get_image
+    from .card_utils import get_image, _fetch_image_bytes
 
     images = await get_image(ev)
     if not images:
         return await bot.send("[鸣潮] 请同时发送要上传的图片")
+
+    # QQ 的 rkey URL 跨会话引用容易失效, 预下载为字节再转发
+    image_bytes = []
+    for url in images:
+        b = await _fetch_image_bytes(url)
+        if b:
+            image_bytes.append(b)
+        else:
+            logger.warning(f"[鸣潮·上传审核] 图片下载失败: {url}")
+    if not image_bytes:
+        return await bot.send("[鸣潮] 上传图片下载失败，请稍后重试")
 
     subs = await gs_subscribe.get_subscribe("联系主人")
     logger.info(f"[鸣潮·上传审核] 取到 {len(subs) if subs else 0} 个主人订阅")
@@ -248,7 +259,6 @@ async def _forward_upload_to_master(bot: Bot, ev: Event):
         f"[鸣潮·上传审核] {origin} 申请上传【{char}】的{type_label}\n"
         f"通过审核请发送: {PREFIX}上传{char}{type_label} 并附下方图片"
     )
-    payload = [text] + [MessageSegment.image(url) for url in images]
 
     fail = 0
     for sub in subs:
@@ -259,9 +269,14 @@ async def _forward_upload_to_master(bot: Bot, ev: Event):
             f"WS_BOT_ID={sub.WS_BOT_ID}"
         )
         try:
-            ret = await sub.send(payload)
-            logger.info(f"[鸣潮·上传审核] sub.send 返回={ret}")
-            if ret == -1:
+            ret_text = await sub.send(text)
+            logger.info(f"[鸣潮·上传审核] sub.send(text) 返回={ret_text}")
+            for idx, b in enumerate(image_bytes):
+                ret_img = await sub.send(MessageSegment.image(b))
+                logger.info(f"[鸣潮·上传审核] sub.send(image#{idx}) 返回={ret_img}")
+                if ret_img == -1:
+                    fail += 1
+            if ret_text == -1:
                 fail += 1
         except Exception as e:
             fail += 1
