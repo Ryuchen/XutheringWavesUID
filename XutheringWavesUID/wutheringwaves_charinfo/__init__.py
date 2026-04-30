@@ -326,10 +326,17 @@ async def send_char_detail_msg(bot: Bot, ev: Event):
 async def send_char_detail_msg2_typo(bot: Bot, ev: Event):
     waves_id = ev.regex_dict.get("waves_id")
     char = ev.regex_dict.get("char")
+    query_type = ev.regex_dict.get("query_type")
 
     if waves_id and len(waves_id) != 9:
         return
     if not char:
+        return
+
+    # 排除已有指令: 刷新练度 / 我的声骸 等
+    if query_type == "练度" and char in ("刷新", "更新", "upd"):
+        return
+    if query_type == "声骸" and char in ("我的",):
         return
 
     at_sender = True if ev.group_id else False
