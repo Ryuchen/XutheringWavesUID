@@ -78,11 +78,11 @@ class PhantomProp(BaseModel):
 
 class FetterDetail(BaseModel):
     groupId: int
-    name: str
-    iconUrl: Optional[str]
-    num: int
-    firstDescription: Optional[str]
-    secondDescription: Optional[str]
+    name: str = ""
+    iconUrl: Optional[str] = None
+    num: int = 0
+    firstDescription: Optional[str] = None
+    secondDescription: Optional[str] = None
 
 
 class Props(BaseModel):
