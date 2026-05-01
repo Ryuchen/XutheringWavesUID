@@ -23,10 +23,12 @@ from ...utils.resource.RESOURCE_PATH import (
 )
 
 
-# 严格白名单, 防止 char_id / name 触发路径穿越或越权写入。
+# 严格白名单, 防止 char_id / token 触发路径穿越或越权写入。
+# 文件名 (name) 由历史 / 第三方写入, 可能含中文; 仅拒路径分隔符/NUL/控制字符,
+# 配合 safe_join 的 relative_to 兜底, 路径穿越无可乘之机。
 _SAFE_CHAR_ID = re.compile(r"^[A-Za-z0-9_\-]{1,32}$")
-_SAFE_NAME = re.compile(r"^[A-Za-z0-9_.\-]{1,128}$")
 _SAFE_TOKEN = re.compile(r"^[A-Za-z0-9_\-]{1,64}$")
+_NAME_FORBID = re.compile(r"[\x00-\x1f/\\]")  # 控制字符 + 正反斜杠
 
 
 def is_safe_char_id(s: object) -> bool:
@@ -34,9 +36,13 @@ def is_safe_char_id(s: object) -> bool:
 
 
 def is_safe_name(s: object) -> bool:
-    if not isinstance(s, str) or s in {".", ".."} or s.startswith("."):
+    if not isinstance(s, str):
         return False
-    return bool(_SAFE_NAME.match(s))
+    if not s or len(s) > 256:
+        return False
+    if s in {".", ".."} or s.startswith("."):
+        return False
+    return _NAME_FORBID.search(s) is None
 
 
 def is_safe_token(s: object) -> bool:
