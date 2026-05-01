@@ -684,14 +684,18 @@ function applyRectStyle(rect, r) {
 
 function startDrag(ev, wrap, rect) {
   ev.preventDefault();
+  // 新一次拖动开始前, 取消 pending 的 auto-crop, 避免半路被服务端替换。
+  clearTimeout(_autoCropTimer);
+  _autoCropTimer = null;
+
   const target = ev.target;
   const isHandle = target.classList.contains("handle");
   const direction = target.dataset.h;
-  const startState = { sx: ev.clientX, sy: ev.clientY, ...state.cropRect };
+  const start = { sx: ev.clientX, sy: ev.clientY, ...state.cropRect };
   const maxW = state.cropImgEl.clientWidth;
   const maxH = state.cropImgEl.clientHeight;
 
-  // 让指针捕获到 rect (即使光标移出元素也持续收到 move 事件), 修复"框不跟鼠标"。
+  // pointer capture: 保证手指/光标移出元素后仍持续收 move 事件。
   try { rect.setPointerCapture(ev.pointerId); } catch (_) {}
 
   let pending = null;
@@ -702,9 +706,9 @@ function startDrag(ev, wrap, rect) {
   };
 
   const move = e => {
-    const dx = e.clientX - startState.sx;
-    const dy = e.clientY - startState.sy;
-    let { x, y, w, h } = startState;
+    let { x, y, w, h } = start;
+    const dx = e.clientX - start.sx;
+    const dy = e.clientY - start.sy;
     if (!isHandle) {
       x += dx; y += dy;
     } else {
@@ -713,8 +717,8 @@ function startDrag(ev, wrap, rect) {
       if (direction.includes("n")) { y += dy; h -= dy; }
       if (direction.includes("s")) { h += dy; }
     }
-    if (w < 8) w = 8;
-    if (h < 8) h = 8;
+    w = Math.max(8, w);
+    h = Math.max(8, h);
     x = Math.max(0, Math.min(x, maxW - w));
     y = Math.max(0, Math.min(y, maxH - h));
     w = Math.min(w, maxW - x);
@@ -723,33 +727,36 @@ function startDrag(ev, wrap, rect) {
     if (pending == null) pending = requestAnimationFrame(flush);
   };
 
-  const up = () => {
+  const cleanup = () => {
     rect.removeEventListener("pointermove", move);
-    rect.removeEventListener("pointerup", up);
-    rect.removeEventListener("pointercancel", up);
+    rect.removeEventListener("pointerup", onUp);
+    rect.removeEventListener("pointercancel", cleanup);
     try { rect.releasePointerCapture(ev.pointerId); } catch (_) {}
     if (pending != null) {
       cancelAnimationFrame(pending);
       flush();
     }
-    // 释放后立即应用裁剪 + 触发右侧预览重渲染。
-    scheduleAutoCrop();
   };
+  // 真·释放 → 落库; pointercancel (浏览器取消手势) → 只清监听器, rect 保留位置。
+  const onUp = () => { cleanup(); scheduleAutoCrop(); };
 
   rect.addEventListener("pointermove", move);
-  rect.addEventListener("pointerup", up);
-  rect.addEventListener("pointercancel", up);
+  rect.addEventListener("pointerup", onUp);
+  rect.addEventListener("pointercancel", cleanup);
 }
 
 // 拖拽结束后应用裁剪并刷新预览; 防止快速连续拖动堆积请求。
+// 静止 IDLE_MS 才真正落库, 期间任何新拖动都会重置计时器, 让连续微调流畅。
+const _AUTO_CROP_IDLE_MS = 800;
 let _autoCropTimer = null;
 let _autoCropInflight = false;
 function scheduleAutoCrop() {
   clearTimeout(_autoCropTimer);
   _autoCropTimer = setTimeout(async () => {
+    _autoCropTimer = null;
     if (_autoCropInflight) {
       // 在途时排队再触发一次, 保证最新一次操作一定被应用
-      _autoCropTimer = setTimeout(scheduleAutoCrop, 80);
+      _autoCropTimer = setTimeout(scheduleAutoCrop, 200);
       return;
     }
     _autoCropInflight = true;
@@ -758,7 +765,7 @@ function scheduleAutoCrop() {
     } finally {
       _autoCropInflight = false;
     }
-  }, 80);
+  }, _AUTO_CROP_IDLE_MS);
 }
 
 function displayToSourceRect(rect) {
