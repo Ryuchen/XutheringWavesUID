@@ -283,11 +283,23 @@ async def _forward_upload_to_master(bot: Bot, ev: Event):
                 return await bot.send("[鸣潮] 上传失败！\n" + "\n".join(size_check_failed))
             return await bot.send("[鸣潮] 上传图片下载失败，请稍后重试")
 
-        block_msgs, _blocked = collect_blocked_duplicates(temp_dir, new_images)
-        if block_msgs:
+        block_msgs, blocked_paths = collect_blocked_duplicates(temp_dir, new_images)
+        if blocked_paths:
+            # 重复的清掉，不重复的继续转发
+            for p in blocked_paths:
+                try:
+                    p.unlink(missing_ok=True)
+                except Exception:
+                    pass
+                delete_orb_cache(p)
+            kept = [(p, b) for p, b in zip(new_images, image_bytes) if p not in blocked_paths]
+            new_images = [p for p, _ in kept]
+            image_bytes = [b for _, b in kept]
+
+        if not new_images:
             prefix_msg = ("\n".join(size_check_failed) + "\n") if size_check_failed else ""
             return await bot.send(
-                f"[鸣潮]【{char_name}】{prefix_msg}疑似重复: {'；'.join(block_msgs)}，已拒绝转交主人审核"
+                f"[鸣潮]【{char_name}】{prefix_msg}全部疑似重复: {'；'.join(block_msgs)}，已拒绝转交主人审核"
             )
 
         subs = await gs_subscribe.get_subscribe("联系主人")
@@ -328,7 +340,8 @@ async def _forward_upload_to_master(bot: Bot, ev: Event):
 
         if subs and fail == len(subs):
             return await bot.send("[鸣潮] 转发审核失败，请稍后再试或联系主人")
-        await bot.send("[鸣潮] 上传申请已提交给主人审核，请等待处理")
+        tail = f"\n已剔除疑似重复: {'；'.join(block_msgs)}" if block_msgs else ""
+        await bot.send(f"[鸣潮] 上传申请已提交给主人审核，请等待处理{tail}")
     finally:
         for p in new_images:
             try:
