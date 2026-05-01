@@ -1,3 +1,4 @@
+import os
 import re
 import uuid
 import asyncio
@@ -25,10 +26,19 @@ from ..utils.waves_api import waves_api
 from ..wutheringwaves_user import deal
 from ..utils.database.models import WavesBind, WavesUser
 from ..wutheringwaves_config import PREFIX, WutheringWavesConfig, ShowConfig
-from ..utils.resource.RESOURCE_PATH import waves_templates, custom_waves_template
+from ..utils.resource.RESOURCE_PATH import (
+    MAIN_PATH,
+    waves_templates,
+    custom_waves_template,
+)
 from ..wutheringwaves_user.login_succ import login_success_msg
 
-cache = TimedCache(timeout=180, maxsize=10)
+# 登录态用 sqlite 落盘，避免多 worker / 进程重启把内存 cache 清空导致 404
+cache = TimedCache(
+    timeout=180,
+    maxsize=10,
+    persist_path=MAIN_PATH / "login_cache.db",
+)
 
 game_title = "[鸣潮]"
 msg_error = f"{game_title} 登录失败\n1.是否注册过库街区\n2.库街区能否查询当前鸣潮特征码数据"
@@ -114,20 +124,21 @@ async def send_login(bot: Bot, ev: Event, url):
 async def page_login_local(bot: Bot, ev: Event, url):
     at_sender = True if ev.group_id else False
     user_token = get_token(ev.user_id)
-    await send_login(bot, ev, f"{url}/waves/i/{user_token}")
-    result = cache.get(user_token)
-    if isinstance(result, dict) and result.get("flow") != "email":
-        return
 
-    # 手机登录
-    data = {"mobile": -1, "code": -1, "user_id": ev.user_id}
-    cache.set(user_token, data)
+    # 始终以最新指令为准：直接覆盖任何已有 session（含邮箱），并刷新 TTL。
+    # 先写 cache 再发 URL，关掉「URL 已可见但 cache 未写入」的瞬开窗口。
+    # 旧的邮箱 waiter 下一次轮询会看到 flow 变了，按 email_login.py 的逻辑静默退出。
+    cache.set(user_token, {"mobile": -1, "code": -1, "user_id": ev.user_id})
+    await send_login(bot, ev, f"{url}/waves/i/{user_token}")
+
+    text = None
     try:
         async with timeout(180):
             while True:
                 result = cache.get(user_token)
                 if result is None:
-                    return await bot.send("登录超时!", at_sender=at_sender)
+                    # 缓存被另一个 waiter 消费 / 显式清理，静默退出，由外层 timeout 兜底真正的超时
+                    return
                 if isinstance(result, dict) and result.get("flow") == "email":
                     return
                 if result.get("mobile") != -1 and result.get("code") != -1:
@@ -138,8 +149,11 @@ async def page_login_local(bot: Bot, ev: Event, url):
     except asyncio.TimeoutError:
         return await bot.send("登录超时!", at_sender=at_sender)
     except Exception as e:
-        logger.error(e)
+        logger.exception(f"[登录] 异常: {e}")
+        return await bot.send("登录失败，请稍后再试", at_sender=at_sender)
 
+    if text is None:
+        return
     return await code_login(bot, ev, text, True)
 
 
@@ -297,6 +311,11 @@ async def waves_login_index(auth: str):
 
     temp = state
     if temp is None:
+        # 多 worker / 进程重启 / TTL 过期都会走这里，打点便于排查
+        logger.info(
+            f"[登录404] auth={auth} pid={os.getpid()} "
+            f"mem_keys={len(cache.cache)} persist={cache.persist_path is not None}"
+        )
         # 检查自定义404页面路径
         custom_404_path = Path(ShowConfig.get_config("Login404HtmlPath").data)
         if custom_404_path.exists():
