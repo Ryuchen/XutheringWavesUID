@@ -25,12 +25,18 @@ from ..utils.image import (
     get_random_waves_role_pile,
 )
 from ..utils.api.model import DailyData, AccountBaseInfo
+from ..utils.api.launcher_chain import fetch_launcher_panel
 from ..utils.constants import WAVES_GAME_ID
 from ..utils.at_help import ruser_id
 from ..utils.waves_api import waves_api
 from ..utils.error_reply import ERROR_CODE, WAVES_CODE_102, WAVES_CODE_103
 from ..utils.name_convert import char_name_to_char_id
-from ..utils.database.models import WavesBind, WavesUser, WavesStaminaRecord, WavesLangSettings
+from ..utils.database.models import (
+    WavesBind,
+    WavesUser,
+    WavesStaminaRecord,
+    WavesLangSettings,
+)
 from ..utils.localization import t
 from ..utils.api.request_util import KuroApiResp
 from ..utils.fonts.waves_fonts import (
@@ -69,6 +75,9 @@ async def seconds2hours(seconds: int) -> str:
 
 
 async def process_uid(uid, ev):
+    if waves_api.is_net(uid):
+        return await _process_uid_launcher(uid, ev)
+
     ck = await waves_api.get_self_waves_ck(uid, ruser_id(ev), ev.bot_id)
     if not ck:
         try:
@@ -120,6 +129,58 @@ async def process_uid(uid, ev):
     }
 
 
+async def _process_uid_launcher(uid, ev):
+    user_id = ruser_id(ev)
+    bot_id = ev.bot_id
+
+    panel = await fetch_launcher_panel(user_id, bot_id, uid)
+    if panel is None:
+        try:
+            await WavesStaminaRecord.update_ck_valid(
+                user_id=user_id,
+                bot_id=bot_id,
+                bot_self_id=ev.bot_self_id or "",
+                uid=uid,
+                is_ck_valid=False,
+            )
+        except Exception:
+            logger.exception("[鸣潮][每日信息]launcher CK 状态更新失败")
+        return None
+
+    base = panel.base
+    daily_info = DailyData(
+        gameId=WAVES_GAME_ID,
+        userId=0,
+        serverId="",
+        roleId=str(uid),
+        roleName=base.name,
+        signInTxt="",
+        hasSignIn=False,
+        energyData=panel.energy,
+        livenessData=panel.liveness,
+        battlePassData=[panel.battlePass],
+    )
+
+    try:
+        await WavesStaminaRecord.upsert_stamina_query(
+            user_id=user_id,
+            bot_id=bot_id,
+            bot_self_id=ev.bot_self_id or "",
+            uid=uid,
+            mr_query_time=int(time.time()),
+            mr_value=panel.energy.cur if panel.energy else None,
+            is_ck_valid=True,
+        )
+    except Exception:
+        logger.exception("[鸣潮][每日信息]launcher 体力记录写入失败")
+
+    return {
+        "daily_info": daily_info,
+        "account_info": base,
+        "from_sdk": True,
+    }
+
+
 async def draw_stamina_img(bot: Bot, ev: Event):
     try:
         uid_list = await WavesBind.get_uid_list_by_game(ruser_id(ev), ev.bot_id)
@@ -165,6 +226,7 @@ async def _draw_stamina_img(ev: Event, valid: Dict, locale: str = "") -> Image.I
     """准备数据并调用绘制函数"""
     daily_info: DailyData = valid["daily_info"]
     account_info: AccountBaseInfo = valid["account_info"]
+    from_sdk: bool = bool(valid.get("from_sdk", False))
 
     # 确定签到状态
     if daily_info.hasSignIn:
@@ -198,7 +260,7 @@ async def _draw_stamina_img(ev: Event, valid: Dict, locale: str = "") -> Image.I
     force_not_use_bg = False
     force_not_use_custom = False
 
-    if user and user.stamina_bg_value:
+    if user and user.stamina_bg_value and not from_sdk:
         logger.debug(f"[鸣潮][每日信息]使用自定义体力背景设置: {user.stamina_bg_value}")
         force_use_bg = "背景" in user.stamina_bg_value
         force_not_use_bg = "立绘" in user.stamina_bg_value
@@ -278,6 +340,7 @@ async def _draw_stamina_img(ev: Event, valid: Dict, locale: str = "") -> Image.I
             active_text=active_text,
             avatar=avatar,
             locale=locale,
+            from_sdk=from_sdk,
         )
         if html_res:
             return html_res
@@ -317,6 +380,7 @@ async def _render_stamina_card(
     active_text: str,
     avatar: Image.Image,
     locale: str = "",
+    from_sdk: bool = False,
 ) -> Image.Image:
     # 准备上下文数据
     
@@ -383,7 +447,7 @@ async def _render_stamina_card(
         is_stamina_urgent = True
 
     # 结晶
-    store_cur = account_info.storeEnergy
+    store_cur = account_info.storeEnergy or 0
     store_total = account_info.storeEnergyLimit if account_info.storeEnergyLimit else 480
     store_percent = min(100, (store_cur / store_total * 100)) if store_total else 0
     store_color = color_red if store_percent > 80 else color_yellow
@@ -437,6 +501,11 @@ async def _render_stamina_card(
          slash_time_text = t("已结束", locale)
 
     # 我去，我真变态！
+    show_sign_in = not from_sdk
+    show_rogue = account_info.rougeScore is not None or account_info.rougeScoreLimit is not None
+    show_tower = daily_info.towerData is not None
+    show_slash_tower = daily_info.slashTowerData is not None
+
     context = {
         "locale": locale,
         "user_name": daily_info.roleName,
@@ -445,7 +514,11 @@ async def _render_stamina_card(
         "avatar_url": pil_to_b64(avatar, quality=75),
         "pile_url": compress_and_b64(pile),
         "has_bg": has_bg,
-        
+        "show_sign_in": show_sign_in,
+        "show_rogue": show_rogue,
+        "show_tower": show_tower,
+        "show_slash_tower": show_slash_tower,
+
         # Icons
         "yes_icon_url": yes_icon_b64,
         "no_icon_url": no_icon_b64,

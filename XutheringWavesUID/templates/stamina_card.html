@@ -361,11 +361,13 @@
 
     <!-- Top Status -->
     <div class="top-status">
+        {% if show_sign_in %}
         <!-- Sign In -->
         <div class="status-badge">
             <img src="{% if sign_in.status %}{{ yes_icon_url }}{% else %}{{ no_icon_url }}{% endif %}">
             <span>{{ sign_in.text }}</span>
         </div>
+        {% endif %}
         <!-- Liveness (Restored) -->
         <div class="status-badge">
             <img src="{% if active_reward.status %}{{ yes_icon_url }}{% else %}{{ no_icon_url }}{% endif %}">
@@ -457,25 +459,31 @@
                 <div class="mini-label">{{ label_battle_pass }}</div>
             </div>
 
+            {% if show_rogue %}
             <!-- Rogue -->
             <div class="mini-stat">
                 <div class="mini-val" style="color: {% if weekly_rogue.total and weekly_rogue.cur == weekly_rogue.total %}#fff{% else %}{{ urgent_color }}{% endif %};">{{ weekly_rogue.cur }}</div>
                 <div class="mini-label">{{ label_rogue }}</div>
             </div>
+            {% endif %}
 
+            {% if show_tower %}
             <!-- Tower -->
             <div class="mini-stat">
                 <div class="mini-val" {% if tower.urgent %}style="color: {{ urgent_color }};"{% endif %}>{{ tower.cur }}<span style="font-size: 20px; color: {% if tower.urgent %}inherit{% else %}rgba(255,255,255,0.7){% endif %}">/{{ tower.total }}</span></div>
                 <div class="mini-label">{{ label_tower }}</div>
                 <div class="mini-sub">{{ tower.time_text }}</div>
             </div>
+            {% endif %}
 
+            {% if show_slash_tower %}
             <!-- Slash Tower -->
             <div class="mini-stat">
                 <div class="mini-val" {% if slash_tower.urgent %}style="color: {{ urgent_color }};"{% endif %}>{{ slash_tower.cur }}<span style="font-size: 20px; color: {% if slash_tower.urgent %}inherit{% else %}rgba(255,255,255,0.7){% endif %}">/{{ slash_tower.total }}</span></div>
                 <div class="mini-label">{{ label_slash_tower }}</div>
                 <div class="mini-sub">{{ slash_tower.time_text }}</div>
             </div>
+            {% endif %}
         </div>
     </div>
 

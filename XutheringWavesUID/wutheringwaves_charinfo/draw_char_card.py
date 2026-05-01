@@ -488,7 +488,7 @@ async def draw_fixed_img(img, avatar, account_info, role_detail, locale=""):
 
     base_info_bg = Image.open(TEXT_PATH / "base_info_bg.png")
     base_info_draw = ImageDraw.Draw(base_info_bg)
-    draw_text_with_fallback(base_info_draw, (275, 120), f"{account_info.name[:7]}", "white", waves_font_30, "lm")
+    draw_text_with_fallback(base_info_draw, (275, 120), f"{account_info.name[:10]}", "white", waves_font_30, "lm")
     draw_text_with_fallback(base_info_draw, (226, 173), f"{t('特征码:', locale)}  {account_info.id}", GOLD, waves_font_25, "lm")
     img.paste(base_info_bg, (35, -30), base_info_bg)
 
@@ -609,7 +609,7 @@ async def draw_char_detail_img(
     char, damageId = parse_text_and_number(char)
 
     char_id = char_name_to_char_id(char)
-    if not char_id:
+    if not char_id or len(char_id) != 4 or not char_id.isdigit():
         return f"未找到指定角色, 请检查输入是否正确！"
 
     char_name = alias_to_char_name(char)
@@ -1058,7 +1058,7 @@ async def draw_char_score_img(ev: Event, uid: str, char: str, user_id: str, wave
     char, damageId = parse_text_and_number(char)
 
     char_id = char_name_to_char_id(char)
-    if not char_id:
+    if not char_id or len(char_id) != 4 or not char_id.isdigit():
         return f"未找到指定角色, 请检查输入是否正确！"
     char_name = alias_to_char_name(char)
 

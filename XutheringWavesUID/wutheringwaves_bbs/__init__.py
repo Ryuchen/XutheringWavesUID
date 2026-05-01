@@ -5,7 +5,7 @@ from gsuid_core.models import Event
 
 from .bbs_card import kuro_coin_card
 from ..utils.hint import error_reply
-from ..utils.at_help import ruser_id
+from ..utils.at_help import ruser_id, is_intl_uid, intl_unavailable_msg
 from ..utils.waves_api import waves_api
 from ..utils.error_reply import WAVES_CODE_102
 from ..utils.database.models import WavesBind
@@ -21,6 +21,9 @@ async def kuro_coin_(bot: Bot, ev: Event):
     logger.info(f"[鸣潮][库洛币] user_id: {user_id} UID: {uid}")
     if not uid:
         await bot.send(error_reply(WAVES_CODE_102))
+        return
+    if is_intl_uid(uid):
+        await bot.send(intl_unavailable_msg(uid))
         return
 
     is_self_ck, ck = await waves_api.get_ck_result(uid, user_id, ev.bot_id)

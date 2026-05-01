@@ -19,6 +19,7 @@ from gsuid_core.utils.database.models import Subscribe
 
 from .waves_subscribe import WavesSubscribe
 from .waves_user_activity import WavesUserActivity
+from .waves_user_sdk import WavesUserSdk
 
 exec_list.extend(
     [
@@ -725,3 +726,14 @@ class WavesStaminaRecordAdmin(GsAdminModel):
 
     # 配置管理模型
     model = WavesStaminaRecord
+
+
+@site.register_admin
+class WavesUserSdkAdmin(GsAdminModel):
+    pk_name = "id"
+    page_schema = PageSchema(
+        label="鸣潮launcher扩展",
+        icon="fa fa-globe",
+    )  # type: ignore
+
+    model = WavesUserSdk

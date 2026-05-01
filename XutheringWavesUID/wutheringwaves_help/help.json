@@ -56,6 +56,14 @@
         "need_admin": false
       },
       {
+        "name": "国际服登录",
+        "desc": "国际服账号通过邮箱密码登录",
+        "eg": "邮箱登录",
+        "need_ck": false,
+        "need_sk": false,
+        "need_admin": false
+      },
+      {
         "name": "添加token",
         "desc": "绑定自己的库街区添加token",
         "eg": "添加token tk,did",
@@ -459,15 +467,15 @@
       {
         "name": "上传角色面板图",
         "desc": "上传角色面板图",
-        "eg": "上传椿面板图",
+        "eg": "上传椿面板/背景图",
         "need_ck": false,
         "need_sk": false,
         "need_admin": true
       },
       {
-        "name": "查看角色面板图",
+        "name": "查看角色面板/背景图",
         "desc": "查看角色面板图",
-        "eg": "查看椿面板图abcdefgh",
+        "eg": "提取面板图+[面板图]",
         "need_ck": false,
         "need_sk": false,
         "need_admin": false

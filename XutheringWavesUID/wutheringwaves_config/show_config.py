@@ -17,6 +17,11 @@ SHOW_CONIFG: Dict[str, GSC] = {
         "自定义登录页面HTML文件路径，请自行确保模板格式正确，尤其注意在移动端显示良好",
         str(show_path / "index.html"),
     ),
+    "LoginIndexEmailHtmlPath": GsStrConfig(
+        "邮箱登录页面HTML路径",
+        "自定义邮箱登录页面HTML文件路径，请自行确保模板格式正确，尤其注意在移动端显示良好",
+        str(show_path / "index_email.html"),
+    ),
     "Login404HtmlPath": GsStrConfig(
         "404页面HTML路径",
         "自定义404页面HTML文件路径，请自行确保模板格式正确，尤其注意在移动端显示良好",
@@ -28,6 +33,14 @@ SHOW_CONIFG: Dict[str, GSC] = {
         str(show_path / "index.html"),
         str(show_path),
         "index",
+        "html",
+    ),
+    "LoginIndexEmailHtmlUpload": GsImageConfig(
+        "上传邮箱登录页面模板（上传格式html）",
+        "",
+        str(show_path / "index_email.html"),
+        str(show_path),
+        "index_email",
         "html",
     ),
     "Login404HtmlUpload": GsImageConfig(

@@ -6,7 +6,7 @@ from gsuid_core.models import Event
 
 from ..utils.hint import error_reply
 from ..utils.button import WavesButton
-from ..utils.at_help import ruser_id
+from ..utils.at_help import ruser_id, is_intl_uid, intl_unavailable_msg
 from .draw_slash_card import draw_slash_img
 from .draw_matrix_card import draw_matrix_img
 from ..utils.error_reply import WAVES_CODE_103
@@ -48,6 +48,8 @@ async def send_waves_abyss_info(bot: Bot, ev: Event):
     uid = await WavesBind.get_uid_by_game(user_id, ev.bot_id)
     if not uid:
         return await bot.send(error_reply(WAVES_CODE_103))
+    if is_intl_uid(uid):
+        return await bot.send(intl_unavailable_msg(uid))
     await bot.logger.info(f"[鸣潮查询深渊信息]user_id:{user_id} uid: {uid}")
 
     im = await draw_abyss_img(ev, uid, user_id)
@@ -81,6 +83,8 @@ async def send_waves_challenge_info(bot: Bot, ev: Event):
     uid = await WavesBind.get_uid_by_game(user_id, ev.bot_id)
     if not uid:
         return await bot.send(error_reply(WAVES_CODE_103))
+    if is_intl_uid(uid):
+        return await bot.send(intl_unavailable_msg(uid))
     await bot.logger.info(f"[鸣潮查询全息战略信息]user_id:{user_id} uid: {uid}")
 
     im = await draw_challenge_img(ev, uid, user_id)
@@ -115,6 +119,8 @@ async def send_waves_slash_info(bot: Bot, ev: Event):
     uid = await WavesBind.get_uid_by_game(user_id, ev.bot_id)
     if not uid:
         return await bot.send(error_reply(WAVES_CODE_103))
+    if is_intl_uid(uid):
+        return await bot.send(intl_unavailable_msg(uid))
 
     im = await draw_slash_img(ev, uid, user_id)
     if isinstance(im, str):
@@ -149,6 +155,8 @@ async def send_waves_matrix_info(bot: Bot, ev: Event):
     uid = await WavesBind.get_uid_by_game(user_id, ev.bot_id)
     if not uid:
         return await bot.send(error_reply(WAVES_CODE_103))
+    if is_intl_uid(uid):
+        return await bot.send(intl_unavailable_msg(uid))
 
     im = await draw_matrix_img(ev, uid, user_id)
     if isinstance(im, str):

@@ -116,7 +116,7 @@ async def page_login_local(bot: Bot, ev: Event, url):
     user_token = get_token(ev.user_id)
     await send_login(bot, ev, f"{url}/waves/i/{user_token}")
     result = cache.get(user_token)
-    if isinstance(result, dict):
+    if isinstance(result, dict) and result.get("flow") != "email":
         return
 
     # 手机登录
@@ -128,6 +128,8 @@ async def page_login_local(bot: Bot, ev: Event, url):
                 result = cache.get(user_token)
                 if result is None:
                     return await bot.send("登录超时!", at_sender=at_sender)
+                if isinstance(result, dict) and result.get("flow") == "email":
+                    return
                 if result.get("mobile") != -1 and result.get("code") != -1:
                     text = f"{result['mobile']},{result['code']}"
                     cache.delete(user_token)
@@ -282,7 +284,14 @@ async def add_cookie(ev, token, did) -> tuple[Union[WavesUser, None], str]:
 
 @app.get("/waves/i/{auth}")
 async def waves_login_index(auth: str):
-    temp = cache.get(auth)
+    state = cache.get(auth)
+
+    if isinstance(state, dict) and state.get("flow") == "email":
+        from .email_login import render_email_login_page
+
+        return await render_email_login_page(auth, state)
+
+    temp = state
     if temp is None:
         # 检查自定义404页面路径
         custom_404_path = Path(ShowConfig.get_config("Login404HtmlPath").data)

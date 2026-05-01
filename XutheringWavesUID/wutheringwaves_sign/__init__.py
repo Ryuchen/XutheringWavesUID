@@ -2,7 +2,7 @@ from gsuid_core.sv import SV
 from gsuid_core.bot import Bot
 from gsuid_core.models import Event
 
-from ..utils.at_help import ruser_id
+from ..utils.at_help import ruser_id, is_intl_uid, intl_unavailable_msg
 from ..utils.error_reply import ERROR_CODE, WAVES_CODE_103
 from ..utils.database.models import WavesBind
 from .draw_sign_calendar import draw_sign_calendar
@@ -23,4 +23,6 @@ async def send_sign_calendar(bot: Bot, ev: Event):
     uid = await WavesBind.get_uid_by_game(ruser_id(ev), ev.bot_id)
     if not uid:
         return await bot.send(ERROR_CODE[WAVES_CODE_103])
+    if is_intl_uid(uid):
+        return await bot.send(intl_unavailable_msg(uid))
     return await bot.send(await draw_sign_calendar(uid, ev))

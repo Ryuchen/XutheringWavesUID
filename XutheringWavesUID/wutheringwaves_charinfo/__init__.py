@@ -11,7 +11,7 @@ from ..utils.hint import error_reply
 from ..utils.char_info_utils import PATTERN
 from ..utils.database.models import WavesBind
 from ..utils.error_reply import WAVES_CODE_103
-from ..utils.at_help import ruser_id, is_valid_at
+from ..utils.at_help import ruser_id, is_valid_at, is_intl_uid, intl_unavailable_msg
 from ..utils.resource.constant import SPECIAL_CHAR
 from ..utils.name_convert import char_name_to_char_id
 from ..utils.name_resolve import resolve_char
@@ -318,6 +318,8 @@ async def send_card_info(bot: Bot, ev: Event):
     uid = await WavesBind.get_uid_by_game(user_id, ev.bot_id)
     if not uid:
         return await bot.send(error_reply(WAVES_CODE_103))
+    if is_intl_uid(uid):
+        return await bot.send(intl_unavailable_msg(uid))
 
     from .draw_refresh_char_card import draw_refresh_char_detail_img
 
@@ -372,6 +374,8 @@ async def send_one_char_detail_msg(bot: Bot, ev: Event):
     uid = await WavesBind.get_uid_by_game(user_id, ev.bot_id)
     if not uid:
         return await bot.send(error_reply(WAVES_CODE_103))
+    if is_intl_uid(uid):
+        return await bot.send(intl_unavailable_msg(uid))
 
     from .draw_refresh_char_card import draw_refresh_char_detail_img
 
@@ -425,6 +429,8 @@ async def send_char_detail_msg(bot: Bot, ev: Event):
     uid = await WavesBind.get_uid_by_game(user_id, ev.bot_id)
     if not uid:
         return await bot.send(error_reply(WAVES_CODE_103))
+    if is_intl_uid(uid):
+        return await bot.send(intl_unavailable_msg(uid))
     logger.debug(f"[鸣潮] [角色面板] UID: {uid}")
 
     res = resolve_char(char)
@@ -477,6 +483,8 @@ async def send_char_detail_msg2_typo(bot: Bot, ev: Event):
     uid = await WavesBind.get_uid_by_game(user_id, ev.bot_id)
     if not uid:
         return await bot.send(error_reply(WAVES_CODE_103))
+    if is_intl_uid(uid):
+        return await bot.send(intl_unavailable_msg(uid))
     canonical_cmd = f"{PREFIX}{char}面板"
     im = await draw_char_detail_img(ev, uid, char, user_id, waves_id)
     # typo 路径: 即使精确命中也强制告知用户已按面板查询
@@ -546,6 +554,8 @@ async def send_char_detail_msg2(bot: Bot, ev: Event):
         uid = await WavesBind.get_uid_by_game(ev.user_id, ev.bot_id)
         if not uid:
             return await bot.send(error_reply(WAVES_CODE_103))
+        if is_intl_uid(uid):
+            return await bot.send(intl_unavailable_msg(uid))
 
         im1 = await draw_char_detail_img(
             ev,
@@ -567,6 +577,8 @@ async def send_char_detail_msg2(bot: Bot, ev: Event):
         uid = await WavesBind.get_uid_by_game(user_id, ev.bot_id)
         if not uid:
             return await bot.send(error_reply(WAVES_CODE_103))
+        if is_intl_uid(uid):
+            return await bot.send(intl_unavailable_msg(uid))
         im2 = await draw_char_detail_img(ev, uid, char, user_id, waves_id, need_convert_img=False)
         if isinstance(im2, str):
             return await bot.send(res.with_tip(im2, canonical_cmd), at_sender)
@@ -587,6 +599,8 @@ async def send_char_detail_msg2(bot: Bot, ev: Event):
         uid = await WavesBind.get_uid_by_game(user_id, ev.bot_id)
         if not uid:
             return await bot.send(error_reply(WAVES_CODE_103))
+        if is_intl_uid(uid):
+            return await bot.send(intl_unavailable_msg(uid))
         im = await draw_char_detail_img(ev, uid, char, user_id, waves_id, change_list_regex=change_list_regex)
         at_sender = False
         if isinstance(im, str):
@@ -631,6 +645,8 @@ async def send_char_detail_msg2_weight(bot: Bot, ev: Event):
     uid = await WavesBind.get_uid_by_game(user_id, ev.bot_id)
     if not uid:
         return await bot.send(error_reply(WAVES_CODE_103))
+    if is_intl_uid(uid):
+        return await bot.send(intl_unavailable_msg(uid))
 
     im = await draw_char_score_img(ev, uid, char, user_id, waves_id)  # type: ignore
     at_sender = False

@@ -7,6 +7,7 @@ from PIL import Image, ImageDraw
 from gsuid_core.models import Event
 from gsuid_core.utils.image.convert import convert_img
 
+from ..utils.at_help import is_intl_uid, intl_unavailable_msg
 from ..utils.hint import error_reply
 from ..utils.image import (
     SPECIAL_GOLD,
@@ -136,6 +137,8 @@ async def calc_develop_cost(
     uid = await WavesBind.get_uid_by_game(user_id, ev.bot_id)
     if not uid:
         return error_reply(WAVES_CODE_103)
+    if is_intl_uid(uid):
+        return intl_unavailable_msg(uid)
 
     token_result, token = await waves_api.get_ck_result(uid, user_id, ev.bot_id)
     if not token_result or not token:

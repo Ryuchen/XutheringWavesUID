@@ -164,7 +164,7 @@ async def draw_role_img(uid: str, ck: str, ev: Event):
 
         # 准备模板数据
         context = {
-            "user_name": account_info.name[:7],
+            "user_name": account_info.name[:10],
             "user_id": account_info.id,
             "level": account_info.level if account_info.is_full else 0,
             "world_level": account_info.worldLevel if account_info.is_full else 0,

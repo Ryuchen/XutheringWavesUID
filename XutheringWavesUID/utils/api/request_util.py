@@ -81,6 +81,7 @@ class RespCode(IntEnum):
     CAPTCHA_ERROR = 130  # {'code': 130, 'msg': '验证码错误，请重新输入'}
     CAPTCHA_EXPIRED = 132  #  {'code': 132, 'msg': '验证码已经过期，请重新获取'}
     ROLE_QUERY_FAILED = 1000  # {'code': 1000, 'msg': '角色查询失败', 'data': None, 'success': False} 未知
+    LAUNCHER_RETRYING = 1005  # launcher SDK 数据未就绪，需要客户端重试
     TOKEN_INVALID = 220  # {'code': 220, 'msg': '登录已过期，请重新登录'} token失效
     BAT_TOKEN_INVALID = 10903  # {'code': 10903, 'msg': '数据令牌已失效', 'data': None, 'success': False} bat失效
     DANGER_ENV = 270  # {'code': 270, 'msg': '当前环境存在风险无法进行操作，请切换网络环境后重试'} ip无了
@@ -93,11 +94,13 @@ NOT_SEND_MASTER_INFO_CODES = (
     RespCode.ERROR.value,
     RespCode.OK_ZERO.value,
     RespCode.OK_HTTP.value,
+    RespCode.BAD_REQUEST.value,
     RespCode.TOKEN_INVALID.value,
     RespCode.BAT_TOKEN_INVALID.value,
     RespCode.CAPTCHA_ERROR.value,
     RespCode.CAPTCHA_EXPIRED.value,
     RespCode.ROLE_QUERY_FAILED.value,
+    RespCode.LAUNCHER_RETRYING.value,
 )
 
 

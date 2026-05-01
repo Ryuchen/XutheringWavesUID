@@ -17,6 +17,7 @@ Plugins(name="XutheringWavesUID", force_prefix=["ww"], allow_empty_prefix=False)
 from .utils.bot_send_hook import install_bot_hooks
 from .utils.database.waves_subscribe import WavesSubscribe
 from .utils.database.waves_user_activity import WavesUserActivity
+from .utils.database.waves_user_sdk import WavesUserSdk  # noqa: F401
 from .utils.plugin_checker import is_from_waves_plugin
 
 # ===== 活跃度批量写入缓冲 =====
