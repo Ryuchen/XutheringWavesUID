@@ -132,33 +132,35 @@ def hash_id_for(name: str) -> str:
     return hashlib.sha256(name.encode()).hexdigest()[:8]
 
 
+def _is_char_id(s: str) -> bool:
+    """角色 id 一律 4 位纯数字; id2name 里武器/声骸/链等的 key 不符合此规则。"""
+    return isinstance(s, str) and len(s) == 4 and s.isdigit()
+
+
 def list_folders(t: str) -> List[dict]:
-    """列出目标类型下所有合法 char_id 条目。
+    """列出目标类型下所有合法角色条目。
 
     - 磁盘上有目录的: 真实 count
     - id2name 里有但磁盘没目录的: 合成 count=0 占位 (上传时 mkdir 会自动建)
-    - 不合法命名的目录: 忽略
+    - 非 4 位纯数字命名的目录: 忽略 (非角色或历史脏数据)
     """
     base = base_dir_for(t)
     seen: dict = {}
 
     if base.exists():
         for d in sorted(base.iterdir(), key=lambda p: p.name):
-            if not d.is_dir():
+            if not d.is_dir() or not _is_char_id(d.name):
                 continue
-            char_id = d.name
-            if not is_safe_char_id(char_id):
-                continue
-            seen[char_id] = {
-                "char_id": char_id,
-                "char_name": easy_id_to_name(char_id, char_id),
+            seen[d.name] = {
+                "char_id": d.name,
+                "char_name": easy_id_to_name(d.name, d.name),
                 "count": sum(1 for _ in iter_images(d)),
             }
 
     try:
         name_convert.ensure_data_loaded()
         for char_id in name_convert.id2name.keys():
-            if char_id in seen or not is_safe_char_id(char_id):
+            if char_id in seen or not _is_char_id(char_id):
                 continue
             seen[char_id] = {
                 "char_id": char_id,
