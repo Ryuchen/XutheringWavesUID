@@ -262,8 +262,9 @@ async def api_tmp_crop(
     """对 tmp 图执行裁剪。
     payload:
       token: str
-      x, y, w, h: float (源图像素, 允许越界后会 clamp)
-    保留原图副本; 当前文件被裁剪结果覆盖。
+      x, y, w, h: float (相对当前 tmp 图的像素坐标, 允许越界后会 clamp)
+    在 current 上做增量裁剪 (前端展示的就是 current, 坐标必须以它为基准, 否则
+    第二次起的裁剪会与可视框错位); original 仅用于 /tmp/restore 还原。
     """
     token = payload.get("token")
     if not st.is_safe_token(token):
@@ -282,7 +283,7 @@ async def api_tmp_crop(
     if current is None or original is None:
         raise HTTPException(404, "tmp not found")
 
-    with Image.open(original) as im:
+    with Image.open(current) as im:
         im.load()
         ow, oh = im.size
         x = max(0, min(x, ow - 1))

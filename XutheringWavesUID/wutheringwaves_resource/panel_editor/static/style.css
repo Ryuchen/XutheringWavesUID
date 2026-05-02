@@ -751,11 +751,14 @@ input[type="search"] {
   background-size: 16px 16px;
   border: 1px solid var(--line-1);
   border-radius: var(--r-2);
+  /* 锚到左上角: 增量裁剪后 current 尺寸会变, 用 flex 居中会让 wrap 在 stage 内
+     重新定位, 视觉上图片整块平移。统一靠左上角对齐, 内容只会"变小"不会"漂移"。 */
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 14px;
   min-height: 380px;
-  overflow: hidden;
+  overflow: auto;
 }
 .cropper__canvas-wrap {
   position: relative;
