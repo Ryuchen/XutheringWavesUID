@@ -688,6 +688,25 @@ async def draw_char_detail_img(
     if isinstance(role_detail, str):
         return role_detail
 
+    def _ph_fp(rd):
+        try:
+            pd = rd.phantomData
+            if pd is None:
+                return "phantomData=None"
+            ep = pd.equipPhantomList
+            if ep is None:
+                return f"phantomData.cost={pd.cost} equipPhantomList=None"
+            slots = [bool(x and x.phantomProp) for x in ep]
+            return f"phantomData.cost={pd.cost} equipPhantomList(len={len(ep)} bool={slots})"
+        except Exception as ex:
+            return f"_ph_fp_err: {type(ex).__name__}: {ex}"
+    logger.warning(
+        f"[鸣潮·伤害诊断] entry char_id={char_id} char={char_name} "
+        f"is_limit_query={is_limit_query} damageId={damageId} uid={uid} "
+        f"role_id={getattr(getattr(role_detail, 'role', None), 'roleId', None)} "
+        f"role_detail_id={id(role_detail)} {_ph_fp(role_detail)}"
+    )
+
     change_command = ""
     oneRank: Optional[OneRankResponse] = None
     enemy_detail: Optional[EnemyDetailData] = EnemyDetailData()
@@ -903,6 +922,15 @@ async def draw_char_detail_img(
         mz_temp.alpha_composite(mz_bg_temp, dest=(i * 190, 0))
 
     img.paste(mz_temp, (0, 1080 + jineng_len), mz_temp)
+
+    logger.warning(
+        f"[鸣潮·伤害诊断] block-b-gate char_id={char_id} char={char_name} "
+        f"is_limit_query={is_limit_query} isDraw={isDraw} "
+        f"damageDetail={'OK' if damageDetail else repr(damageDetail)} "
+        f"damageDetail_len={len(damageDetail) if damageDetail else None} "
+        f"role_detail_id={id(role_detail)} {_ph_fp(role_detail)} "
+        f"will_draw={bool(isDraw and damageDetail and role_detail.phantomData and role_detail.phantomData.equipPhantomList)}"
+    )
 
     if isDraw and damageDetail and role_detail.phantomData and role_detail.phantomData.equipPhantomList:
         # damageAttribute = card_sort_map_to_attribute(card_map)

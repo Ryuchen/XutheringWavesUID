@@ -12,9 +12,13 @@ class WavesRegister(object):
 
     @classmethod
     def register_class(cls, _id, _clz):
-        # old_cls = cls.find_class(_id)
-        # if old_cls:
-        #     raise TypeError('%s already register %s for type %s' % (cls, old_cls, _id))
+        # 防御: 不让一次失败的运行期 reload 把已有的有效注册覆盖成 None。
+        # 二次 reload (register_damage→register_rank, ID_MAPPING 还有 1408→1406 / 1501→1502
+        # / 1605→1604 这种别名) 会让同一个 damage_<id>.py 在一次 reload_all_register 里被
+        # importlib.reload 4-6 次, 任何一次 reload 中途 ImportError 都可能让 getattr(module,
+        # attr) 落到 None 或半态值上, 静默把这条 char 的伤害注册抹掉。
+        if _clz is None:
+            return
         cls._id_cls_map[_id] = _clz
 
 

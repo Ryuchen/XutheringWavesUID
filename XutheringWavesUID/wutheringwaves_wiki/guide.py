@@ -13,6 +13,7 @@ from ..utils.resource.RESOURCE_PATH import GUIDE_PATH
 from ..wutheringwaves_config.wutheringwaves_config import WutheringWavesConfig
 
 guide_map = {
+    "社区攻略": "KuroBBS",
     "金铃子攻略组": "JinLingZi",
     "丸子": "VanZi",
     "Moealkyne": "Moealkyne",
@@ -20,7 +21,6 @@ guide_map = {
     "小羊早睡不遭罪": "XiaoYang",
     "吃我无痕": "WuHen",
     "巡游天国FM": "XFM",
-    "社区攻略": "KuroBBS",
 }
 
 guide_author_map = {v: k for k, v in guide_map.items()}
@@ -47,7 +47,11 @@ async def get_guide(bot: Bot, ev: Event, char_name: str):
     imgs_result = []
     pattern = re.compile(re.escape(char_name), re.IGNORECASE)
     if "all" in config:
-        for guide_path in GUIDE_PATH.iterdir():
+        paths = sorted(
+            GUIDE_PATH.iterdir(),
+            key=lambda p: (p.name != "KuroBBS", p.name),
+        )
+        for guide_path in paths:
             # 检查是否被排除
             author_name = guide_author_map.get(guide_path.name, guide_path.name)
             if author_name in excluded_providers or any(excluded in author_name for excluded in excluded_providers):

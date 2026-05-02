@@ -60,10 +60,14 @@ ID_MAPPING = {
     "1412": "1412",
 }
 
-IMPORT_WARNING_SHOWN = False
+# 一次完整 reload_all_register 里, 单个 damage_<id>.py 可能被 reload 4-6 次
+# (register_damage + register_rank, ID_MAPPING 还有 1408→1406 / 1501→1502 / 1605→1604
+# 这种别名共用模块)。把"首装时模块尚未下载完"的初始噪声合并提示一次, 但运行期再发生
+# 任何 ImportError 必须能在日志里看到具体是哪个 char / 哪条 import 链。
+_INITIAL_IMPORT_NOTICE_SHOWN = False
 
 def _dynamic_load_and_register(attr_name, register_cls, force_reload=False):
-    global IMPORT_WARNING_SHOWN
+    global _INITIAL_IMPORT_NOTICE_SHOWN
     current_globals = globals()
     for char_id, module_suffix in ID_MAPPING.items():
         module_path = f"..waves_build.damage_{module_suffix}"
@@ -72,19 +76,37 @@ def _dynamic_load_and_register(attr_name, register_cls, force_reload=False):
             if force_reload:
                 importlib.reload(module)
             if not hasattr(module, attr_name):
+                logger.warning(
+                    f"[鸣潮·伤害注册] {module_path} 缺失 attr={attr_name} (char_id={char_id})"
+                )
                 continue
 
             target_obj = getattr(module, attr_name)
+            if target_obj is None:
+                logger.warning(
+                    f"[鸣潮·伤害注册] {module_path}.{attr_name} 为 None, 跳过 (char_id={char_id})"
+                )
+                continue
             register_cls.register_class(char_id, target_obj)
             global_var_name = f"{attr_name.split('_')[0]}_{char_id}"
             current_globals[global_var_name] = target_obj
 
-        except ImportError:
-            if not IMPORT_WARNING_SHOWN:
-                logger.warning(f"[Warning] 计算模块未找到，请观察下载是否进行，并等待下载完成后再进行其他操作，除非遇到下载问题。")
-                IMPORT_WARNING_SHOWN = True
+        except ImportError as e:
+            if not _INITIAL_IMPORT_NOTICE_SHOWN and not force_reload:
+                logger.warning(
+                    "[鸣潮·伤害注册] 计算模块未找到，请观察下载是否进行，"
+                    "并等待下载完成后再进行其他操作，除非遇到下载问题。"
+                )
+                _INITIAL_IMPORT_NOTICE_SHOWN = True
+            logger.warning(
+                f"[鸣潮·伤害注册] ImportError module={module_path} char_id={char_id} "
+                f"attr={attr_name} reload={force_reload}: {e}"
+            )
         except Exception as e:
-            logger.warning(f"[Warning] Failed to load {module_path} for {char_id}: {e}")
+            logger.warning(
+                f"[鸣潮·伤害注册] {type(e).__name__} module={module_path} "
+                f"char_id={char_id} attr={attr_name} reload={force_reload}: {e}"
+            )
 
 
 def register_damage(reload=False):
