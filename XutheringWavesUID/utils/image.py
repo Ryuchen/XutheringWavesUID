@@ -240,6 +240,26 @@ def _random_image_from_dir(directory: str) -> Optional[str]:
     return random.choice(valid_files) if valid_files else None
 
 
+def _list_custom_char_dirs(base_path: str) -> list:
+    """列出 base_path 下 4 位数字命名且非空的子目录名 (即合法 char_id 子目录)。
+    避免抽到 .DS_Store / 临时目录 / 备份目录之类的脏命名。"""
+    try:
+        entries = os.listdir(base_path)
+    except (FileNotFoundError, NotADirectoryError):
+        return []
+    result = []
+    for name in entries:
+        if len(name) != 4 or not name.isdigit():
+            continue
+        sub = f"{base_path}/{name}"
+        try:
+            if os.path.isdir(sub) and len(os.listdir(sub)) > 0:
+                result.append(name)
+        except OSError:
+            continue
+    return result
+
+
 def get_ICON():
     return Image.open(ICON)
 
@@ -254,6 +274,44 @@ async def get_random_share_bg_path():
     return SHARE_BG_PATH / path
 
 
+def _list_official_image_files(base_path: str) -> list:
+    """列出 base_path 下合法图片文件名 (跳过隐藏/非图片)。"""
+    try:
+        entries = os.listdir(base_path)
+    except (FileNotFoundError, NotADirectoryError):
+        return []
+    return [
+        f for f in entries
+        if not f.startswith(".") and f.lower().endswith((".png", ".jpg", ".jpeg", ".webp"))
+    ]
+
+
+def _pick_from_custom_or_official(
+    custom_base: str,
+    official_base: str,
+    force_not_use_custom: bool,
+) -> Optional[str]:
+    """custom (4 位数字 char_id 子目录) + 官方 文件 等权混合池随机抽一张, 返回完整路径。
+    每个 custom char_id 算一个 slot (内部再随机一张), 每个官方文件算一个 slot。"""
+    slots: list = []
+    if not force_not_use_custom:
+        slots.extend(("custom", cid) for cid in _list_custom_char_dirs(custom_base))
+    slots.extend(("official", fname) for fname in _list_official_image_files(official_base))
+    if not slots:
+        return None
+    kind, ident = random.choice(slots)
+    if kind == "custom":
+        custom_dir = f"{custom_base}/{ident}"
+        picked = _random_image_from_dir(custom_dir)
+        if picked:
+            return f"{custom_dir}/{picked}"
+    else:
+        path = f"{official_base}/{ident}"
+        if os.path.exists(path):
+            return path
+    return None
+
+
 async def get_random_waves_role_pile(char_id: Optional[str] = None, force_not_use_custom: bool = False):
     forced = _force_pile_path.get()
     if forced is not None and forced.exists():
@@ -261,6 +319,13 @@ async def get_random_waves_role_pile(char_id: Optional[str] = None, force_not_us
     if char_id:
         return await get_role_pile_default(char_id, custom=not force_not_use_custom)
 
+    picked = _pick_from_custom_or_official(
+        str(CUSTOM_MR_CARD_PATH), str(ROLE_PILE_PATH), force_not_use_custom
+    )
+    if picked:
+        return Image.open(picked).convert("RGBA")
+
+    # 极端兜底: slots 为空时回落老逻辑
     path = random.choice(os.listdir(f"{ROLE_PILE_PATH}"))
     return Image.open(f"{ROLE_PILE_PATH}/{path}").convert("RGBA")
 
@@ -280,22 +345,12 @@ async def get_random_waves_bg(char_id: Optional[str] = None, force_not_use_custo
             path = ROLE_BG_PATH / name
             if os.path.exists(path):
                 return Image.open(path).convert("RGBA"), True
-
     else:
-        bg_list = [f for f in os.listdir(f"{CUSTOM_MR_BG_PATH}") if os.path.isdir(f"{CUSTOM_MR_BG_PATH}/{f}")]
-        if not force_not_use_custom and bg_list:
-            char_id = random.choice(bg_list)
-            custom_dir = f"{CUSTOM_MR_BG_PATH}/{char_id}"
-            if os.path.isdir(custom_dir) and len(os.listdir(custom_dir)) > 0:
-                path = _random_image_from_dir(custom_dir)
-                if path:
-                    return Image.open(f"{custom_dir}/{path}").convert("RGBA"), True
-
-        else:
-            name = random.choice(os.listdir(f"{ROLE_BG_PATH}"))
-            path = ROLE_BG_PATH / name
-            if os.path.exists(path):
-                return Image.open(path).convert("RGBA"), True
+        picked = _pick_from_custom_or_official(
+            str(CUSTOM_MR_BG_PATH), str(ROLE_BG_PATH), force_not_use_custom
+        )
+        if picked:
+            return Image.open(picked).convert("RGBA"), True
 
     return await get_random_waves_role_pile(char_id, force_not_use_custom), False
 
