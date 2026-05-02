@@ -195,8 +195,10 @@ def ensure_data_loaded(force: bool = False):
             logger.exception(f"读取自定义id2name失败 {CUSTOM_ID2NAME_PATH} - {e}")
             custom_id2name = {}
 
-        # 合并自定义数据（自定义数据会覆盖默认数据）
-        id2name.update(custom_id2name)
+        # 合并自定义数据：资源中已存在的 key 以资源 value 为准，
+        # custom 仅能新增资源中没有的 kv 对，不允许覆盖资源
+        for k, v in custom_id2name.items():
+            id2name.setdefault(k, v)
 
     # 将合并后的数据写回到自定义文件中
     with open(CUSTOM_ID2NAME_PATH, "w", encoding="UTF-8") as f:
