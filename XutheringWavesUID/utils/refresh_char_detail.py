@@ -216,13 +216,15 @@ async def save_card_info(
     waves_char_rank = await get_waves_char_rank(uid, save_data, True)
 
     # 候选门槛: 不在漂泊者列表、本次确有变更、有旧分、旧分>140、
-    #   跨档 delta∈(0,20) / 未跨档 delta∈(3,30)
+    #   跨档 / 单角色刷新 delta∈(0,20) ; 否则 delta∈(3,30)
     # 选取: 优先跨越档位 (210 > 195 > 175) 的角色; 同档位中挑 new 最高
+    # 一次刷了 >=20 个角色, 不再提示 top_improver(全量刷新场景)
     TIER_THRESHOLDS = (210.0, 195.0, 175.0)
     top_improver = None
-    if waves_char_rank and refresh_update:
+    if waves_char_rank and refresh_update and len(refresh_update) < 20:
         from ..wutheringwaves_rank.draw_rank_list_card import load_char_list_data
         old_scores = await load_char_list_data(uid) or {}
+        single_char = len(refresh_update) == 1
         candidates = []
         for cr in waves_char_rank:
             if cr.roleId in SPECIAL_CHAR_INT_ALL:
@@ -241,7 +243,7 @@ async def save_card_info(
                 continue
             delta = new - old
             crossed_tier = any(new >= tier > old for tier in TIER_THRESHOLDS)
-            lo, hi = (0, 20) if crossed_tier else (3, 30)
+            lo, hi = (0, 20) if (crossed_tier or single_char) else (3, 30)
             if not (lo < delta < hi):
                 continue
             candidates.append({

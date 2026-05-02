@@ -31,7 +31,7 @@ class AccountBaseInfo(BaseModel):
 
     name: str  # 名字
     id: int  # 特征码
-    creatTime: Optional[int] = None  # 创建时间 ms
+    creatTime: Optional[int] = None  # 创建时间 秒级 unix 时间戳
     activeDays: Optional[int] = None  # 活跃天数
     level: Optional[int] = None  # 等级
     worldLevel: Optional[int] = None  # 世界等级

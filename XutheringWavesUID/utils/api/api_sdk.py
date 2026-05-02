@@ -108,14 +108,20 @@ def _resolve_server_id(role_id: Union[int, str], server_id: Optional[str] = None
     return NET_SERVER_ID_MAP.get(prefix, SERVER_ID_NET)
 
 
-def _to_ms(value: Any) -> Optional[int]:
-    """ISO 字符串 / 数字时间转毫秒时间戳。"""
+def _to_ts(value: Any) -> Optional[int]:
+    """ISO 字符串 / 数字时间转秒级 unix 时间戳。
+
+    国际服 API 返回的是 ISO 字符串（参见 kuro_py 的 EnergyRecoverTime / CreatTime
+    字段），下游 ``datetime.fromtimestamp`` 期望秒。对数值型输入做毫秒→秒的兜底
+    （>1e12 视为毫秒）。
+    """
     if value in (None, ""):
         return None
     try:
         if isinstance(value, (int, float)):
-            return int(value)
-        return int(datetime.fromisoformat(str(value)).timestamp() * 1000)
+            v = int(value)
+            return v // 1000 if v > 10**12 else v
+        return int(datetime.fromisoformat(str(value)).timestamp())
     except Exception:
         return None
 
@@ -188,7 +194,7 @@ def _adapt_account_base(base: Dict[str, Any]) -> AccountBaseInfo:
     return AccountBaseInfo(
         name=str(base.get("Name", "")),
         id=_safe_int(base.get("Id")),
-        creatTime=_to_ms(base.get("CreatTime")),
+        creatTime=_to_ts(base.get("CreatTime")),
         activeDays=base.get("ActiveDays"),
         level=base.get("Level"),
         worldLevel=base.get("WorldLevel"),
@@ -204,7 +210,7 @@ def _adapt_energy(base: Dict[str, Any]) -> EnergyData:
     return EnergyData(
         name="结晶波片",
         img="",
-        refreshTimeStamp=_to_ms(base.get("EnergyRecoverTime")) or 0,
+        refreshTimeStamp=_to_ts(base.get("EnergyRecoverTime")) or 0,
         cur=_safe_int(base.get("Energy")),
         total=_safe_int(base.get("MaxEnergy")),
     )
