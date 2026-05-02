@@ -1,16 +1,12 @@
 """基于拼音 + 字面相似度的"你可能想找"通用模糊匹配。
 
-- 处理打错字: 拼音化后用 SequenceMatcher 算相似度
-- 处理顺序颠倒: 拼音字符排序后再比较
-- 处理英文输入: 直接走字面相似度
-- 处理子串: 短输入是候选子串时给出加分
-
-pypinyin 是可选依赖；未安装时降级为纯字面匹配（打错字情况会变弱但仍可用）。
+pypinyin / rapidfuzz 都是可选依赖, 缺则降级。
 """
 
 from __future__ import annotations
 
 import difflib
+from collections import Counter
 from typing import Dict, List, Tuple, Iterable
 
 from gsuid_core.logger import logger
@@ -27,15 +23,30 @@ def _import_pypinyin():
         return None, None
 
 
+def _import_rapidfuzz():
+    try:
+        from rapidfuzz import fuzz  # type: ignore
+        return fuzz
+    except Exception:
+        logger.warning("[鸣潮] 未安装rapidfuzz，安装后模糊匹配更快, 且支持'近子串'容错加分。")
+        logger.info("[鸣潮] 安装方法 Linux/Mac: 在当前目录下执行 source .venv/bin/activate && uv pip install rapidfuzz")
+        logger.info("[鸣潮] 安装方法 Windows: 在当前目录下执行 .venv\\Scripts\\activate; uv pip install rapidfuzz")
+        return None
+
+
 lazy_pinyin, Style = _import_pypinyin()
 _HAS_PYPINYIN = lazy_pinyin is not None
 
+_rf_fuzz = _import_rapidfuzz()
+_HAS_RAPIDFUZZ = _rf_fuzz is not None
+
 
 _pinyin_cache: Dict[str, str] = {}
+_pinyin_token_cache: Dict[str, str] = {}
 
 
 def _to_pinyin(s: str) -> str:
-    """中文转无声调拼音串，非中文小写保留。命中缓存后直接返回。"""
+    """中文转无声调拼音串(无空格)，非中文小写保留。命中缓存后直接返回。"""
     if s in _pinyin_cache:
         return _pinyin_cache[s]
     if _HAS_PYPINYIN:
@@ -46,10 +57,39 @@ def _to_pinyin(s: str) -> str:
     return result
 
 
+def _to_pinyin_tokens(s: str) -> str:
+    """中文转无声调拼音, 音节间用空格分隔。"""
+    if s in _pinyin_token_cache:
+        return _pinyin_token_cache[s]
+    if _HAS_PYPINYIN:
+        result = " ".join(lazy_pinyin(s, style=Style.NORMAL)).lower()
+    else:
+        result = s.lower()
+    _pinyin_token_cache[s] = result
+    return result
+
+
 def _ratio(a: str, b: str) -> float:
     if not a or not b:
         return 0.0
+    if _HAS_RAPIDFUZZ:
+        return _rf_fuzz.ratio(a, b) / 100.0
     return difflib.SequenceMatcher(None, a, b).ratio()
+
+
+def _reorder_ratio(query: str, name: str, query_py_sorted: str, name_py_sorted: str) -> float:
+    """处理音节顺序颠倒 — 拼音 token 多重集重合率, 比字符级度量更严格。
+
+    无 pypinyin 时退化为整串拼音字母排序 ratio。
+    """
+    if not _HAS_PYPINYIN:
+        return _ratio(query_py_sorted, name_py_sorted)
+    qt = _to_pinyin_tokens(query).split()
+    nt = _to_pinyin_tokens(name).split()
+    if not qt or not nt:
+        return 0.0
+    overlap = sum((Counter(qt) & Counter(nt)).values())
+    return overlap / max(len(qt), len(nt))
 
 
 def _score_pair(query_norm: str, query_py: str, query_py_sorted: str, name: str) -> float:
@@ -61,16 +101,21 @@ def _score_pair(query_norm: str, query_py: str, query_py_sorted: str, name: str)
     s = max(
         _ratio(query_norm, n_lower),
         _ratio(query_py, n_py),
-        _ratio(query_py_sorted, n_py_sorted),
+        _reorder_ratio(query_norm, name, query_py_sorted, n_py_sorted),
     )
 
-    # 子串加分: 双方拼音都至少 3 字符时启用, 避免 yy/sh/xk 等短缩写
-    # 对其他无关 query 产生大量子串噪声命中
+    # 子串加分: 短拼音串 <3 字符时跳过, 避免短缩写产生大量噪声命中
     if query_py and n_py:
         short = min(len(query_py), len(n_py))
         long_ = max(len(query_py), len(n_py))
-        if short >= 3 and (query_py in n_py or n_py in query_py):
-            s = max(s, 0.6 + 0.4 * short / long_)
+        if short >= 3:
+            if query_py in n_py or n_py in query_py:
+                s = max(s, 0.6 + 0.4 * short / long_)
+            elif _HAS_RAPIDFUZZ:
+                # 近子串: 用 partial_ratio 容许 typo / 漏字
+                pr = _rf_fuzz.partial_ratio(query_py, n_py) / 100.0
+                if pr >= 0.85:
+                    s = max(s, pr * (0.6 + 0.4 * short / long_))
 
     return s
 

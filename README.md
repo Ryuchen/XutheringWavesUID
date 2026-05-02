@@ -79,17 +79,24 @@ https://blog.ovoii.io/posts/notes/wwbot
 > **权重和伤害计算更新时，仅需发送 ww下载全部资源 将自动重载**
 >
 > **建议安装以下额外依赖：**
-> - `playwright`：用于渲染公告、wiki图等功能。安装后还需执行 `uv run playwright install chromium`
+> - `playwright`：用于渲染公告、wiki图等功能。**安装后还需执行 `uv run playwright install chromium` 下载浏览器内核**（core 不会自动下载）
 > - `opencv-python`：用于面板图重复判断、提取面板图、相似度识别、矩阵显示共鸣链等功能
 > - `fonttools`：用于多语言字体 fallback，未安装时日韩文可能显示为方框
 > - `pypinyin`：用于模糊建议（含打错字、顺序颠倒等容错）
+> - `rapidfuzz`：配合 `pypinyin` 加速模糊匹配，并启用近子串容错（typo 子串也能命中）
+>
+> **大多数情况下你不用手动装这些**：core 启动时会读取本插件 `pyproject.toml` 的 `[project].dependencies`，对未安装的依赖自动通过多镜像 fallback（字节 → 阿里 → 清华 → 官方）调用 `pip install`。core 日志中能看到 `[CMD执行] ... pip install ...` 即表示在自动装。
+>
+> **但 core 自动安装并不保证成功**（如全部镜像不通、网络异常、磁盘问题、AutoInstallDep 配置被关闭等）。如果启动后日志提示某依赖缺失，或上述功能未启用，请手动执行：
 >
 > ```bash
 > # Linux/Mac
-> source .venv/bin/activate && uv pip install playwright opencv-python fonttools pypinyin && uv run playwright install chromium
+> source .venv/bin/activate && uv pip install playwright opencv-python fonttools pypinyin rapidfuzz && uv run playwright install chromium
 > # Windows
-> .venv\Scripts\activate; uv pip install playwright opencv-python fonttools pypinyin; uv run playwright install chromium
+> .venv\Scripts\activate; uv pip install playwright opencv-python fonttools pypinyin rapidfuzz; uv run playwright install chromium
 > ```
+>
+> 如果 core 已经把 Python 包都装好了，`playwright` 浏览器内核（`playwright install chromium`）这一步仍需自己执行一次。
 >
 > **如有条件，建议为系统补充以下字体，避免官方公告使用特殊字符时渲染异常：**
 > - emoji 字体：如 `Noto Color Emoji`、`Apple Color Emoji`、`Segoe UI Emoji`
