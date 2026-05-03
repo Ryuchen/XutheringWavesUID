@@ -183,11 +183,11 @@ def ensure_data_loaded(force: bool = False):
             f"{_prev_char_id_data_len} 项重置为空 dict): {e}"
         )
         char_id_data = {}
-    if _prev_char_id_data_len > 0 and len(char_id_data) == 0:
-        logger.error(
-            f"[鸣潮·伤害诊断] char_id_data 在本次 reload 中由 {_prev_char_id_data_len} "
-            f"项变成空 dict, force={force}"
-        )
+    # if _prev_char_id_data_len > 0 and len(char_id_data) == 0:
+    #     logger.error(
+    #         f"[鸣潮·伤害诊断] char_id_data 在本次 reload 中由 {_prev_char_id_data_len} "
+    #         f"项变成空 dict, force={force}"
+    #     )
 
     try:
         with open(MAP_PATH / "id2name.json", "r", encoding="UTF-8") as f:
@@ -204,11 +204,11 @@ def ensure_data_loaded(force: bool = False):
             f"{_prev_id2name_len} 项重置为空 dict): {e}"
         )
         id2name = {}
-    if _prev_id2name_len > 0 and len(id2name) == 0:
-        logger.error(
-            f"[鸣潮·伤害诊断] id2name 在本次 reload 中由 {_prev_id2name_len} "
-            f"项变成空 dict, force={force}"
-        )
+    # if _prev_id2name_len > 0 and len(id2name) == 0:
+    #     logger.error(
+    #         f"[鸣潮·伤害诊断] id2name 在本次 reload 中由 {_prev_id2name_len} "
+    #         f"项变成空 dict, force={force}"
+    #     )
 
     # 加载自定义 id2name.json
     if CUSTOM_ID2NAME_PATH.exists():
