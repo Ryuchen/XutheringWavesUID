@@ -513,8 +513,8 @@ async def _render_stamina_card(
     # 我去，我真变态！
     show_sign_in = not from_sdk
     show_rogue = account_info.rougeScore is not None or account_info.rougeScoreLimit is not None
-    show_tower = daily_info.towerData is not None
-    show_slash_tower = daily_info.slashTowerData is not None
+    show_tower = tower_data is not None
+    show_slash_tower = slash_data is not None
 
     context = {
         "locale": locale,
