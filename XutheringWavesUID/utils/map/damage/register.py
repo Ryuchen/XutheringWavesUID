@@ -69,12 +69,30 @@ _INITIAL_IMPORT_NOTICE_SHOWN = False
 def _dynamic_load_and_register(attr_name, register_cls, force_reload=False):
     global _INITIAL_IMPORT_NOTICE_SHOWN
     current_globals = globals()
+    logger.error(
+        f"[鸣潮·伤害诊断] _dynamic_load_and_register 开始 attr={attr_name} "
+        f"register_cls={register_cls.__name__} register_cls_id={id(register_cls)} "
+        f"map_id={id(register_cls._id_cls_map)} "
+        f"map_size_before={len(register_cls._id_cls_map)} "
+        f"force_reload={force_reload}"
+    )
     for char_id, module_suffix in ID_MAPPING.items():
         module_path = f"..waves_build.damage_{module_suffix}"
         try:
             module = importlib.import_module(module_path, package=__package__)
             if force_reload:
-                importlib.reload(module)
+                # 编译扩展 (.so/.pyd) reload 行为不稳定, 仅 reload .py / .pyc。
+                origin = ""
+                spec = getattr(module, "__spec__", None)
+                if spec is not None:
+                    origin = getattr(spec, "origin", "") or ""
+                if origin.endswith((".py", ".pyc")):
+                    importlib.reload(module)
+                else:
+                    logger.debug(
+                        f"[鸣潮·伤害注册] 跳过编译扩展 reload module={module_path} "
+                        f"origin={origin}"
+                    )
             if not hasattr(module, attr_name):
                 logger.warning(
                     f"[鸣潮·伤害注册] {module_path} 缺失 attr={attr_name} (char_id={char_id})"
@@ -83,8 +101,16 @@ def _dynamic_load_and_register(attr_name, register_cls, force_reload=False):
 
             target_obj = getattr(module, attr_name)
             if target_obj is None:
-                logger.warning(
-                    f"[鸣潮·伤害注册] {module_path}.{attr_name} 为 None, 跳过 (char_id={char_id})"
+                logger.error(
+                    f"[鸣潮·伤害诊断] {module_path}.{attr_name} 为 None, 跳过 "
+                    f"char_id={char_id} reload={force_reload}"
+                )
+                continue
+            if isinstance(target_obj, (list, dict)) and not target_obj:
+                logger.error(
+                    f"[鸣潮·伤害诊断] {module_path}.{attr_name} 为空 "
+                    f"{type(target_obj).__name__}, 跳过 char_id={char_id} "
+                    f"reload={force_reload}"
                 )
                 continue
             register_cls.register_class(char_id, target_obj)
@@ -107,6 +133,12 @@ def _dynamic_load_and_register(attr_name, register_cls, force_reload=False):
                 f"[鸣潮·伤害注册] {type(e).__name__} module={module_path} "
                 f"char_id={char_id} attr={attr_name} reload={force_reload}: {e}"
             )
+    logger.error(
+        f"[鸣潮·伤害诊断] _dynamic_load_and_register 结束 attr={attr_name} "
+        f"register_cls={register_cls.__name__} register_cls_id={id(register_cls)} "
+        f"map_id={id(register_cls._id_cls_map)} "
+        f"map_size_after={len(register_cls._id_cls_map)}"
+    )
 
 
 def register_damage(reload=False):

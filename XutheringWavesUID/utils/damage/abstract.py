@@ -1,5 +1,7 @@
 from typing import List, Union, Optional
 
+from gsuid_core.logger import logger
+
 from ...utils.damage.damage import DamageAttribute
 
 
@@ -8,16 +10,29 @@ class WavesRegister(object):
 
     @classmethod
     def find_class(cls, _id):
-        return cls._id_cls_map.get(_id)
+        result = cls._id_cls_map.get(_id)
+        if result is None or (isinstance(result, (list, dict)) and not result):
+            logger.error(
+                f"[鸣潮·伤害诊断] find_class miss cls={cls.__name__} "
+                f"id={_id} cls_obj_id={id(cls)} map_obj_id={id(cls._id_cls_map)} "
+                f"map_size={len(cls._id_cls_map)} "
+                f"sample_keys={list(cls._id_cls_map.keys())[:5]}"
+            )
+        return result
 
     @classmethod
     def register_class(cls, _id, _clz):
-        # 防御: 不让一次失败的运行期 reload 把已有的有效注册覆盖成 None。
-        # 二次 reload (register_damage→register_rank, ID_MAPPING 还有 1408→1406 / 1501→1502
-        # / 1605→1604 这种别名) 会让同一个 damage_<id>.py 在一次 reload_all_register 里被
-        # importlib.reload 4-6 次, 任何一次 reload 中途 ImportError 都可能让 getattr(module,
-        # attr) 落到 None 或半态值上, 静默把这条 char 的伤害注册抹掉。
         if _clz is None:
+            logger.error(
+                f"[鸣潮·伤害诊断] register_class None! cls={cls.__name__} "
+                f"id={_id} cls_obj_id={id(cls)}"
+            )
+            return
+        if isinstance(_clz, (list, dict)) and not _clz:
+            logger.error(
+                f"[鸣潮·伤害诊断] register_class empty {type(_clz).__name__}! "
+                f"cls={cls.__name__} id={_id} cls_obj_id={id(cls)}"
+            )
             return
         cls._id_cls_map[_id] = _clz
 
@@ -40,6 +55,17 @@ class DamageDetailRegister(WavesRegister):
 
 class DamageRankRegister(WavesRegister):
     _id_cls_map = {}
+
+
+# 抓 abstract.py 重入, 多次出现说明 Register 类被重新定义。
+logger.error(
+    f"[鸣潮·伤害诊断] abstract.py loaded module={__name__} "
+    f"file={__file__} "
+    f"DamageDetailRegister_id={id(DamageDetailRegister)} "
+    f"DamageDetail_map_id={id(DamageDetailRegister._id_cls_map)} "
+    f"DamageRankRegister_id={id(DamageRankRegister)} "
+    f"DamageRank_map_id={id(DamageRankRegister._id_cls_map)}"
+)
 
 
 class WeaponAbstract(object):
