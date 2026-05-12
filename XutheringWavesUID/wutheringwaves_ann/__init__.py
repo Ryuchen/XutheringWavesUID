@@ -98,7 +98,19 @@ def _create_ann_push_task(new_ann_need_send, datas) -> None:
     task.add_done_callback(_on_done)
 
 
-@sv_ann.on_command("公告")
+@sv_ann.on_command(
+    "公告",
+    to_ai="""查询鸣潮游戏公告。
+
+无参数: 列出当前公告索引列表（图）。
+text 是 "#<id>": 查看指定公告全文。例: text="#1456"。
+
+当用户问「最新公告 / 鸣潮公告 / 看下公告」时调用列表；用户给具体编号时查明细。
+
+Args:
+    text: 留空查公告列表；或 "#<公告ID>" 查指定公告明细。例: "#1456"。
+""",
+)
 async def ann_(bot: Bot, ev: Event):
     ann_id = ev.text
     if not ann_id or ann_id.strip() == "列表":

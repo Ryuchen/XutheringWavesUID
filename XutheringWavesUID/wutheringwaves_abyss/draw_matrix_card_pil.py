@@ -1,3 +1,4 @@
+import asyncio
 from typing import Union
 from pathlib import Path
 
@@ -5,6 +6,7 @@ from PIL import Image, ImageChops, ImageDraw
 
 from gsuid_core.logger import logger
 from gsuid_core.models import Event
+from gsuid_core.pool import to_thread
 from gsuid_core.utils.image.convert import convert_img
 from gsuid_core.utils.image.image_tools import crop_center_img
 
@@ -171,6 +173,20 @@ async def _draw_user_header(
     account_info: AccountBaseInfo,
     user_pref: str,
 ):
+    avatar_pair = None
+    try:
+        avatar_pair = await draw_pic_with_ring(ev)
+    except Exception as e:
+        logger.warning(f"[鸣潮] 矩阵PIL头像绘制失败: {e}")
+    await asyncio.to_thread(_compose_user_header_sync, card_img, account_info, user_pref, avatar_pair)
+
+
+def _compose_user_header_sync(
+    card_img: Image.Image,
+    account_info: AccountBaseInfo,
+    user_pref: str,
+    avatar_pair,
+):
     draw = ImageDraw.Draw(card_img, "RGBA")
 
     base_info_bg = _load_texture("base_info_bg.png")
@@ -198,12 +214,10 @@ async def _draw_user_header(
             "lm",
         )
 
-    try:
-        avatar, avatar_ring = await draw_pic_with_ring(ev)
+    if avatar_pair is not None:
+        avatar, avatar_ring = avatar_pair
         card_img.alpha_composite(avatar, (25, 70))
         card_img.alpha_composite(avatar_ring, (35, 80))
-    except Exception as e:
-        logger.warning(f"[鸣潮] 矩阵PIL头像绘制失败: {e}")
 
     if account_info.is_full:
         title_bar = _load_texture("title_bar.png")
@@ -233,12 +247,33 @@ async def draw_matrix_index_img(
     if not modes:
         raise ValueError(MATRIX_ERROR_NO_DATA)
 
+    avatar_pair = None
+    try:
+        avatar_pair = await draw_pic_with_ring(ev)
+    except Exception as e:
+        logger.warning(f"[鸣潮] 矩阵PIL头像绘制失败: {e}")
+
+    card_img = await _compose_matrix_index_img(
+        account_info, user_pref, current_date, matrix_detail, modes, avatar_pair
+    )
+    return await convert_img(card_img)
+
+
+@to_thread
+def _compose_matrix_index_img(
+    account_info: AccountBaseInfo,
+    user_pref: str,
+    current_date: str,
+    matrix_detail: MatrixDetail,
+    modes,
+    avatar_pair,
+):
     section_h = 76 + len(modes) * 116
     card_h = PIL_HEADER_HEIGHT + section_h + 55
     card_img = _load_texture_cover("matrix-home-bg.png", PIL_CARD_WIDTH, card_h)
     card_img.alpha_composite(Image.new("RGBA", card_img.size, (0, 0, 0, 45)), (0, 0))
 
-    await _draw_user_header(card_img, ev, account_info, user_pref)
+    _compose_user_header_sync(card_img, account_info, user_pref, avatar_pair)
     draw = ImageDraw.Draw(card_img, "RGBA")
 
     section_y = PIL_HEADER_HEIGHT
@@ -278,9 +313,10 @@ async def draw_matrix_index_img(
         )
 
     card_img = add_footer(card_img, 600, 20)
-    return await convert_img(card_img)
+    return card_img
 
 
+# TODO: PIL 卸到线程池 (队伍循环里穿插 await pic_download_from_url)
 async def draw_matrix_detail_img(
     ev: Event,
     account_info: AccountBaseInfo,

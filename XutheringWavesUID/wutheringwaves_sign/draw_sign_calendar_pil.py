@@ -3,6 +3,8 @@ from typing import Optional, Tuple
 
 from PIL import Image, ImageDraw
 
+from gsuid_core.pool import to_thread
+
 from ..utils.api.model import SignInInitData
 from ..utils.fonts.waves_fonts import waves_font_origin
 from ..utils.image import add_footer, pic_download_from_url
@@ -85,9 +87,10 @@ def _cell_box_y(row: int) -> int:
     return row * (CELL_H_MONTH + CELL_DAY_H_MONTH + CELL_GAP_MONTH)
 
 
-async def _render_month_cell(
+def _render_month_cell(
     sign_data: SignInInitData,
     goods,
+    icon: Optional[Image.Image],
     price_bg: Optional[Image.Image],
     today_no_sign: Optional[Image.Image],
     sign_day_bg: Optional[Image.Image],
@@ -104,7 +107,6 @@ async def _render_month_cell(
     if top_bg is not None:
         _paste(cell, top_bg, (0, 0))
 
-    icon = await _load(goods.goodsUrl)
     if icon is not None:
         icon = _fit(icon.convert("RGBA"), (CELL_W_MONTH, CELL_H_MONTH))
         _paste(cell, icon, (0, 0))
@@ -139,8 +141,9 @@ async def _render_month_cell(
     return cell
 
 
-async def _render_loop_cell(
+def _render_loop_cell(
     item,
+    icon: Optional[Image.Image],
     loop_card_bg: Optional[Image.Image],
     process_grey: Optional[Image.Image],
     process_light: Optional[Image.Image],
@@ -156,7 +159,6 @@ async def _render_loop_cell(
         bg = _fit(loop_card_bg.convert("RGBA"), (LOOP_CELL_SIZE, LOOP_CELL_SIZE))
         _paste(cell, bg, (card_x, 0))
 
-    icon = await _load(item["goods_url"])
     if icon is not None:
         icon_size = LOOP_CELL_SIZE - 8
         icon_img = _fit(icon.convert("RGBA"), (icon_size, icon_size))
@@ -203,11 +205,6 @@ async def render_sign_calendar_pil(
     uid_display: str,
     month: int,
 ) -> bytes:
-    main_bg = _hex(font_style.get("main_bgColor"), "#D9C7BA")
-    month_text = _hex(font_style.get("month_textColor"), "#1d1d1d")
-    cycle_title_c = _hex(font_style.get("cycle_titleColor"), "#E58A4E")
-    cycle_time_c = _hex(font_style.get("cycle_timeTextColor"), "#666666")
-
     has_loop = bool(sign_data.signLoopGoodsList and sign_data.loopSignNum > 0)
 
     cover = await _load(img_info.get("main_coverBg", ""))
@@ -233,8 +230,65 @@ async def render_sign_calendar_pil(
                     "goods_url": goods.goodsUrl,
                     "num": goods.goodsNum,
                     "is_gained": goods.isGain,
+                    "icon": await _load(goods.goodsUrl),
                 }
             )
+
+    month_icons = []
+    for goods in sign_data.signInGoodsConfigs:
+        month_icons.append(await _load(goods.goodsUrl))
+
+    return await _render_sign_calendar_sync(
+        sign_data,
+        font_style,
+        role_name,
+        uid_display,
+        month,
+        cover,
+        box_top,
+        box_center,
+        box_bottom,
+        price_bg,
+        sign_day_bg,
+        today_no_sign,
+        had_sign_in_bg,
+        cycle_bg,
+        loop_card_bg,
+        process_grey,
+        process_light,
+        loop_items,
+        month_icons,
+        has_loop,
+    )
+
+
+@to_thread
+def _render_sign_calendar_sync(
+    sign_data: SignInInitData,
+    font_style: dict,
+    role_name: str,
+    uid_display: str,
+    month: int,
+    cover,
+    box_top,
+    box_center,
+    box_bottom,
+    price_bg,
+    sign_day_bg,
+    today_no_sign,
+    had_sign_in_bg,
+    cycle_bg,
+    loop_card_bg,
+    process_grey,
+    process_light,
+    loop_items,
+    month_icons,
+    has_loop: bool,
+) -> bytes:
+    main_bg = _hex(font_style.get("main_bgColor"), "#D9C7BA")
+    month_text = _hex(font_style.get("month_textColor"), "#1d1d1d")
+    cycle_title_c = _hex(font_style.get("cycle_titleColor"), "#E58A4E")
+    cycle_time_c = _hex(font_style.get("cycle_timeTextColor"), "#666666")
 
     cover_h = cover.height if cover else 0
 
@@ -292,8 +346,9 @@ async def render_sign_calendar_pil(
         col_w = (BOX_W - 60) // 7
         strip_x_start = cx + 30
         for i, item in enumerate(loop_items):
-            cell_img = await _render_loop_cell(
+            cell_img = _render_loop_cell(
                 item,
+                item.get("icon"),
                 loop_card_bg,
                 process_grey,
                 process_light,
@@ -367,8 +422,9 @@ async def render_sign_calendar_pil(
         row = idx // CELLS_PER_ROW
         cx = grid_x_start + col * (CELL_W_MONTH + CELL_GAP_MONTH)
         cy = grid_y_start + row * (row_h + CELL_GAP_MONTH)
-        cell_img = await _render_month_cell(
-            sign_data, goods, price_bg, today_no_sign, sign_day_bg, had_sign_in_bg
+        icon = month_icons[idx] if idx < len(month_icons) else None
+        cell_img = _render_month_cell(
+            sign_data, goods, icon, price_bg, today_no_sign, sign_day_bg, had_sign_in_bg
         )
         _paste(canvas, cell_img, (cx, cy))
 

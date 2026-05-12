@@ -4,6 +4,7 @@ from typing import Dict, List, Sequence
 
 from PIL import Image, ImageDraw
 
+from gsuid_core.pool import to_thread
 from gsuid_core.utils.image.convert import convert_img
 from gsuid_core.utils.image.image_tools import crop_center_img
 
@@ -234,6 +235,13 @@ async def draw_char_alias_pil(
     avatar_url: str = "",
     char_id: str = "",
 ) -> bytes:
+    avatar = await _load_avatar(80, char_id, avatar_url)
+    canvas = await _compose_char_alias(char_name, alias_list, avatar)
+    return await convert_img(flatten_rgba(canvas, PAGE_BG))
+
+
+@to_thread
+def _compose_char_alias(char_name: str, alias_list: List[str], avatar) -> Image.Image:
     width = 600
     tags = alias_list or [char_name]
     main_x = 25
@@ -255,7 +263,6 @@ async def draw_char_alias_pil(
     draw.rectangle((main_x + 1, main_y + 4, width - main_x - 1, main_y + header_h), fill=HEADER_BG)
     draw.line((main_x, main_y + header_h, width - main_x, main_y + header_h), fill=(255, 255, 255, 28), width=1)
 
-    avatar = await _load_avatar(80, char_id, avatar_url)
     _paste_avatar(canvas, draw, 50, 45, 80, avatar=avatar)
     _draw_text(draw, (155, 66), "CHARACTER NAME", waves_font_12, ACCENT_DIM, "lm")
     _draw_text(draw, (155, 98), _fit_text(char_name, waves_font_30, 370), waves_font_30, WHITE, "lm")
@@ -267,7 +274,7 @@ async def draw_char_alias_pil(
     _draw_text(draw, (62, label_y), "ALIASES", waves_font_16, SUB_TEXT, "lm")
     _draw_tag_rows(canvas, draw, tag_rows, 50, label_y + 25, 32, 8, 8, waves_font_16, first_highlight=True, radius=6)
     add_footer(canvas, w=260, offset_y=8, color="white")
-    return await convert_img(flatten_rgba(canvas, PAGE_BG))
+    return canvas
 
 
 def _prepare_all_cards(chars: List[Dict]) -> List[Dict]:
@@ -319,13 +326,19 @@ def _draw_all_card(
 
 
 async def draw_all_char_alias_pil(chars: List[Dict]) -> bytes:
-    width = 800
     for char in chars:
         char["avatar_img"] = await _load_avatar(
             40,
             str(char.get("char_id") or ""),
             str(char.get("avatar") or ""),
         )
+    canvas = await _compose_all_char_alias(chars)
+    return await convert_img(flatten_rgba(canvas, PAGE_BG))
+
+
+@to_thread
+def _compose_all_char_alias(chars: List[Dict]) -> Image.Image:
+    width = 800
     cards = _prepare_all_cards(chars)
     cols = 3
     gap = 12
@@ -354,4 +367,4 @@ async def draw_all_char_alias_pil(chars: List[Dict]) -> bytes:
     draw.rectangle((0, footer_top, width, height), fill=(10, 10, 12, 250))
     draw.line((0, footer_top, width, footer_top), fill=(232, 201, 99, 52), width=1)
     add_footer(canvas, w=320, offset_y=8, color="white")
-    return await convert_img(flatten_rgba(canvas, PAGE_BG))
+    return canvas

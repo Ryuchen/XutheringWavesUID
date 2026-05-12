@@ -7,6 +7,7 @@ from pathlib import Path
 from msgspec import json as msgjson
 from PIL import Image, ImageDraw
 
+from gsuid_core.pool import to_thread
 from gsuid_core.utils.image.convert import convert_img
 
 from ..utils.image import (
@@ -325,7 +326,8 @@ async def parse_char_forte_data(data: Dict, char_id: str):
     return final_img
 
 
-async def draw_text_block(title, lines, width, title_font, content_font, title_color, content_color, x_pad, y_pad, shadow_rad, line_sp):
+@to_thread
+def draw_text_block(title, lines, width, title_font, content_font, title_color, content_color, x_pad, y_pad, shadow_rad, line_sp):
     # Calculate height
     content_lines = []
     for line in lines:
@@ -353,7 +355,8 @@ async def draw_text_block(title, lines, width, title_font, content_font, title_c
     return img
 
 
-async def draw_mixed_text(desc_text, input_list, width, font, color, x_pad, y_pad, shadow_rad, line_sp):
+@to_thread
+def draw_mixed_text(desc_text, input_list, width, font, color, x_pad, y_pad, shadow_rad, line_sp):
     # Prepare content segments
     segments = []
     parts = re.split(r"{(\d+)}", desc_text)
@@ -507,7 +510,8 @@ async def draw_char_chain_pil(char_id: str):
     return card_img
 
 
-async def parse_char_stats(max_stats: Stats):
+@to_thread
+def parse_char_stats(max_stats: Stats):
     labels = ["基础生命", "基础攻击", "基础防御"]
     values = [f"{max_stats.life:.0f}", f"{max_stats.atk:.0f}", f"{max_stats.def_:.0f}"]
     rows = [(label, value) for label, value in zip(labels, values)]
@@ -546,7 +550,8 @@ async def parse_char_stats(max_stats: Stats):
     return image
 
 
-async def parse_char_chain(data: Dict[int, Chain]):
+@to_thread
+def parse_char_chain(data: Dict[int, Chain]):
     y_padding = 20  # 初始位移
     x_padding = 20  # 初始位移
     line_spacing = 10  # 行间距
@@ -647,6 +652,19 @@ async def parse_char_skill(data: Dict[str, Dict[str, Skill]]):
         ("谐度破坏", "17", []),
     ]
 
+    content_w = 900
+    rate_imgs: Dict[str, Optional[Image.Image]] = {}
+    for skill_type, skill_tree_id, _relate in keys:
+        if skill_tree_id not in data:
+            continue
+        item = data[skill_tree_id]["skill"]
+        rate_imgs[skill_tree_id] = await parse_char_skill_rate(item.level, content_w)
+
+    return await _compose_char_skill(data, keys, rate_imgs)
+
+
+@to_thread
+def _compose_char_skill(data, keys, rate_imgs):
     image_width = 1000
     card_x = 30
     card_w = 940
@@ -685,7 +703,7 @@ async def parse_char_skill(data: Dict[str, Dict[str, Skill]]):
             line_items.extend(("heading", line) for line in _wrap_pil_text(relate_title, heading_font, content_w))
             line_items.extend(("text", line) for line in _wrap_pil_text(relate_desc, detail_font, content_w))
 
-        rate_img = await parse_char_skill_rate(item.level, content_w)
+        rate_img = rate_imgs.get(skill_tree_id)
         body_h = 0
         for kind, _line in line_items:
             if kind == "space":
@@ -754,7 +772,8 @@ async def parse_char_skill(data: Dict[str, Dict[str, Skill]]):
     return final_img
 
 
-async def parse_char_skill_rate(skillLevels: Optional[Dict[str, SkillLevel]], table_width: int = 900):
+@to_thread
+def parse_char_skill_rate(skillLevels: Optional[Dict[str, SkillLevel]], table_width: int = 900):
     if not skillLevels:
         return
     rows = []

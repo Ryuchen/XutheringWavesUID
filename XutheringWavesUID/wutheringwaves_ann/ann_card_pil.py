@@ -11,6 +11,7 @@ from PIL import Image, ImageOps, ImageDraw, ImageChops
 warnings.filterwarnings('ignore', category=Image.DecompressionBombWarning)
 
 from gsuid_core.logger import logger
+from gsuid_core.pool import to_thread
 from gsuid_core.utils.image.convert import convert_img
 
 from ..utils.image import (
@@ -294,19 +295,18 @@ def _draw_header(img: Image.Image, title: str, subtitle: str = "", title_right: 
     return header_h
 
 
-async def _draw_user_info(
+def _draw_user_info_sync(
     img: Image.Image,
     y: int,
     user_name: str,
     user_time: str,
-    avatar_url: str = "",
+    avatar: Optional[Image.Image] = None,
 ) -> int:
     draw = ImageDraw.Draw(img)
     section_h = 104
     draw.rectangle((0, y, PAGE_W, y + section_h), fill=PANEL_BG)
     draw.line((0, y + section_h - 1, PAGE_W, y + section_h - 1), fill=LINE_COLOR)
 
-    avatar = await _load_avatar(avatar_url, 70)
     if avatar:
         img.alpha_composite(avatar, (30, y + 17))
     else:
@@ -317,6 +317,17 @@ async def _draw_user_info(
     if user_time:
         _draw_text(draw, (118, y + 60), user_time, TEXT_SUB, ww_font_16)
     return y + section_h
+
+
+async def _draw_user_info(
+    img: Image.Image,
+    y: int,
+    user_name: str,
+    user_time: str,
+    avatar_url: str = "",
+) -> int:
+    avatar = await _load_avatar(avatar_url, 70)
+    return _draw_user_info_sync(img, y, user_name, user_time, avatar)
 
 
 async def _prepare_sections(
@@ -399,6 +410,22 @@ async def ann_list_card(user_id: Optional[str] = None) -> bytes:
     subtitle = f"用户 {user_id} 的公告列表 | 使用 {PREFIX}公告#ID 查看详情" if user_id else f"查看详细内容，使用 {PREFIX}公告#ID 查看详情"
 
     card_w, card_h = 220, 214
+
+    # 预取所有卡片封面
+    for section in sections:
+        for item in section["ann_list"]:
+            item["_cover_img"] = await _load_cover(item.get("coverUrl", ""), (card_w, 110), fit=True)
+
+    user_avatar = None
+    if user_info:
+        user_avatar = await _load_avatar(user_info.get("headCodeUrl", ""), 70)
+
+    img = await _compose_ann_list(sections, subtitle, user_info, user_id, user_avatar, card_w, card_h)
+    return await convert_img(flatten_rgba(img, PANEL_BG))
+
+
+@to_thread
+def _compose_ann_list(sections, subtitle, user_info, user_id, user_avatar, card_w, card_h) -> Image.Image:
     grid_x, grid_gap = 25, 15
     section_title_h = 50 if not user_id else 10
     total_h = 136
@@ -413,12 +440,12 @@ async def ann_list_card(user_id: Optional[str] = None) -> bytes:
     y = _draw_header(img, "鸣潮公告", subtitle)
 
     if user_info:
-        y = await _draw_user_info(
+        y = _draw_user_info_sync(
             img,
             y,
             user_info.get("userName", ""),
             user_info.get("ipRegion", ""),
-            user_info.get("headCodeUrl", ""),
+            user_avatar,
         )
 
     for section in sections:
@@ -441,18 +468,20 @@ async def ann_list_card(user_id: Optional[str] = None) -> bytes:
             row, col = divmod(index, 3)
             x = grid_x + col * (card_w + grid_gap)
             item_y = y + row * (card_h + grid_gap)
-            card = await create_item_card(card_w, card_h, item, section["color"], section["name"] == "周边")
+            card = _create_item_card_sync(
+                card_w, card_h, item, section["color"], section["name"] == "周边", item.get("_cover_img")
+            )
             _paste_masked(img, card, (x, item_y), 10)
 
         rows = (len(section["ann_list"]) + 2) // 3
         y += rows * card_h + max(rows - 1, 0) * grid_gap + 18
 
     img = add_footer(img, PAGE_W // 2, 8, color="black")
-    return await convert_img(flatten_rgba(img, PANEL_BG))
+    return img
 
 
-async def create_item_card(w, h, info, color, use_short_id):
-    """创建公告列表卡片"""
+def _create_item_card_sync(w, h, info, color, use_short_id, cover):
+    """创建公告列表卡片 (同步)"""
     card = Image.new("RGBA", (w, h), (255, 255, 255, 0))
     draw = ImageDraw.Draw(card)
     draw.rounded_rectangle((0, 0, w - 1, h - 1), radius=10, fill=PANEL_BG)
@@ -460,7 +489,6 @@ async def create_item_card(w, h, info, color, use_short_id):
     cover_h = 110
     cover_bg = (236, 240, 241, 255)
     draw.rectangle((0, 0, w, cover_h), fill=cover_bg)
-    cover = await _load_cover(info.get("coverUrl", ""), (w, cover_h), fit=True)
     if cover:
         card.alpha_composite(clean_alpha_matte(cover, cover_bg), (0, 0))
     else:
@@ -481,6 +509,12 @@ async def create_item_card(w, h, info, color, use_short_id):
     _draw_text(draw, (w - 12 - date_w, h - 28), date_text, TEXT_SUB, ww_font_14)
     draw.rounded_rectangle((0, 0, w - 1, h - 1), radius=10, outline=(0, 0, 0, 14), width=1)
     return card
+
+
+async def create_item_card(w, h, info, color, use_short_id):
+    """创建公告列表卡片"""
+    cover = await _load_cover(info.get("coverUrl", ""), (w, 110), fit=True)
+    return _create_item_card_sync(w, h, info, color, use_short_id, cover)
 
 
 def format_date(ts) -> str:
@@ -605,6 +639,13 @@ async def _prepare_detail_blocks(post_content: List[Dict[str, Any]]) -> List[Dic
 
 
 async def _draw_detail_page(res: Dict[str, Any], blocks: List[Dict[str, Any]]) -> bytes:
+    user_avatar = await _load_avatar(res.get("headCodeUrl", ""), 70)
+    img = await _compose_detail_page(res, blocks, user_avatar)
+    return await convert_img(flatten_rgba(img, PANEL_BG))
+
+
+@to_thread
+def _compose_detail_page(res: Dict[str, Any], blocks: List[Dict[str, Any]], user_avatar) -> Image.Image:
     title = res.get("postTitle", "公告详情")
     logo = _load_logo(60)
     title_x = 30 + ((logo.width + 20) if logo else 0)
@@ -625,12 +666,12 @@ async def _draw_detail_page(res: Dict[str, Any], blocks: List[Dict[str, Any]]) -
 
     img = Image.new("RGBA", (PAGE_W, max(total_h, 320)), PANEL_BG)
     y = _draw_header(img, title, title_right=True)
-    y = await _draw_user_info(
+    y = _draw_user_info_sync(
         img,
         y,
         res.get("userName", "鸣潮"),
         f"发布于 {res.get('postTime', '未知')}",
-        res.get("headCodeUrl", ""),
+        user_avatar,
     )
     y += content_top
 
@@ -644,7 +685,7 @@ async def _draw_detail_page(res: Dict[str, Any], blocks: List[Dict[str, Any]]) -
             y = _draw_image_detail_block(img, block["image"], y, video=True)
 
     img = add_footer(img, PAGE_W // 2, 8, color="black")
-    return await convert_img(flatten_rgba(img, PANEL_BG))
+    return img
 
 
 def _draw_text_detail_block(draw: ImageDraw.ImageDraw, lines: List[str], y: int) -> int:

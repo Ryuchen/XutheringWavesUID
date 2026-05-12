@@ -112,6 +112,7 @@ async def get_rank(item: MatrixRankItem) -> Optional[MatrixRankRes]:
             logger.exception(f"获取矩阵排行失败: {e}")
 
 
+# TODO: PIL 卸到线程池 (loop 内 await get_square_avatar / pic_download_from_url 频繁, 需要批量预取重构)
 async def draw_all_matrix_rank_card(bot: Bot, ev: Event):
     waves_id = await WavesBind.get_uid_by_game(ev.user_id, ev.bot_id)
     match = re.search(r"(\d+)", ev.raw_text)
@@ -514,6 +515,7 @@ async def get_role_chain_count(uid: str, role_id: int) -> int:
         return -1
 
 
+# TODO: PIL 卸到线程池 (loop 内 await get_role_chain_count / pic_download_from_url 频繁, 需要批量预取重构)
 async def draw_matrix_rank_list(bot: Bot, ev: Event):
     """绘制矩阵群排行 (PIL)"""
     start_time = time.time()

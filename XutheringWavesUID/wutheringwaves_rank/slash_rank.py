@@ -152,6 +152,7 @@ async def get_rank(item: SlashRankItem) -> Optional[SlashRankRes]:
             logger.exception(f"获取排行失败: {e}")
 
 
+# TODO: PIL 卸到线程池 (loop 内 await get_square_avatar / pic_download_from_url 较多, 需要批量预取重构)
 async def draw_all_slash_rank_card(bot: Bot, ev: Event):
     waves_id = await WavesBind.get_uid_by_game(ev.user_id, ev.bot_id)
     match = re.search(r"(\d+)", ev.raw_text)
@@ -493,6 +494,7 @@ async def get_five_star_chain_total(uid: str) -> int:
         return 0
 
 
+# TODO: PIL 卸到线程池 (loop 内 await get_role_chain_count / get_square_avatar / pic_download_from_url 频繁, 需要批量预取重构)
 async def draw_slash_rank_list(bot: Bot, ev: Event):
     """绘制无尽排行"""
     start_time = time.time()

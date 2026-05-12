@@ -5,6 +5,7 @@ from typing import Optional
 
 from PIL import Image, ImageDraw, ImageFilter
 
+from gsuid_core.pool import to_thread
 from gsuid_core.utils.image.convert import convert_img
 
 from ..utils.fonts.waves_fonts import (
@@ -118,14 +119,15 @@ def _draw_signature(
         _draw_text(draw, (x, y + idx * 28), line, waves_font_18, (127, 140, 141, 255))
 
 
-async def kuro_coin_card_pil(
+@to_thread
+def _compose_coin_card(
     user_name: str,
     user_id: str,
-    head_url: str,
-    head_frame_url: str,
     gold_num: int,
     signature: str,
-) -> bytes:
+    avatar: Optional[Image.Image],
+    frame: Optional[Image.Image],
+) -> Image.Image:
     canvas = Image.new("RGBA", (WIDTH, HEIGHT), (244, 247, 249, 255))
     shadow = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
     shadow_draw = ImageDraw.Draw(shadow, "RGBA")
@@ -138,7 +140,6 @@ async def kuro_coin_card_pil(
     draw.rounded_rectangle(CARD_BOX, radius=16, fill=(255, 255, 255, 255))
 
     avatar_x, avatar_y = 78, 78
-    avatar = await _load_url_image(head_url)
     if avatar is None:
         draw.ellipse(
             (avatar_x, avatar_y, avatar_x + 128, avatar_y + 128),
@@ -153,7 +154,6 @@ async def kuro_coin_card_pil(
         )
         canvas.alpha_composite(_circle_image(avatar, 128), (avatar_x, avatar_y))
 
-    frame = await _load_url_image(head_frame_url)
     if frame is not None:
         frame = frame.resize((152, 152), Image.LANCZOS)
         canvas.alpha_composite(frame, (avatar_x - 12, avatar_y - 12))
@@ -192,4 +192,18 @@ async def kuro_coin_card_pil(
     )
 
     add_footer(canvas, w=260, offset_y=8, color="black")
+    return canvas
+
+
+async def kuro_coin_card_pil(
+    user_name: str,
+    user_id: str,
+    head_url: str,
+    head_frame_url: str,
+    gold_num: int,
+    signature: str,
+) -> bytes:
+    avatar = await _load_url_image(head_url)
+    frame = await _load_url_image(head_frame_url)
+    canvas = await _compose_coin_card(user_name, user_id, gold_num, signature, avatar, frame)
     return await convert_img(canvas)

@@ -1,3 +1,4 @@
+import asyncio
 import copy
 import textwrap
 from pathlib import Path
@@ -6,6 +7,7 @@ from collections import defaultdict
 from PIL import Image, ImageDraw
 
 from gsuid_core.logger import logger
+from gsuid_core.pool import to_thread
 from gsuid_core.utils.image.convert import convert_img
 
 from ..utils.image import (
@@ -77,8 +79,7 @@ def _calc_sonata_canvas_height(sorted_groups: list[tuple[str, list[dict]]]) -> i
     return max(y_offset + 90, 320)
 
 
-async def _draw_sonata_card(img: Image.Image, draw: ImageDraw.ImageDraw, sonata: dict, x: int, y: int) -> int:
-    fetter_icon = await get_attribute_effect(sonata["name"])
+def _draw_sonata_card_sync(img: Image.Image, draw: ImageDraw.ImageDraw, sonata: dict, fetter_icon: Image.Image, x: int, y: int) -> int:
     fetter_icon = fetter_icon.resize((50, 50))
     img.paste(fetter_icon, (x, y), fetter_icon)
 
@@ -155,6 +156,17 @@ async def _draw_weapon_list_pil(weapon_type: str):
     # 按类型从小到大排序
     sorted_groups = sorted(weapon_groups.items(), key=lambda x: x[0])
 
+    # 预取所有武器图标
+    all_ids = [w["id"] for _, ws in sorted_groups for w in ws]
+    icon_results = await asyncio.gather(*[get_square_weapon(wid) for wid in all_ids])
+    icon_map = dict(zip(all_ids, icon_results))
+
+    img = await _compose_weapon_list(sorted_groups, target_type, icon_map)
+    return await convert_img(img)
+
+
+@to_thread
+def _compose_weapon_list(sorted_groups, target_type, icon_map):
     # 每行武器数量（单类型4列，全部类型9列）
     weapons_per_row = 9 if target_type is None else 4
     # 图标大小
@@ -224,8 +236,8 @@ async def _draw_weapon_list_pil(weapon_type: str):
                 # 计算位置（居中布局）
                 x_pos = 40 + col * horizontal_spacing
 
-                # 获取武器图标
-                weapon_icon = await get_square_weapon(weapon["id"])
+                # 获取武器图标（预取）
+                weapon_icon = icon_map[weapon["id"]]
                 weapon_icon = weapon_icon.resize((icon_size, icon_size))
 
                 # 获取并调整武器背景框
@@ -262,7 +274,7 @@ async def _draw_weapon_list_pil(weapon_type: str):
     # 裁剪图片到实际高度
     img = img.crop((0, 0, width, y_offset + 50))
     img = add_footer(img, int(width / 2), 10)  # 页脚居中
-    return await convert_img(img)
+    return img
 
 
 async def draw_sonata_list(version: str = ""):
@@ -303,6 +315,17 @@ async def _draw_sonata_list_pil(version: str = ""):
 
     sorted_groups = sorted(sonata_groups.items(), key=lambda x: float(x[0]), reverse=True)
 
+    # 预取所有合鸣效果图标
+    all_names = [s["name"] for _, ss in sorted_groups for s in ss]
+    icon_results = await asyncio.gather(*[get_attribute_effect(n) for n in all_names])
+    icon_map = dict(zip(all_names, icon_results))
+
+    img = await _compose_sonata_list(sorted_groups, version, icon_map)
+    return await convert_img(img)
+
+
+@to_thread
+def _compose_sonata_list(sorted_groups, version, icon_map):
     canvas_height = _calc_sonata_canvas_height(sorted_groups)
     img = _get_cover_waves_bg(900, canvas_height, "bg6")
     draw = ImageDraw.Draw(img)
@@ -328,12 +351,12 @@ async def _draw_sonata_list_pil(version: str = ""):
 
             # 第一列套装
             sonata1 = sonatas[i]
-            max_height = await _draw_sonata_card(img, draw, sonata1, 40, current_y)
+            max_height = _draw_sonata_card_sync(img, draw, sonata1, icon_map[sonata1["name"]], 40, current_y)
 
             # 第二列套装（如果有）
             if i + 1 < len(sonatas):
                 sonata2 = sonatas[i + 1]
-                max_height = max(max_height, await _draw_sonata_card(img, draw, sonata2, 460, current_y))
+                max_height = max(max_height, _draw_sonata_card_sync(img, draw, sonata2, icon_map[sonata2["name"]], 460, current_y))
 
             # 移动到下一行（使用当前行最大高度 + 间距）
             y_offset += max_height + 20  # 增加行间距
@@ -345,4 +368,4 @@ async def _draw_sonata_list_pil(version: str = ""):
     # 裁剪图片到实际高度，保留页脚空间，且不超过已经生成的背景画布。
     img = img.crop((0, 0, 900, min(img.height, y_offset + 90)))
     img = add_footer(img, 450, 10)
-    return await convert_img(img)
+    return img

@@ -25,7 +25,7 @@ from gsuid_core.models import Event
 from gsuid_core.utils.image.utils import sget
 from gsuid_core.utils.image.image_tools import crop_center_img
 
-from ..utils.resource.RESOURCE_PATH import (
+from .resource.RESOURCE_PATH import (
     AVATAR_PATH,
     CACHE_PATH,
     WEAPON_PATH,
@@ -604,7 +604,7 @@ async def get_event_avatar(
     img = None
 
     if is_valid_at_param:
-        from ..utils.at_help import is_valid_at
+        from .at_help import is_valid_at
 
         is_valid_at_param = is_valid_at(ev)
 

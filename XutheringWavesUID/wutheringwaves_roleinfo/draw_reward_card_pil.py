@@ -6,6 +6,7 @@ from typing import Dict, List
 from PIL import Image, ImageDraw
 
 from gsuid_core.models import Event
+from gsuid_core.pool import to_thread
 from gsuid_core.utils.image.convert import convert_img
 
 from ..utils.api.model import AccountBaseInfo
@@ -90,11 +91,11 @@ def _rounded_card(
     draw.rounded_rectangle(box, radius=radius, fill=fill, outline=outline, width=1)
 
 
-async def _draw_header(
+def _draw_header(
     card: Image.Image,
     draw: ImageDraw.ImageDraw,
     score_data: Dict,
-    ev: Event,
+    avatar_pair,
 ) -> None:
     account_info: AccountBaseInfo = score_data["account_info"]
 
@@ -115,12 +116,13 @@ async def _draw_header(
         _draw_text(draw, (220, 76), _fit_text(account_info.name, waves_font_42, 430), waves_font_42)
         _draw_text(draw, (220, 128), f"UID {score_data['display_uid']}", waves_font_25, GOLD)
 
-    try:
-        avatar, avatar_ring = await draw_pic_with_ring(ev)
-        card.paste(avatar, (45, 50), avatar)
-        card.paste(avatar_ring, (55, 60), avatar_ring)
-    except Exception:
-        pass
+    if avatar_pair is not None:
+        try:
+            avatar, avatar_ring = avatar_pair
+            card.paste(avatar, (45, 50), avatar)
+            card.paste(avatar_ring, (55, 60), avatar_ring)
+        except Exception:
+            pass
 
     if account_info.is_full:
         try:
@@ -363,10 +365,8 @@ def _draw_disclaimer(draw: ImageDraw.ImageDraw, y: int) -> int:
     return y + h + 24
 
 
-async def draw_reward_img_pil(
-    score_data: Dict,
-    ev: Event,
-) -> bytes:
+@to_thread
+def _compose_reward_img(score_data: Dict, avatar_pair) -> Image.Image:
     character_items = score_data["character_items"]
     weapon_items = score_data["weapon_items"]
     char_rows = max(1, (len(character_items) + 2) // 3)
@@ -382,7 +382,7 @@ async def draw_reward_img_pil(
         card = card.convert("RGBA")
     draw = ImageDraw.Draw(card, "RGBA")
 
-    await _draw_header(card, draw, score_data, ev)
+    _draw_header(card, draw, score_data, avatar_pair)
     y = _draw_summary(draw, summary_start, score_data)
     y = _draw_reward_grid(
         card,
@@ -403,4 +403,17 @@ async def draw_reward_img_pil(
     y = _draw_disclaimer(draw, y + 8)
 
     add_footer(card, w=600, offset_y=25)
+    return card
+
+
+async def draw_reward_img_pil(
+    score_data: Dict,
+    ev: Event,
+) -> bytes:
+    try:
+        avatar_pair = await draw_pic_with_ring(ev)
+    except Exception:
+        avatar_pair = None
+
+    card = await _compose_reward_img(score_data, avatar_pair)
     return await convert_img(card)

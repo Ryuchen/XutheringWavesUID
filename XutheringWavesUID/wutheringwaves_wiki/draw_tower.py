@@ -1,5 +1,6 @@
 "深塔和海墟挑战信息绘制"
 
+import asyncio
 import re
 import base64
 from typing import Any, Dict, Union, Optional
@@ -10,6 +11,7 @@ from PIL import Image, ImageChops, ImageDraw
 
 from gsuid_core.logger import logger
 from gsuid_core.models import Event
+from gsuid_core.pool import to_thread
 from gsuid_core.utils.image.convert import convert_img
 
 from ..utils.util import clean_tags, load_json_file
@@ -131,42 +133,41 @@ async def draw_tower_challenge_img(ev: Event, period: Optional[int] = None) -> U
         if not sections:
             return f"深塔第{period}期没有有效的层级数据"
 
-        # 计算高度
-        width = 900
-        # 预计算总高度
-        total_height = 150  # 头部
-        section_heights = []
-        for area_name, floor_data in sections:
-            h = _calculate_section_height(area_name, floor_data, width - 80)
-            section_heights.append(h)
-            total_height += h + 20
-
-        total_height += 30  # 底部padding
-
-        # 创建画布
-        card_img = get_waves_bg(width, total_height, "bg9")
-        draw = ImageDraw.Draw(card_img)
-
-        # 绘制标题
-        draw_text_with_shadow(draw, "深塔", width // 2, 50, waves_font_32, "white", anchor="mm")
-
-        # 绘制期数标签（在标题下方）
-        draw_text_with_shadow(draw, f"第{period}期", 50, 95, waves_font_20, (180, 180, 180), anchor="lm")
-
-        # 绘制层级信息
-        current_y = 130
-        for i, (area_name, floor_data) in enumerate(sections):
-            section_h = section_heights[i]
-            _draw_floor_section(card_img, (40, current_y), area_name, floor_data, width - 80, section_h)
-            current_y += section_h + 20
-
-        card_img = add_footer(card_img, color="white")
+        card_img = await _render_tower_pil(period, sections)
         card_img = await convert_img(card_img)
         return card_img
 
     except Exception as e:
         logger.error(f"Error drawing tower challenge: {e}")
         return f"绘制深塔信息失败: {str(e)}"
+
+
+@to_thread
+def _render_tower_pil(period: int, sections):
+    width = 900
+    total_height = 150
+    section_heights = []
+    for area_name, floor_data in sections:
+        h = _calculate_section_height(area_name, floor_data, width - 80)
+        section_heights.append(h)
+        total_height += h + 20
+
+    total_height += 30
+
+    card_img = get_waves_bg(width, total_height, "bg9")
+    draw = ImageDraw.Draw(card_img)
+
+    draw_text_with_shadow(draw, "深塔", width // 2, 50, waves_font_32, "white", anchor="mm")
+    draw_text_with_shadow(draw, f"第{period}期", 50, 95, waves_font_20, (180, 180, 180), anchor="lm")
+
+    current_y = 130
+    for i, (area_name, floor_data) in enumerate(sections):
+        section_h = section_heights[i]
+        _draw_floor_section(card_img, (40, current_y), area_name, floor_data, width - 80, section_h)
+        current_y += section_h + 20
+
+    card_img = add_footer(card_img, color="white")
+    return card_img
 
 
 async def draw_slash_challenge_img(ev: Event, period: Optional[int] = None) -> Union[bytes, str]:
@@ -214,170 +215,155 @@ async def draw_slash_challenge_img(ev: Event, period: Optional[int] = None) -> U
         if not endless_data:
             return f"海墟第{period}期无无尽湍渊数据"
 
-        width = 900
-
         # 加载额外的Buff数据 (可选)
         buff_json_path = MAP_CHALLENGE_PATH / "slash" / f"buff_{period}.json"
         buff_data = load_json_file(buff_json_path)
 
-        # 预计算内容高度
-        title = endless_data.get("Title", "无尽湍渊")
-        desc = endless_data.get("Desc", "")
-        desc = clean_tags(desc).rstrip("。.")
-
-        # 获取所有Floor的数据
-        floors = endless_data.get("Floor", {})
-        floor_list = list(floors.values())
-
-        # 标题区域高度
-        header_height = 120
-
-        # 描述区域高度
-        desc_start_y = header_height + 10
-        desc_lines = _wrap_matrix_text_px(desc, waves_font_18, width - 130) if desc else []
-
-        desc_height = 30 + len(desc_lines) * 26 + 10
-
-        # Buff区域高度
-        buff_height = 0
-        buff_layouts = []
-        if buff_data:
-            buff_height += 40
-            for b_name, b_desc in buff_data.items():
-                b_desc = clean_tags(b_desc).rstrip("。.")
-                b_lines = _wrap_matrix_text_px(b_desc, waves_font_16, width - 170) or [""]
-                buff_layouts.append((b_name, b_lines))
-                buff_height += 30 + len(b_lines) * 24 + 16
-
-        # 计算每个Floor的高度
-        floor_heights = []
-        for floor_data in floor_list:
-            h = 40
-
-            # Floor Desc/Buff
-            f_desc = clean_tags(floor_data.get("Desc", "")).rstrip("。.")
-            if f_desc:
-                f_desc_lines = _wrap_matrix_text_px(f_desc, waves_font_16, width - 150)
-                h += len(f_desc_lines) * 24 + 12
-
-            # Monsters
-            monsters = floor_data.get("Monsters", {})
-            monster_count = len(monsters)
-            monster_rows = (min(monster_count, 8) + MONSTER_COLS - 1) // MONSTER_COLS
-            if monster_count > 0:
-                h += 35 + monster_rows * MONSTER_CARD_H + max(0, monster_rows - 1) * MONSTER_ROW_GAP + 10
-
-            floor_heights.append(h)
-
-        monster_area_height = sum(floor_heights) + 20
-
-        total_height = desc_start_y + desc_height + buff_height + monster_area_height + 30
-
-        # 创建画布
-        card_img = get_waves_bg(width, total_height, "bg9")
-        draw = ImageDraw.Draw(card_img)
-
-        # 绘制标题
-        draw_text_with_shadow(draw, f"海墟 第{period}期", width // 2, 50, waves_font_32, "white", anchor="mm")
-
-        draw_text_with_shadow(draw, f"无尽 - {title}", width // 2, 90, waves_font_24, (255, 200, 100), anchor="mm")
-
-        # 绘制海域特性(Desc)
-        current_y = desc_start_y
-        draw_text_with_shadow(draw, "【海域特性】", 50, current_y, waves_font_20, (255, 200, 100), anchor="lm")
-        current_y += 30
-
-        for line in desc_lines:
-            draw.text((65, current_y), line, (230, 230, 230), waves_font_18, "lm")
-            current_y += 26
-
-        # 绘制额外Buff
-        if buff_data:
-            current_y += 10
-            draw_text_with_shadow(draw, "【本期信物】", 50, current_y, waves_font_20, (255, 215, 0), anchor="lm")
-            current_y += 35
-
-            for b_name, lines in buff_layouts:
-                # Buff Name
-                draw.text((65, current_y), f"◆ {b_name}", (255, 200, 100), waves_font_18, "lm")
-                current_y += 25
-
-                for i, line in enumerate(lines):
-                    if i == 0:
-                        draw.text((85, current_y), line, (220, 220, 220), waves_font_16, "lm")
-                    else:
-                        draw.text((85, current_y), line, (220, 220, 220), waves_font_16, "lm")
-                    current_y += 24
-                current_y += 10
-
-        # 绘制各个Floor
-        current_y += 10
-        for i, floor_data in enumerate(floor_list):
-            # 绘制分割标题
-            draw_text_with_shadow(draw, f"【半场 {i + 1}】", 50, current_y, waves_font_20, (100, 200, 255), anchor="lm")
-            current_y += 30
-
-            # Floor Desc
-            f_desc = clean_tags(floor_data.get("Desc", "")).rstrip("。.")
-            if f_desc:
-                lines = _wrap_matrix_text_px(f_desc, waves_font_16, width - 150)
-                for i, line in enumerate(lines):
-                    if i == 0:
-                        draw.text((65, current_y), f"· {line}", (200, 200, 200), waves_font_16, "lm")
-                    else:
-                        draw.text((65 + 12, current_y), line, (200, 200, 200), waves_font_16, "lm")
-                    current_y += 24
-                current_y += 10
-
-            # Monsters
-            monsters = floor_data.get("Monsters", {})
-
-            if monsters:
-                draw_text_with_shadow(draw, "敌人配置", 65, current_y, waves_font_18, (255, 150, 150), anchor="lm")
-                current_y += 35
-
-                x_pos_start = 60
-                x_pos = x_pos_start
-                col = 0
-                card_w = (width - 120 - MONSTER_COL_GAP * (MONSTER_COLS - 1)) // MONSTER_COLS
-                card_h = MONSTER_CARD_H
-
-                for monster_info in list(monsters.values())[:8]:
-                    name = monster_info.get("Name", "未知")
-                    element_id = monster_info.get("Element", 0)
-                    element_name = ELEMENT_NAME_MAP.get(element_id, "无")
-                    color = ELEMENT_COLOR.get(element_id, (200, 200, 200))
-                    _draw_challenge_monster_card(
-                        card_img,
-                        (x_pos, current_y),
-                        card_w,
-                        card_h,
-                        name,
-                        element_name,
-                        color,
-                    )
-
-                    col += 1
-                    if col >= MONSTER_COLS:
-                        col = 0
-                        current_y += card_h + MONSTER_ROW_GAP
-                        x_pos = x_pos_start
-                    else:
-                        x_pos += card_w + MONSTER_COL_GAP
-
-                # 如果最后一行没满，需要补上高度
-                if col > 0:
-                    current_y += card_h + MONSTER_ROW_GAP
-
-            current_y += 30
-
-        card_img = add_footer(card_img, color="white")
+        card_img = await _render_slash_pil(period, endless_data, buff_data)
         card_img = await convert_img(card_img)
         return card_img
 
     except Exception as e:
         logger.error(f"Error drawing slash challenge: {e}")
         return f"绘制海墟信息失败: {str(e)}"
+
+
+@to_thread
+def _render_slash_pil(period: int, endless_data: Dict[str, Any], buff_data):
+    width = 900
+    title = endless_data.get("Title", "无尽湍渊")
+    desc = endless_data.get("Desc", "")
+    desc = clean_tags(desc).rstrip("。.")
+
+    floors = endless_data.get("Floor", {})
+    floor_list = list(floors.values())
+
+    header_height = 120
+
+    desc_start_y = header_height + 10
+    desc_lines = _wrap_matrix_text_px(desc, waves_font_18, width - 130) if desc else []
+
+    desc_height = 30 + len(desc_lines) * 26 + 10
+
+    buff_height = 0
+    buff_layouts = []
+    if buff_data:
+        buff_height += 40
+        for b_name, b_desc in buff_data.items():
+            b_desc = clean_tags(b_desc).rstrip("。.")
+            b_lines = _wrap_matrix_text_px(b_desc, waves_font_16, width - 170) or [""]
+            buff_layouts.append((b_name, b_lines))
+            buff_height += 30 + len(b_lines) * 24 + 16
+
+    floor_heights = []
+    for floor_data in floor_list:
+        h = 40
+        f_desc = clean_tags(floor_data.get("Desc", "")).rstrip("。.")
+        if f_desc:
+            f_desc_lines = _wrap_matrix_text_px(f_desc, waves_font_16, width - 150)
+            h += len(f_desc_lines) * 24 + 12
+
+        monsters = floor_data.get("Monsters", {})
+        monster_count = len(monsters)
+        monster_rows = (min(monster_count, 8) + MONSTER_COLS - 1) // MONSTER_COLS
+        if monster_count > 0:
+            h += 35 + monster_rows * MONSTER_CARD_H + max(0, monster_rows - 1) * MONSTER_ROW_GAP + 10
+
+        floor_heights.append(h)
+
+    monster_area_height = sum(floor_heights) + 20
+
+    total_height = desc_start_y + desc_height + buff_height + monster_area_height + 30
+
+    card_img = get_waves_bg(width, total_height, "bg9")
+    draw = ImageDraw.Draw(card_img)
+
+    draw_text_with_shadow(draw, f"海墟 第{period}期", width // 2, 50, waves_font_32, "white", anchor="mm")
+    draw_text_with_shadow(draw, f"无尽 - {title}", width // 2, 90, waves_font_24, (255, 200, 100), anchor="mm")
+
+    current_y = desc_start_y
+    draw_text_with_shadow(draw, "【海域特性】", 50, current_y, waves_font_20, (255, 200, 100), anchor="lm")
+    current_y += 30
+
+    for line in desc_lines:
+        draw.text((65, current_y), line, (230, 230, 230), waves_font_18, "lm")
+        current_y += 26
+
+    if buff_data:
+        current_y += 10
+        draw_text_with_shadow(draw, "【本期信物】", 50, current_y, waves_font_20, (255, 215, 0), anchor="lm")
+        current_y += 35
+
+        for b_name, lines in buff_layouts:
+            draw.text((65, current_y), f"◆ {b_name}", (255, 200, 100), waves_font_18, "lm")
+            current_y += 25
+
+            for i, line in enumerate(lines):
+                if i == 0:
+                    draw.text((85, current_y), line, (220, 220, 220), waves_font_16, "lm")
+                else:
+                    draw.text((85, current_y), line, (220, 220, 220), waves_font_16, "lm")
+                current_y += 24
+            current_y += 10
+
+    current_y += 10
+    for i, floor_data in enumerate(floor_list):
+        draw_text_with_shadow(draw, f"【半场 {i + 1}】", 50, current_y, waves_font_20, (100, 200, 255), anchor="lm")
+        current_y += 30
+
+        f_desc = clean_tags(floor_data.get("Desc", "")).rstrip("。.")
+        if f_desc:
+            lines = _wrap_matrix_text_px(f_desc, waves_font_16, width - 150)
+            for i, line in enumerate(lines):
+                if i == 0:
+                    draw.text((65, current_y), f"· {line}", (200, 200, 200), waves_font_16, "lm")
+                else:
+                    draw.text((65 + 12, current_y), line, (200, 200, 200), waves_font_16, "lm")
+                current_y += 24
+            current_y += 10
+
+        monsters = floor_data.get("Monsters", {})
+
+        if monsters:
+            draw_text_with_shadow(draw, "敌人配置", 65, current_y, waves_font_18, (255, 150, 150), anchor="lm")
+            current_y += 35
+
+            x_pos_start = 60
+            x_pos = x_pos_start
+            col = 0
+            card_w = (width - 120 - MONSTER_COL_GAP * (MONSTER_COLS - 1)) // MONSTER_COLS
+            card_h = MONSTER_CARD_H
+
+            for monster_info in list(monsters.values())[:8]:
+                name = monster_info.get("Name", "未知")
+                element_id = monster_info.get("Element", 0)
+                element_name = ELEMENT_NAME_MAP.get(element_id, "无")
+                color = ELEMENT_COLOR.get(element_id, (200, 200, 200))
+                _draw_challenge_monster_card(
+                    card_img,
+                    (x_pos, current_y),
+                    card_w,
+                    card_h,
+                    name,
+                    element_name,
+                    color,
+                )
+
+                col += 1
+                if col >= MONSTER_COLS:
+                    col = 0
+                    current_y += card_h + MONSTER_ROW_GAP
+                    x_pos = x_pos_start
+                else:
+                    x_pos += card_w + MONSTER_COL_GAP
+
+            if col > 0:
+                current_y += card_h + MONSTER_ROW_GAP
+
+        current_y += 30
+
+    card_img = add_footer(card_img, color="white")
+    return card_img
 
 
 def _calculate_section_height(area_name: str, floor_data: Dict[str, Any], width: int) -> int:
@@ -749,6 +735,12 @@ async def _draw_matrix_challenge_pil(season: int, matrix_data: Dict[str, Any]) -
     level_name, buffs, bosses, roles = _prepare_matrix_info(matrix_data)
     if not level_name:
         return f"矩阵第{season}期数据为空"
+    card_img = await _render_matrix_pil(season, level_name, buffs, bosses, roles)
+    return await convert_img(card_img)
+
+
+@to_thread
+def _render_matrix_pil(season, level_name, buffs, bosses, roles):
 
     width = 900
     buff_item_heights = [
@@ -874,7 +866,7 @@ async def _draw_matrix_challenge_pil(season: int, matrix_data: Dict[str, Any]) -
             desc_y += 18
 
     card_img = add_footer(card_img, color="white")
-    return await convert_img(card_img)
+    return card_img
 
 
 async def draw_matrix_challenge_img(ev: Event, season: Optional[int] = None) -> Union[bytes, str]:

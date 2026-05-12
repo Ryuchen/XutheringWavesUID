@@ -255,7 +255,7 @@ def get_version(dynamic: bool = False, **kwargs):
     from ..version import XutheringWavesUID_version
 
     if dynamic:
-        from ..utils.safety import generate_dynamic_version
+        from .safety import generate_dynamic_version
 
         dynamic_version = generate_dynamic_version(**kwargs)
         return XutheringWavesUID_version + dynamic_version

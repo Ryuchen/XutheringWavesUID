@@ -42,7 +42,18 @@ async def handle_add_char_alias(bot: Bot, ev: Event):
     await bot.send("\n".join(msgs))
 
 
-@sv_list_char_alias.on_regex(rf"^(?P<name>{PATTERN})别名(列表)?$", block=True)
+@sv_list_char_alias.on_regex(
+    rf"^(?P<name>{PATTERN})别名(列表)?$",
+    block=True,
+    to_ai="""查询某角色已注册的全部别名（俗称、外号、英文缩写）。
+
+当用户问「长离别名 / 维里奈有什么外号」时调用。
+text 必须是 "<角色名>别名" 格式（regex 匹配）。例: text="长离别名"、text="椿别名列表"。
+
+Args:
+    text: "<角色名>别名" 或 "<角色名>别名列表"。例: "长离别名"。
+""",
+)
 async def handle_list_char_alias(bot: Bot, ev: Event):
     char_name = ev.regex_dict.get("name")
     if not char_name:
@@ -52,7 +63,18 @@ async def handle_list_char_alias(bot: Bot, ev: Event):
     await bot.send(msg)
 
 
-@sv_list_char_alias.on_fullmatch(("别名", "别名列表"), block=True)
+@sv_list_char_alias.on_fullmatch(
+    ("别名", "别名列表"),
+    block=True,
+    to_ai="""查询鸣潮全部角色的别名一览图（所有角色的别名汇总）。
+
+当用户问「鸣潮角色别名列表 / 都有谁的别名 / 别名一览」时调用。
+返回包含全部角色的别名表格图。
+
+Args:
+    text: 无需参数，留空即可。
+""",
+)
 async def handle_all_char_alias(bot: Bot, ev: Event):
     """Render all character aliases as a single image."""
     from ..utils.name_convert import char_alias_data, alias_to_char_name_list
