@@ -26,7 +26,7 @@ sv_waves_matrix_info = SV("waves查询矩阵信息", priority=4)
 
 
 @sv_waves_guide.on_regex(
-    rf"^(?P<wiki_name>{PATTERN})(?P<wiki_type>共鸣链|共鳴鏈|gml|命座|天赋|天賦|技能|jn|图鉴|圖鑑|专武|專武|wiki|介绍|介紹|回路|操作|机制|機制|jz)$",
+    rf"^(?P<wiki_name>{PATTERN})(?P<wiki_type>共鸣链|共鳴鏈|gml|命座|天赋|天賦|技能|jn|图鉴|圖鑑|专武|武器|專武|wiki|介绍|介紹|回路|操作|机制|機制|jz)$",
     block=True,
     to_ai="""查询鸣潮角色/武器/声骸的 wiki 图（图鉴、共鸣链、技能、机制、专武介绍等）。
 
@@ -87,7 +87,7 @@ async def send_waves_wiki(bot: Bot, ev: Event):
             msg = "[鸣潮] 未找到指定角色, 请先检查输入是否正确！"
         return await bot.send(msg, at_sender)
     else:
-        if wiki_type in ("专武", "專武"):
+        if wiki_type in ("专武", "專武", "武器"):
             wiki_name = wiki_name + "专武"
         img = await draw_wiki_weapon(wiki_name)
         if isinstance(img, str) or not img:
