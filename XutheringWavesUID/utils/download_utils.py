@@ -2,6 +2,7 @@ import os
 import json
 import shutil
 import hashlib
+import tempfile
 from pathlib import Path
 
 from gsuid_core.logger import logger
@@ -64,6 +65,27 @@ def check_file_hash(path: Path) -> bool:
 
 
 
+def _atomic_copy_tree(src, dst):
+    """逐文件 写临时文件 + os.replace 原子替换。"""
+    src_path = Path(src)
+    for src_file in src_path.rglob("*"):
+        if not src_file.is_file():
+            continue
+        dst_file = Path(dst) / src_file.relative_to(src_path)
+        dst_file.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp = tempfile.mkstemp(dir=dst_file.parent, prefix=".tmp_")
+        os.close(fd)
+        try:
+            shutil.copy2(src_file, tmp)
+            os.replace(tmp, dst_file)
+        except Exception:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+            raise
+
+
 def copy_if_different(src, dst, name, soft=False):
     """复制并返回是否有更新"""
     if not os.path.exists(src):
@@ -93,7 +115,7 @@ def copy_if_different(src, dst, name, soft=False):
     if needs_update:
         try:
             if not soft:
-                shutil.copytree(src, dst, dirs_exist_ok=True)
+                _atomic_copy_tree(src, dst)
         except Exception as e:
             logger.exception(f"[鸣潮] {name} 更新失败！{e}")
         logger.info(f"[鸣潮] {name} 更新完成！")

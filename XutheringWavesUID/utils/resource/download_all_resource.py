@@ -266,7 +266,6 @@ async def reload_all_modules():
 
 
 async def notify_master_and_restart(reason: str = "构建文件已更新，正在重启..."):
-    # 含 .so 的构建无法在进程内热重载(会段错误), 必须整核重启; 重启前先通知【联系主人】订阅
     from gsuid_core.subscribe import gs_subscribe
     from gsuid_core.buildin_plugins.core_command.core_restart.restart import (
         restart_genshinuid,
