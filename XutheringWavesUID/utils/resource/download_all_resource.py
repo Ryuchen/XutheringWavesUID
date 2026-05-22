@@ -265,29 +265,26 @@ async def reload_all_modules():
     await reload_ai_rag()
 
 
-async def notify_master_and_reload(
-    reason: str = "构建文件已更新，正在重载插件...", notify_master: bool = True
-):
-    from gsuid_core.utils.plugins_update.reload_plugin import reload_plugin
+async def notify_master_and_restart(reason: str = "构建文件已更新，正在重启..."):
+    # 含 .so 的构建无法在进程内热重载(会段错误), 必须整核重启; 重启前先通知【联系主人】订阅
+    from gsuid_core.subscribe import gs_subscribe
+    from gsuid_core.buildin_plugins.core_command.core_restart.restart import (
+        restart_genshinuid,
+    )
 
-    if notify_master:
-        from gsuid_core.subscribe import gs_subscribe
+    try:
+        subs = await gs_subscribe.get_subscribe("联系主人")
+    except Exception as e:
+        subs = None
+        logger.warning(f"[鸣潮] 获取主人订阅失败: {e}")
 
-        try:
-            subs = await gs_subscribe.get_subscribe("联系主人")
-        except Exception as e:
-            subs = None
-            logger.warning(f"[鸣潮] 获取主人订阅失败: {e}")
+    if subs:
+        for sub in subs:
+            try:
+                await sub.send(f"[鸣潮] {reason}")
+            except Exception as e:
+                logger.warning(f"[鸣潮] 重启通知发送失败: {e}")
+    else:
+        logger.info("[鸣潮] 无【联系主人】订阅, 跳过重启通知")
 
-        if subs:
-            for sub in subs:
-                try:
-                    await sub.send(f"[鸣潮] {reason}")
-                except Exception as e:
-                    logger.warning(f"[鸣潮] 重载通知发送失败: {e}")
-        else:
-            logger.info("[鸣潮] 无【联系主人】订阅, 跳过重载通知")
-
-    retcode = reload_plugin("XutheringWavesUID")
-    logger.info(f"[鸣潮] 重载插件结果: {retcode}")
-    return retcode
+    await restart_genshinuid(is_send=False)
