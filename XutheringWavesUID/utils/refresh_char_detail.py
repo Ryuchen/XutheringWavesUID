@@ -9,7 +9,7 @@ from gsuid_core.logger import logger
 from gsuid_core.models import Event
 
 from .hint import error_reply
-from .util import get_version
+from .util import get_version, hide_uid
 from .api.model import RoleList, AccountBaseInfo, OwnedRoleInfoResponse
 from .waves_api import waves_api
 from .resource.constant import SPECIAL_CHAR_INT_ALL
@@ -345,13 +345,13 @@ async def refresh_char(
         return role_info.throw_msg()
 
     if isinstance(role_info.data, dict) and "roleList" not in role_info.data:
-        return f"鸣潮特征码[{uid}]的角色数据未公开展示，请【{PREFIX}登录】或在库街区展示角色"
+        return f"鸣潮特征码[{hide_uid(uid)}]的角色数据未公开展示，请【{PREFIX}登录】或在库街区展示角色"
 
     try:
         role_info = RoleList.model_validate(role_info.data)
     except Exception as e:
         logger.exception(f"{uid} 角色信息解析失败", e)
-        msg = f"鸣潮特征码[{uid}]获取数据失败\n1.是否注册过库街区\n2.库街区能否查询当前鸣潮特征码数据"
+        msg = f"鸣潮特征码[{hide_uid(uid)}]获取数据失败\n1.是否注册过库街区\n2.库街区能否查询当前鸣潮特征码数据"
         return msg
 
     request_role_ids: List[int] = []

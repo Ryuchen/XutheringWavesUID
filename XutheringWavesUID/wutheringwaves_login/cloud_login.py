@@ -17,9 +17,8 @@ from gsuid_core.web_app import app
 
 from ..utils.database.models import WavesBind
 from ..utils.database.waves_gacha_cloud import WavesGachaCloud
-from ..utils.error_reply import ERROR_CODE, WAVES_CODE_102
 from ..utils.resource.RESOURCE_PATH import custom_waves_template, waves_templates
-from ..utils.waves_api import waves_api
+from ..utils.util import get_hide_uid_pref, hide_uid
 from ..utils.waves_build.cloud_api import (
     GEETEST_CAPTCHA_ID,
     GEETEST_PRODUCT,
@@ -81,24 +80,13 @@ async def _persist_and_bind(
 
 
 # ===== 登录成功 → 入库后尝试更新一次抽卡记录 ===================
-async def _login_then_update(
-    bot: Bot, ev: Event, uid: str, record_id: str, *, already: bool
-):
+async def _login_then_update(bot: Bot, ev: Event, uid: str, record_id: str):
     at_sender = True if ev.group_id else False
-    head = "已有有效云登录" if already else "云登录成功，已记录"
-
-    ck = await waves_api.get_self_waves_ck(uid, ev.user_id, ev.bot_id)
-    if not ck:
-        return await bot.send(
-            (" " if at_sender else "")
-            + f"{GAME_TITLE} {head} UID{uid}\n"
-            + ERROR_CODE[WAVES_CODE_102],
-            at_sender=at_sender,
-        )
+    user_pref = await get_hide_uid_pref(uid, ev.user_id, ev.bot_id)
 
     await bot.send(
         (" " if at_sender else "")
-        + f"{GAME_TITLE} {head} UID{uid}\n"
+        + f"{GAME_TITLE} 云登录成功，已记录 UID{hide_uid(uid, user_pref)}\n"
         + f"正在尝试更新抽卡记录！以后更新可使用【{PREFIX}更新抽卡记录】",
         at_sender=at_sender,
     )
@@ -109,17 +97,8 @@ async def _login_then_update(
 
 # ===== 指令入口 ===============================================
 async def cloud_login_entry(bot: Bot, ev: Event):
-    # 1) 复用：已有有效云登录记录，校验+续期回写即可，无需再扫码
-    reuse = await WavesGachaCloud.select_latest_valid(ev.user_id, ev.bot_id)
-    if reuse and reuse.uid:
-        record_id = await fetch_cloud_record_id(ev.user_id, ev.bot_id, reuse.uid)
-        if record_id:
-            return await _login_then_update(
-                bot, ev, reuse.uid, record_id, already=True
-            )
-        # 续期失败 → 落到扫码重登
-
-    # 2) 网页登录：本地用自带网页，外置交给 ww-login
+    # 每次抽卡登录都走完整登录流程, 允许为不同 uid 各建一条记录
+    # (复用/续期已有记录交给 更新抽卡记录)
     url, is_local = await get_url()
     url = url.rstrip("/")
     if is_local:
@@ -166,15 +145,14 @@ async def _cloud_login_web(bot: Bot, ev: Event, url: str):
                         )
                     record_id = await fetch_cloud_record_id(ev.user_id, ev.bot_id, uid)
                     if not record_id:
+                        user_pref = await get_hide_uid_pref(uid, ev.user_id, ev.bot_id)
                         return await bot.send(
                             (" " if at_sender else "")
-                            + f"{GAME_TITLE} 云登录成功，UID{uid} 已记录\n"
+                            + f"{GAME_TITLE} 云登录成功，UID{hide_uid(uid, user_pref)} 已记录\n"
                             + "抽卡记录拉取失败",
                             at_sender=at_sender,
                         )
-                    return await _login_then_update(
-                        bot, ev, uid, record_id, already=False
-                    )
+                    return await _login_then_update(bot, ev, uid, record_id)
 
                 if phase == "failed":
                     err = state.get("error_msg") or "云登录失败"
@@ -279,15 +257,14 @@ async def _cloud_login_other(bot: Bot, ev: Event, url: str):
 
                     record_id = await fetch_cloud_record_id(ev.user_id, ev.bot_id, uid)
                     if not record_id:
+                        user_pref = await get_hide_uid_pref(uid, ev.user_id, ev.bot_id)
                         return await bot.send(
                             (" " if at_sender else "")
-                            + f"{GAME_TITLE} 云登录成功，UID{uid} 已记录\n"
+                            + f"{GAME_TITLE} 云登录成功，UID{hide_uid(uid, user_pref)} 已记录\n"
                             + "抽卡记录拉取失败",
                             at_sender=at_sender,
                         )
-                    return await _login_then_update(
-                        bot, ev, uid, record_id, already=False
-                    )
+                    return await _login_then_update(bot, ev, uid, record_id)
         except asyncio.TimeoutError:
             return await bot.send("登录超时!", at_sender=at_sender)
         except Exception as e:

@@ -856,9 +856,9 @@ async def draw_char_detail_img(
     # 右侧属性: 有评分时左半留分数位, 否则用旧布局
     right_image_temp = Image.new("RGBA", (600, 1100))
     if score_report is not None:
-        right_prop_y = 90
-        right_weapon_banner_y = 595
-        weapon_name_y = 745
+        right_prop_y = 100
+        right_weapon_banner_y = 605
+        weapon_name_y = 765
         weapon_bg_y = 745
     else:
         right_prop_y = 80
@@ -1571,7 +1571,7 @@ async def ph_card_draw_optimal(
     ph_sum_value: int = 250,
     locale: str = "",
 ):
-    """最优声骸区域: ph_card_draw 布局, 声骸卡使用 best_loadout, 评分槽显示综合评分."""
+    """最优声骸区域: ph_card_draw 布局, 声骸卡使用 best_loadout, 评分槽显示培养目标 (SSS/150)."""
     best_loadout = getattr(score_report, "best_loadout", None) or []
     equipPhantomList = (
         role_detail.phantomData.equipPhantomList
@@ -1683,8 +1683,7 @@ async def ph_card_draw_optimal(
             ),
         )
 
-    score = float(getattr(score_report, "score", 0.0) or 0.0)
-    grade = get_panel_score_grade(score)
+    grade = "sss"
     sh_score_bg_c = Image.open(TEXT_PATH / f"sh_score_bg_{grade}.png")
     score_temp = Image.new("RGBA", sh_score_bg_c.size)
     score_temp.alpha_composite(sh_score_bg_c)
@@ -1692,14 +1691,14 @@ async def ph_card_draw_optimal(
     score_temp.alpha_composite(sh_score_c)
     score_temp_draw = ImageDraw.Draw(score_temp)
     draw_text_with_fallback(score_temp_draw, (180, 260), t("综合评级", locale), GREY, waves_font_30 if locale == "en" else waves_font_40, "mm")
-    draw_text_with_fallback(score_temp_draw, (180, 380), f"{score:.2f}分", "white", waves_font_40, "mm")
+    draw_text_with_fallback(score_temp_draw, (180, 380), "150.00分", "white", waves_font_40, "mm")
     draw_text_with_fallback(score_temp_draw, (180, 440), t("综合评分", locale), GREY, waves_font_30 if locale == "en" else waves_font_40, "mm")
     phantom_temp.alpha_composite(score_temp, dest=(30, 120 + ph_sum_value))
 
     return phantom_temp
 
 
-_SCORE_RULE_TITLE = "综合评分规则（测试中）"
+_SCORE_RULE_TITLE = "综合评分规则"
 _SCORE_RULE_LINES = (
     "以2-3分钟的常规队伍循环为基础，根据当前套装和装备求解得到最优期望伤害的词条作为基准计分",
     "由于共鸣效率会影响限定时间内循环次数，作为分段的独立乘区。单通等特殊场景不适用综合评分",
@@ -1751,8 +1750,9 @@ async def draw_char_optimize_img(ev: Event, uid: str, char: str, user_id: str, w
     ph_sum_value = 60
     jineng_len = 180
     echo_list = 1400
-    score_offset = 0
-    bar_shift = 0
+    score_offset = 115
+    bar_shift = 25
+    jineng_len += score_offset + bar_shift
 
     # ── 账户 / CK ────────────────────────────────────────────────────────
     ck = ""
@@ -1896,10 +1896,10 @@ async def draw_char_optimize_img(ev: Event, uid: str, char: str, user_id: str, w
     # ── 右侧属性/武器区 ───────────────────────────────────────────────────
     right_image_temp = Image.new("RGBA", (600, 1100))
 
-    right_prop_y = 80
-    right_weapon_banner_y = 550
-    weapon_name_y = 680
-    weapon_bg_y = 620
+    right_prop_y = 100
+    right_weapon_banner_y = 605
+    weapon_name_y = 765
+    weapon_bg_y = 745
 
     # 武器 banner
     banner2 = Image.open(TEXT_PATH / "banner2.png")
@@ -2158,6 +2158,15 @@ async def draw_char_optimize_img(ev: Event, uid: str, char: str, user_id: str, w
         skill_bar.alpha_composite(skill_bg_temp, dest=(_x, _y))
         temp_i += 1
     img.alpha_composite(skill_bar, dest=(0, 1150 + score_offset + bar_shift))
+
+    # 综合评分块: 立绘下方 / skill_bar 上方 (与面板一致)
+    grade = get_panel_score_grade(score_report.score)
+    grade_icon = Image.open(TEXT_PATH / f"panel_score_{grade}.png")
+    grade_icon = grade_icon.resize((200, 200))
+    img.alpha_composite(grade_icon, dest=(90, 1080 + bar_shift))
+    score_draw = ImageDraw.Draw(img)
+    draw_text_with_fallback(score_draw, (400, 1140 + bar_shift), f"{score_report.score:.2f}", "white", waves_font_40, "mm")
+    draw_text_with_fallback(score_draw, (400, 1200 + bar_shift), t("综合评分", locale), GREY, waves_font_40, "mm")
 
     img = add_footer(img)
     img = await convert_img(img)
