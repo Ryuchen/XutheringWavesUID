@@ -636,6 +636,14 @@
         "need_ck": false,
         "need_sk": false,
         "need_admin": false
+      },
+      {
+        "name": "综合评分说明",
+        "desc": "查看综合评分的计算规则与评分细则说明图（计分基准、共鸣效率乘区、收益得分等）。",
+        "eg": "综合评分说明",
+        "need_ck": false,
+        "need_sk": false,
+        "need_admin": false
       }
     ]
   },

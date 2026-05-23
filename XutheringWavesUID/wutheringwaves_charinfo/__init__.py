@@ -1,4 +1,6 @@
 import asyncio
+from pathlib import Path
+
 from PIL import Image
 from gsuid_core.sv import SV
 from gsuid_core.bot import Bot
@@ -93,8 +95,11 @@ waves_new_get_one_char_info = SV("waves新获取单个角色面板", priority=3)
 waves_new_char_detail = SV("waves角色面板", priority=5)
 waves_char_tips = SV("waves面板图权限提示和审核", priority=4)
 waves_char_detail = SV("waves角色查询", priority=5)
+waves_score_explain = SV("waves综合评分说明", priority=5)
 
 _repeated_card_lock = asyncio.Lock()
+
+SCORE_EXPLAIN_IMG = Path(__file__).parent / "综合评分说明.png"
 
 
 TYPE_MAP = {
@@ -838,3 +843,11 @@ async def send_char_optimize_msg(bot: Bot, ev: Event):
         return await bot.send(res.with_tip(im, canonical_cmd), at_sender)
     if isinstance(im, bytes):
         return await bot.send(res.wrap(im, canonical_cmd), at_sender)
+
+
+@waves_score_explain.on_fullmatch(("综合评分说明", "综合评分细则", "综合评分规则"), block=True)
+async def send_score_explain_msg(bot: Bot, ev: Event):
+    if not SCORE_EXPLAIN_IMG.exists():
+        return await bot.send("[鸣潮] 暂无综合评分说明图")
+    img = await convert_img(SCORE_EXPLAIN_IMG)
+    await bot.send(MessageSegment.image(img))

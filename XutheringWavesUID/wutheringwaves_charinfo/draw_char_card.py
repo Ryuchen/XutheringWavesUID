@@ -2034,6 +2034,11 @@ async def draw_char_optimize_img(ev: Event, uid: str, char: str, user_id: str, w
         t(_SCORE_RULE_TITLE, locale, partial=True),
         SPECIAL_GOLD, waves_font_28, "lm",
     )
+    draw_text_with_fallback(
+        rp_draw, (_rule_w - 40, _RULE_TITLE_H // 2 + 4),
+        f"{t('评分细则请发送', locale)} {PREFIX}综合评分说明",
+        SPECIAL_GOLD, waves_font_28, "rm",
+    )
     rp_draw.line(
         [(40, _RULE_TITLE_H), (_rule_w - 40, _RULE_TITLE_H)],
         fill=(255, 255, 255, 45), width=2,
