@@ -28,6 +28,11 @@ from . import storage as st
 
 _STATIC_DIR = Path(__file__).parent / "static"
 
+# 框选可超出原图(越界部分白色填充)后, 画布尺寸的安全上限, 防 OOM:
+# 单边 ≤ 原图各边 3 倍且 ≤ 8000px; 同时总像素 ≤ 40MP(单边限幅挡不住极端长宽比)。
+_MAX_CROP_DIM = 8000
+_MAX_CROP_PIXELS = 40_000_000
+
 
 def _try_update_orb_cache(p: Path) -> None:
     try:
@@ -278,7 +283,7 @@ async def api_tmp_crop(
     """对 tmp 图执行裁剪。
     payload:
       token: str
-      x, y, w, h: float (相对当前 tmp 图的像素坐标, 允许越界后会 clamp)
+      x, y, w, h: float (相对当前 tmp 图的像素坐标, 允许框选超出原图, 越界部分白色填充)
     在 current 上做增量裁剪 (前端展示的就是 current, 坐标必须以它为基准, 否则
     第二次起的裁剪会与可视框错位); original 仅用于 /tmp/restore 还原。
     """
@@ -302,11 +307,28 @@ async def api_tmp_crop(
     with Image.open(current) as im:
         im.load()
         ow, oh = im.size
-        x = max(0, min(x, ow - 1))
-        y = max(0, min(y, oh - 1))
-        w = max(1, min(w, ow - x))
-        h = max(1, min(h, oh - y))
-        cropped = im.crop((x, y, x + w, y + h))
+
+        # 允许框选超出原图: 越界部分白色填充, 不再 clamp 到原图范围。仍限制画布尺寸防 OOM。
+        if w > min(_MAX_CROP_DIM, ow * 3) or h > min(_MAX_CROP_DIM, oh * 3):
+            raise HTTPException(400, "crop size too large")
+        if w * h > _MAX_CROP_PIXELS:
+            raise HTTPException(400, "crop size too large")
+
+        is_jpeg = current.suffix.lower() in (".jpg", ".jpeg")
+        keep_alpha = (not is_jpeg) and im.mode in ("RGBA", "LA", "P")
+        mode = "RGBA" if keep_alpha else "RGB"
+        fill = (255, 255, 255, 255) if keep_alpha else (255, 255, 255)
+        canvas = Image.new(mode, (w, h), fill)
+
+        # 原图与框选框的重叠区域(原图坐标系), 仅在有重叠时把对应内容贴回白底画布。
+        ix0, iy0 = max(0, x), max(0, y)
+        ix1, iy1 = min(ow, x + w), min(oh, y + h)
+        if ix1 > ix0 and iy1 > iy0:
+            region = im.crop((ix0, iy0, ix1, iy1))
+            if region.mode != mode:
+                region = region.convert(mode)
+            canvas.paste(region, (ix0 - x, iy0 - y))
+        cropped = canvas
 
     suffix = current.suffix
     out = BytesIO()

@@ -26,8 +26,9 @@ const state = {
   thumbSize: null,
   // single-crop tmp:
   cropTmp: null,              // {token, suffix, source: {w,h}, current: {w,h}, kind: "upload" | "edit-existing", origin: {char_id,name}? }
-  cropRect: null,             // {x,y,w,h} display coords
+  cropRect: null,             // {x,y,w,h} display coords (图像坐标系, 原点=图片左上角)
   cropImgEl: null,
+  cropClient: null,           // {w,h} 上次记录的图片显示尺寸, 供窗口缩放校正
   // batch:
   batchItems: [],             // [{token,name,suffix,width,height,size,confirmed?,charId?}]
   batchAllow: false,          // confirm-all checkbox
@@ -649,21 +650,58 @@ function renderCropper(body) {
   body.append(bar, stage);
 }
 
+// 裁剪框贴边时的最小留白(px), 也是 CSS .cropper__canvas-wrap 的初始 padding。
+// 框选超出原图时, 该侧 padding 会按超出量动态增大(见 layoutCropper), 形成"往外拉自动外扩"的白色填充预览。
+const CROP_FRAME = 12;
+
+// 面板(card)图渲染参数: 自定义图经 resize_and_center 以 contain 方式缩放居中进 PANEL_OUT,
+// 「查看面板图」只显示其中 PANEL_VIS 窗口(与后端 card_utils._PANEL_VISIBLE_BOX_LOCAL 对齐)。
+const PANEL_OUT = { w: 560, h: 1000 };
+const PANEL_VIS = { l: 60, t: 95, r: 500, b: 900 };
+
+// 计算「查看面板图」实际可见窗口, 返回相对"裁剪框左上角"的显示坐标(裁剪框即将来保存的图)。
+// 裁剪框尺寸变化时实时重算 → 虚线随裁剪框联动。无法计算时返回 null。
+// 复刻后端 card_utils.resize_and_center: W×H 以 contain 缩放居中进 560×1000, 仅显示窗口 (60,95,500,900)。
+// 直接用裁剪框显示尺寸计算: 显示是源的等比缩放, 可见窗口占框的"比例"与源坐标系一致, 故结果等价。
+function panelVisibleRectInCrop(W, H) {
+  if (!(W > 0) || !(H > 0)) return null;
+  const f = (W > H) ? (PANEL_OUT.w / W) : (PANEL_OUT.h / H);
+  const pasteX = (PANEL_OUT.w - W * f) / 2;
+  const pasteY = (PANEL_OUT.h - H * f) / 2;
+  // 可见窗口映射回框坐标, 并 clamp 到框内(超出部分是居中留白/白色填充, 不算可见内容)
+  const l = Math.max(0, Math.min((PANEL_VIS.l - pasteX) / f, W));
+  const t = Math.max(0, Math.min((PANEL_VIS.t - pasteY) / f, H));
+  const r = Math.max(0, Math.min((PANEL_VIS.r - pasteX) / f, W));
+  const b = Math.max(0, Math.min((PANEL_VIS.b - pasteY) / f, H));
+  if (r <= l || b <= t) return null;
+  return { x: l, y: t, w: r - l, h: b - t };
+}
+
 function initCropRect(img, wrap) {
   // Initialize crop rect to full image (display coords)
   const w = img.clientWidth;
   const h = img.clientHeight;
   state.cropRect = { x: 0, y: 0, w, h };
+  state.cropClient = { w, h };  // 记录当前显示尺寸, 供窗口缩放时按比例校正
   drawCropRect(wrap);
   updateRectReadout();
 }
 
 function drawCropRect(wrap) {
-  let rect = wrap.querySelector(".cropper__rect");
   if (!state.cropRect) {
-    rect?.remove();
+    wrap.querySelector(".cropper__rect")?.remove();
+    wrap.querySelector(".cropper__visbox")?.remove();
     return;
   }
+  // 仅面板(card)类型显示「查看面板图」实际可见区引导(灰蒙版); 体力/背景类型不显示。
+  if (state.type === "card") {
+    if (!wrap.querySelector(".cropper__visbox")) {
+      wrap.append(el("div", { class: "cropper__visbox" }));
+    }
+  } else {
+    wrap.querySelector(".cropper__visbox")?.remove();
+  }
+  let rect = wrap.querySelector(".cropper__rect");
   if (!rect) {
     rect = el("div", { class: "cropper__rect" });
     for (const h_ of ["nw", "n", "ne", "e", "se", "s", "sw", "w"]) {
@@ -672,15 +710,64 @@ function drawCropRect(wrap) {
     rect.addEventListener("pointerdown", ev => startDrag(ev, wrap, rect));
     wrap.append(rect);
   }
-  applyRectStyle(rect, state.cropRect);
+  layoutCropper(wrap);
 }
 
-function applyRectStyle(rect, r) {
-  rect.style.left = `${r.x}px`;
-  rect.style.top = `${r.y}px`;
-  rect.style.width = `${r.w}px`;
-  rect.style.height = `${r.h}px`;
+// 统一布局: 按框选超出量动态设置 wrap padding(白色外扩区), 再据此定位裁剪框与可见区引导框。
+function layoutCropper(wrap) {
+  const r = state.cropRect;
+  const img = state.cropImgEl;
+  if (!wrap || !r || !img) return;
+  const iw = img.clientWidth, ih = img.clientHeight;
+  // 框选超出原图时, 对应侧 padding 按超出量动态增大(白色填充预览); 未超出侧保持最小留白。
+  // 用 ceil 保证 padL ≥ -r.x, 框左/上边不会溢出白色填充区(亚像素也不漏)。
+  const padL = Math.max(CROP_FRAME, Math.ceil(-r.x));
+  const padT = Math.max(CROP_FRAME, Math.ceil(-r.y));
+  const padR = Math.max(CROP_FRAME, Math.ceil(r.x + r.w - iw));
+  const padB = Math.max(CROP_FRAME, Math.ceil(r.y + r.h - ih));
+  wrap.style.padding = `${padT}px ${padR}px ${padB}px ${padL}px`;
+
+  // 图片左上角位于 padding 盒内 (padL, padT); 裁剪框用图像坐标系, 叠加该偏移。
+  const rect = wrap.querySelector(".cropper__rect");
+  if (rect) {
+    rect.style.left = `${padL + r.x}px`;
+    rect.style.top = `${padT + r.y}px`;
+    rect.style.width = `${r.w}px`;
+    rect.style.height = `${r.h}px`;
+  }
+  // 可见区引导: 相对裁剪框计算(框=将来保存的图), 故随裁剪框实时联动; 再叠加框在 wrap 内的位置。
+  const vis = wrap.querySelector(".cropper__visbox");
+  if (vis) {
+    const v = panelVisibleRectInCrop(r.w, r.h);
+    if (v) {
+      vis.style.display = "";
+      vis.style.left = `${padL + r.x + v.x}px`;
+      vis.style.top = `${padT + r.y + v.y}px`;
+      vis.style.width = `${v.w}px`;
+      vis.style.height = `${v.h}px`;
+    } else {
+      vis.style.display = "none";
+    }
+  }
 }
+
+// 浏览器窗口缩放时图片显示尺寸会变, 按比例校正 cropRect 并重新布局, 否则裁剪框与图片错位。
+function onCropperResize() {
+  if (state.mode !== "single-crop") return;
+  const img = state.cropImgEl;
+  if (!img || !state.cropRect || !state.cropClient) return;
+  const nw = img.clientWidth, nh = img.clientHeight;
+  const ow = state.cropClient.w, oh = state.cropClient.h;
+  if (!ow || !oh) { state.cropClient = { w: nw, h: nh }; return; }
+  if (nw === ow && nh === oh) return;
+  const rx = nw / ow, ry = nh / oh;
+  const r = state.cropRect;
+  state.cropRect = { x: r.x * rx, y: r.y * ry, w: r.w * rx, h: r.h * ry };
+  state.cropClient = { w: nw, h: nh };
+  layoutCropper(img.parentElement);
+  updateRectReadout();
+}
+window.addEventListener("resize", onCropperResize);
 
 function startDrag(ev, wrap, rect) {
   ev.preventDefault();
@@ -701,28 +788,31 @@ function startDrag(ev, wrap, rect) {
   let pending = null;
   const flush = () => {
     pending = null;
-    applyRectStyle(rect, state.cropRect);
+    layoutCropper(wrap);
     updateRectReadout();
   };
 
   const move = e => {
-    let { x, y, w, h } = start;
     const dx = e.clientX - start.sx;
     const dy = e.clientY - start.sy;
+    // 允许框选超出原图: 各边最多向外扩展一个图尺寸(即输出 ≤ 3×), 越界部分由后端白色填充
+    const MIN = 8;
+    const minBX = -maxW, maxBX = 2 * maxW;
+    const minBY = -maxH, maxBY = 2 * maxH;
+    let { x, y, w, h } = start;
     if (!isHandle) {
-      x += dx; y += dy;
+      // 整体拖动: 平移后 clamp 位置, 尺寸不变
+      x = Math.min(Math.max(start.x + dx, minBX), maxBX - w);
+      y = Math.min(Math.max(start.y + dy, minBY), maxBY - h);
     } else {
-      if (direction.includes("w")) { x += dx; w -= dx; }
-      if (direction.includes("e")) { w += dx; }
-      if (direction.includes("n")) { y += dy; h -= dy; }
-      if (direction.includes("s")) { h += dy; }
+      // 拉伸: 只移动被拖的边, 对边固定(避免触边时把对边一起带动)
+      let left = start.x, top = start.y, right = start.x + start.w, bottom = start.y + start.h;
+      if (direction.includes("w")) left = Math.min(Math.max(left + dx, minBX), right - MIN);
+      if (direction.includes("e")) right = Math.max(Math.min(right + dx, maxBX), left + MIN);
+      if (direction.includes("n")) top = Math.min(Math.max(top + dy, minBY), bottom - MIN);
+      if (direction.includes("s")) bottom = Math.max(Math.min(bottom + dy, maxBY), top + MIN);
+      x = left; y = top; w = right - left; h = bottom - top;
     }
-    w = Math.max(8, w);
-    h = Math.max(8, h);
-    x = Math.max(0, Math.min(x, maxW - w));
-    y = Math.max(0, Math.min(y, maxH - h));
-    w = Math.min(w, maxW - x);
-    h = Math.min(h, maxH - y);
     state.cropRect = { x, y, w, h };
     if (pending == null) pending = requestAnimationFrame(flush);
   };
@@ -774,8 +864,9 @@ function displayToSourceRect(rect) {
   const sx = img.naturalWidth / img.clientWidth;
   const sy = img.naturalHeight / img.clientHeight;
   return {
-    x: Math.max(0, Math.round(rect.x * sx)),
-    y: Math.max(0, Math.round(rect.y * sy)),
+    // 允许负坐标(框选越过原图左/上边界), 越界部分后端白色填充
+    x: Math.round(rect.x * sx),
+    y: Math.round(rect.y * sy),
     w: Math.max(1, Math.round(rect.w * sx)),
     h: Math.max(1, Math.round(rect.h * sy)),
   };
@@ -831,6 +922,7 @@ function _resetCropState() {
   state.cropTmp = null;
   state.cropRect = null;
   state.cropImgEl = null;
+  state.cropClient = null;
   state.editWarnDismissed = false;
 }
 
