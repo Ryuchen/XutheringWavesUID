@@ -123,7 +123,7 @@ async def _cloud_login_web(bot: Bot, ev: Event, url: str):
         },
     )
 
-    await send_login(bot, ev, f"{url}/waves/i/{user_token}")
+    await send_login(bot, ev, f"{url}/waves/i/{user_token}", refresh_panel=False)
 
     try:
         async with timeout(180):
@@ -197,7 +197,7 @@ async def _cloud_login_other(bot: Bot, ev: Event, url: str):
         if not token:
             return await bot.send("服务请求失败! 请稍后再试\n", at_sender=at_sender)
 
-        await send_login(bot, ev, f"{url}/waves/i/{token}")
+        await send_login(bot, ev, f"{url}/waves/i/{token}", refresh_panel=False)
 
         times = 3
         try:

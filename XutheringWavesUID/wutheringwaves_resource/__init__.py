@@ -42,8 +42,8 @@ async def send_download_resource_msg(bot: Bot, ev: Event):
     if check_file_hash(BUILD_TEMP) or check_file_hash(MAP_BUILD_TEMP):    
         await download_all_resource()
     
-    build_updated = copy_if_different(BUILD_TEMP, BUILD_PATH, "安全工具资源")
-    map_updated = copy_if_different(MAP_BUILD_TEMP, MAP_BUILD_PATH, "伤害计算资源")
+    build_updated = copy_if_different(BUILD_TEMP, BUILD_PATH, "安全工具资源", soft=True)
+    map_updated = copy_if_different(MAP_BUILD_TEMP, MAP_BUILD_PATH, "伤害计算资源", soft=True)
 
     if build_updated or map_updated:
         await bot.send("[鸣潮] 构建文件已更新，正在重启...")
@@ -57,16 +57,6 @@ async def send_download_resource_msg(bot: Bot, ev: Event):
 
 
 async def startup():
-    build_applied = copy_if_different(BUILD_TEMP, BUILD_PATH, "安全工具资源")
-    map_applied = copy_if_different(MAP_BUILD_TEMP, MAP_BUILD_PATH, "伤害计算资源")
-    if build_applied or map_applied:
-        logger.info("[鸣潮] 应用已下载的新构建, 重启加载...")
-        from gsuid_core.buildin_plugins.core_command.core_restart.restart import (
-            restart_genshinuid,
-        )
-        await restart_genshinuid(is_send=False)
-        return
-
     await reload_all_modules()  # 已有资源，先加载，不然检查资源列表太久了
     logger.info("[鸣潮] 等待资源下载完成...")
     await download_all_resource()

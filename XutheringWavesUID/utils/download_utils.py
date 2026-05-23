@@ -68,9 +68,10 @@ def check_file_hash(path: Path) -> bool:
 def _atomic_copy_tree(src, dst):
     """逐文件 写临时文件 + os.replace 原子替换。"""
     src_path = Path(src)
-    for src_file in src_path.rglob("*"):
-        if not src_file.is_file():
-            continue
+    files = [f for f in src_path.rglob("*") if f.is_file()]
+    # 锁敏感的编译扩展先复制
+    files.sort(key=lambda p: p.suffix.lower() not in (".pyd", ".so", ".dll", ".dylib"))
+    for src_file in files:
         dst_file = Path(dst) / src_file.relative_to(src_path)
         dst_file.parent.mkdir(parents=True, exist_ok=True)
         fd, tmp = tempfile.mkstemp(dir=dst_file.parent, prefix=".tmp_")
@@ -113,11 +114,12 @@ def copy_if_different(src, dst, name, soft=False):
                 break
 
     if needs_update:
-        try:
-            if not soft:
+        if not soft:
+            try:
                 _atomic_copy_tree(src, dst)
-        except Exception as e:
-            logger.exception(f"[鸣潮] {name} 更新失败！{e}")
+            except Exception as e:
+                logger.exception(f"[鸣潮] {name} 更新失败！{e}")
+                return False
         logger.info(f"[鸣潮] {name} 更新完成！")
         return True
     else:

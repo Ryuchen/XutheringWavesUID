@@ -181,7 +181,7 @@ async def get_gacha_log_by_link(bot: Bot, ev: Event):
         if ev.command.startswith("强制"):
             await bot.logger.info("[WARNING]本次为强制刷新")
             is_force = True
-        await bot.send(f"UID{hide_uid(uid, user_pref)}开始执行[刷新抽卡记录],需要一定时间，请稍等!\n官方仅保存近180天抽卡记录，仅更新该部分。")
+        await bot.send(f"UID{hide_uid(uid, user_pref)}开始执行[更新抽卡记录]，需要一定时间，请稍等!\n官方仅保存近180天抽卡记录，仅更新该部分。")
         im = await save_gachalogs(ev, uid, record_id, is_force)
 
         if im.startswith("🌱"):
