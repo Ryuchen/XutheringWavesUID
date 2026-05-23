@@ -347,7 +347,7 @@ async def ph_card_draw(
             score_temp_draw = ImageDraw.Draw(score_temp)
 
             draw_text_with_fallback(score_temp_draw, (180, 260), t("声骸评级", locale), GREY, waves_font_30 if locale == 'en' else waves_font_40, "mm")
-            draw_text_with_fallback(score_temp_draw, (180, 380), f"{phantom_score:.2f}分", "white", waves_font_40, "mm")
+            draw_text_with_fallback(score_temp_draw, (180, 380), f"{phantom_score:.2f}{t('分', locale)}", "white", waves_font_40, "mm")
             draw_text_with_fallback(score_temp_draw, (180, 440), t("声骸评分", locale), GREY, waves_font_30 if locale == 'en' else waves_font_40, "mm")
         else:
             abs_bg = Image.open(TEXT_PATH / "abs.png")
@@ -1368,7 +1368,7 @@ async def draw_char_score_img(ev: Event, uid: str, char: str, user_id: str, wave
             score_temp_draw = ImageDraw.Draw(score_temp)
 
             draw_text_with_fallback(score_temp_draw, (180, 260), t("声骸评级", locale), GREY, waves_font_30 if locale == 'en' else waves_font_40, "mm")
-            draw_text_with_fallback(score_temp_draw, (180, 380), f"{phantom_score:.2f}分", "white", waves_font_40, "mm")
+            draw_text_with_fallback(score_temp_draw, (180, 380), f"{phantom_score:.2f}{t('分', locale)}", "white", waves_font_40, "mm")
             draw_text_with_fallback(score_temp_draw, (180, 440), t("声骸评分", locale), GREY, waves_font_30 if locale == 'en' else waves_font_40, "mm")
         else:
             abs_bg = Image.open(TEXT_PATH / "abs.png")
@@ -1691,7 +1691,7 @@ async def ph_card_draw_optimal(
     score_temp.alpha_composite(sh_score_c)
     score_temp_draw = ImageDraw.Draw(score_temp)
     draw_text_with_fallback(score_temp_draw, (180, 260), t("综合评级", locale), GREY, waves_font_30 if locale == "en" else waves_font_40, "mm")
-    draw_text_with_fallback(score_temp_draw, (180, 380), "150.00分", "white", waves_font_40, "mm")
+    draw_text_with_fallback(score_temp_draw, (180, 380), f"150.00{t('分', locale)}", "white", waves_font_40, "mm")
     draw_text_with_fallback(score_temp_draw, (180, 440), t("综合评分", locale), GREY, waves_font_30 if locale == "en" else waves_font_40, "mm")
     phantom_temp.alpha_composite(score_temp, dest=(30, 120 + ph_sum_value))
 
