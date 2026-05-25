@@ -1,4 +1,5 @@
 import os
+import sys
 import importlib
 import json
 import shutil
@@ -7,10 +8,94 @@ import tempfile
 import threading
 import time
 from pathlib import Path
+from contextlib import contextmanager
 
 from gsuid_core.logger import logger
 
 BUILD_COPY_LOCK = threading.RLock()
+
+# 跨进程文件锁: 串行化多实例的 build 落盘, 防止自重启被进程管理器双拉起时
+# 两个进程同时 _atomic_copy_tree 造成「半替换」的模块集被 import 到。
+_BUILD_LOCK_PATH = None
+
+
+def _get_build_lock_path() -> Path:
+    global _BUILD_LOCK_PATH
+    if _BUILD_LOCK_PATH is None:
+        # 放安装目录内(与落盘目标同处): 跨实例共享, 且不受 systemd PrivateTmp 隔离;
+        # 若放 /tmp, PrivateTmp=yes 时各实例 /tmp 互相隔离, 锁会形同虚设。
+        from .resource.RESOURCE_PATH import BUILD_ROOT
+
+        _BUILD_LOCK_PATH = Path(BUILD_ROOT) / ".build_copy.lock"
+    return _BUILD_LOCK_PATH
+
+
+@contextmanager
+def build_interprocess_lock(timeout: float = 120.0):
+    """跨进程独占锁。取锁超时则降级继续(仍有线程锁兜底), 不阻断启动。"""
+    f = None
+    acquired = False
+    try:
+        try:
+            # 二进制模式: Windows 下 msvcrt.locking 按文件指针锁字节, 避免文本模式位置歧义
+            f = open(_get_build_lock_path(), "a+b")
+        except OSError as e:
+            logger.warning(f"[鸣潮] 构建锁文件打开失败, 降级继续: {e}")
+            yield False
+            return
+
+        deadline = time.time() + timeout
+        if sys.platform == "win32":
+            import msvcrt
+
+            while True:
+                try:
+                    f.seek(0)
+                    msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, 1)
+                    acquired = True
+                    break
+                except OSError:
+                    if time.time() >= deadline:
+                        break
+                    time.sleep(0.2)
+        else:
+            import fcntl
+
+            while True:
+                try:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    acquired = True
+                    break
+                except OSError:
+                    if time.time() >= deadline:
+                        break
+                    time.sleep(0.2)
+
+        if not acquired:
+            logger.warning(
+                "[鸣潮] 跨进程构建锁获取超时, 降级继续。出现真实竞争时, "
+                "请检查自动启动方式是否导致重启时带起了多个相同实例!!! "
+                "(systemd/pm2/docker + 自重启的 kill+自 spawn 会双拉起)"
+            )
+        yield acquired
+    finally:
+        if f is not None:
+            try:
+                if acquired:
+                    if sys.platform == "win32":
+                        import msvcrt
+
+                        try:
+                            f.seek(0)
+                            msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
+                        except OSError:
+                            pass
+                    else:
+                        import fcntl
+
+                        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+            finally:
+                f.close()
 
 
 def count_files(directory: Path, pattern: str = "*") -> int:
@@ -144,12 +229,12 @@ def _atomic_copy_tree(src, dst):
 
 
 def copy_build_files(soft=False):
-    with BUILD_COPY_LOCK:
+    with BUILD_COPY_LOCK, build_interprocess_lock():
         return _copy_build_files(soft)
 
 
 def import_after_build_copy(module_name, package=None):
-    with BUILD_COPY_LOCK:
+    with BUILD_COPY_LOCK, build_interprocess_lock():
         _copy_build_files()
         return importlib.import_module(module_name, package=package)
 
