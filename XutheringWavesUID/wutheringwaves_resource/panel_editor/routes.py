@@ -376,7 +376,7 @@ async def api_tmp_restore(payload: dict, _: None = Depends(require_auth)):
     return {"token": token, "width": w, "height": h, "size": current.stat().st_size}
 
 
-def _save_resized(p: Path, im: Image.Image) -> int:
+def _save_resized(p: Path, im: Image.Image) -> None:
     out = BytesIO()
     suffix = p.suffix.lower()
     if suffix in (".jpg", ".jpeg"):
@@ -385,9 +385,7 @@ def _save_resized(p: Path, im: Image.Image) -> int:
         im.save(out, "WEBP", quality=90)
     else:
         im.save(out, "PNG")
-    data = out.getvalue()
-    p.write_bytes(data)
-    return len(data)
+    p.write_bytes(out.getvalue())
 
 
 @app.post("/waves/panel-edit/api/tmp/resize")

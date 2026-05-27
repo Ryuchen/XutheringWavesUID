@@ -794,25 +794,13 @@ input[type="search"] {
   opacity: 0.45;
   pointer-events: none;
 }
-/* card 类型: rect = 实际保存图的边界 (不可拖, 用粗 outline + 外蒙版强调) */
-.cropper__rect--passive {
-  cursor: default;
-  pointer-events: none;
-  border: 1px dashed rgba(255, 255, 255, 0.55);
-  outline: 2px solid var(--accent);
-  box-shadow: 0 0 0 99999px rgba(7, 9, 13, 0.55);
-}
-.cropper__rect--passive::before,
-.cropper__rect--passive::after {
-  display: none;
-}
 /* 用 .cropper__visbox.cropper__visbox--active 提升 specificity, 防止
    后面基础 .cropper__visbox 规则把 pointer-events 覆盖回 none */
 .cropper__visbox.cropper__visbox--active {
   pointer-events: auto;
   cursor: move;
   border: 1px solid var(--accent);
-  /* 蒙版由外层 rect--passive 统一负责, 避免叠加变更深 */
+  /* 蒙版由外层 rect 统一负责, 避免与 visbox 自带蒙版叠加变更深 */
   box-shadow: none;
   touch-action: none;
 }
@@ -880,6 +868,9 @@ input[type="search"] {
   border-radius: 2px;
   touch-action: none;
 }
+.cropper__rect .handle { z-index: 5; }
+.cropper__visbox.cropper__visbox--active { z-index: 4; }
+.cropper__visbox.cropper__visbox--active .handle { z-index: 6; }
 /* 透明的扩展点击/触摸热区, 不影响视觉, 增大命中范围 */
 .handle::before {
   content: "";
@@ -1462,7 +1453,7 @@ input[type="search"] {
   }
   .cropper__actions {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
   .cropper__actions .btn {
