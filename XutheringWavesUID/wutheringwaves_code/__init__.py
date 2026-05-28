@@ -1,7 +1,7 @@
 import re
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import httpx
 
@@ -40,11 +40,15 @@ async def get_sign_func(bot: Bot, ev: Event):
         order = code.get("order", "")
         if order in invalid_code_list or not order:
             continue
-        reward = code.get("reward", "")
         label = code.get("label", "")
+        if is_code_expired(label):
+            continue
+        reward = code.get("reward", "")
         msg = [f"兑换码: {order}", f"奖励: {reward}", label]
         msgs.append("\n".join(msg))
 
+    if not msgs:
+        return await bot.send("[鸣潮] 暂无可用兑换码")
     await bot.send(msgs)
 
 
@@ -77,35 +81,20 @@ def is_code_expired(label: str) -> bool:
 
     expire_month = int(match.group(1))
     expire_day = int(match.group(2))
-    expire_hour = int(match.group(2))
+    expire_hour = int(match.group(3))
 
     now = datetime.now()
-    current_month = now.month
-
-    expire_year = now.year
-    # 处理跨年的情况
-    if current_month < expire_month:
-        # 当前月份小于截止月份，说明截止日期是去年的
-        expire_year -= 1
-    elif current_month == expire_month:
-        # 当前月份等于截止月份，需要比较日期
-        if now.day > expire_day:
-            # 当前日期已经过了截止日期，说明是明年的
-            expire_year += 1
-    else:
-        # 当前月份大于截止月份，使用当前年份
-        pass
-
     if expire_hour == 24:
-        expire_hour = 23
-        expire_min = 59
-        expire_sec = 59
+        expire_hour, expire_min, expire_sec = 23, 59, 59
     else:
-        expire_min = 0
-        expire_sec = 0
+        expire_min, expire_sec = 0, 0
 
-    # 构建截止时间
-    expire_date = datetime(expire_year, expire_month, expire_day, expire_hour, expire_min, expire_sec)
+    # 取距 now 最近的候选年(±183 天窗口), 兼顾年初查去年末码 / 年末查明年初码两种跨年场景。
+    # 整 183 天歧义点采用 >= 显式归前/后一年, 不留模糊地带。
+    expire_date = datetime(now.year, expire_month, expire_day, expire_hour, expire_min, expire_sec)
+    if expire_date - now >= timedelta(days=183):
+        expire_date = expire_date.replace(year=now.year - 1)
+    elif now - expire_date >= timedelta(days=183):
+        expire_date = expire_date.replace(year=now.year + 1)
 
-    # 比较时间
     return now > expire_date

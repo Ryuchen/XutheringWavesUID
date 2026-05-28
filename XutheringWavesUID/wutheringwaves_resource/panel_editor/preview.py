@@ -157,7 +157,7 @@ async def render_rank_preview(char_id: str, image_path: Path) -> Optional[bytes]
         waves_font_30,
         waves_font_44,
     )
-    from ...wutheringwaves_rank.darw_rank_card import TITLE_I, char_mask, logo_img
+    from ...wutheringwaves_rank.draw_rank_card import TITLE_I, char_mask, logo_img
     from ...utils.resource.constant import SPECIAL_CHAR_NAME
 
     char_name = easy_id_to_name(char_id, "漂泊者")

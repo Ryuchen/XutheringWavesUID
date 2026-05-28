@@ -235,7 +235,7 @@ def load_json_file(json_path: Path) -> Optional[Dict[str, Any]]:
         with open(json_path, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
-        logger.error(f"Failed to load json {json_path}: {e}")
+        logger.error(f"[鸣潮·工具] Failed to load json {json_path}: {e}")
         return None
 
 

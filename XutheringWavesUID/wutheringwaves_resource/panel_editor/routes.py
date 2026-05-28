@@ -231,11 +231,16 @@ async def api_image(
 # ------------------------- 临时上传 / 裁剪 -------------------------
 
 
+_MAX_UPLOAD_BYTES = 100 * 1024 * 1024  # 100 MB 防手滑
+
+
 async def _stage_upload(file: UploadFile) -> Optional[dict]:
-    """读 + 校验 + 落盘一份 tmp; 失败返回 None。"""
+    """读 + 校验 + 落盘一份 tmp; 失败返回 None；超大抛 413。"""
     raw = await file.read()
     if not raw:
         return None
+    if len(raw) > _MAX_UPLOAD_BYTES:
+        raise HTTPException(413, f"file too large (>{_MAX_UPLOAD_BYTES // 1024 // 1024}MB)")
     try:
         with Image.open(BytesIO(raw)) as im:
             im.load()

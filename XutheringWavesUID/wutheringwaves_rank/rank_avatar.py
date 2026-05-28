@@ -39,7 +39,7 @@ async def _fetch_sender_avatar_image(url: str) -> Optional[Image.Image]:
         pic_cache.set(cache_key, img)
         return img
     except Exception as e:
-        logger.debug(f"sender_avatar 抓取失败 {url}: {e}")
+        logger.debug(f"[鸣潮·排行头像] sender_avatar 抓取失败 url={url}: {e}")
         return None
 
 
@@ -50,7 +50,7 @@ async def _fetch_db_avatar_image(user_id: Optional[str]) -> Optional[Image.Image
     try:
         url = await WavesUser.get_avatar_url(user_id)
     except Exception as e:
-        logger.debug(f"db avatar_url 查询失败 user_id={user_id}: {e}")
+        logger.debug(f"[鸣潮·排行头像] db avatar_url 查询失败 user_id={user_id}: {e}")
         return None
     if not url:
         return None

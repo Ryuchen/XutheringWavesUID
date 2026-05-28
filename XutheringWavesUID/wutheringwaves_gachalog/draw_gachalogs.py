@@ -294,7 +294,9 @@ async def draw_card(uid: str, ev: Event):
     title_num = len([1 for i in gachalogs.keys() if "新手" not in i])
 
     total_data = _compute_pool_stats(gachalogs)
-    await save_gacha_stats(uid, total_data)
+    stats_path = PLAYER_PATH / str(uid) / "gachaStats.json"
+    if not stats_path.exists():
+        await save_gacha_stats(uid, total_data)
 
     # 预加载所有抽卡物品的图标
     item_icon_cache: Dict[str, Image.Image] = {}
