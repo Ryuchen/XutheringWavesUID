@@ -110,7 +110,7 @@ async def draw_card_help():
 
     pc = "\n".join(
         [
-            "PC获取方式",
+            "PC获取方式（已失效，建议使用上方两种获取方式）",
             "1.打开游戏抽卡界面，点开换取记录",
             "2.在鸣潮安装的目录下进入目录：`Wuthering Waves\\Wuthering Waves Game\\Client\\Saved\\Logs`",
             "3.找到文件`Client.log`并用记事本打开",
