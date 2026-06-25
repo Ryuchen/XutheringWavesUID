@@ -350,10 +350,11 @@ def _compose_char_list(
     bar_star_h = 110
     n = len(char_assets)
     if two_col:
-        width = 2000
-        header_h = 330
+        col_w = 920
+        width = col_w + 1000
+        header_h = 280
         rows = (n + 1) // 2
-        h = header_h + rows * bar_star_h + 80
+        h = header_h + rows * bar_star_h + 130
     else:
         width = 1000
         header_h = 230 + 260
@@ -386,10 +387,7 @@ def _compose_char_list(
     # 角色数量统计: 双列时横排到右侧, 单列时在头像下方
     info_bg = _draw_info_bg(stats)
     if two_col:
-        card_img.paste(info_bg, (1000, 35), info_bg)
-        hint_draw = ImageDraw.Draw(card_img)
-        hint = f"可指定  {PREFIX}练度统计 五星/四星/全部"
-        hint_draw.text((width // 2, header_h - 30), hint, SPECIAL_GOLD, waves_font_24, "mm")
+        card_img.paste(info_bg, (col_w, 35), info_bg)
     else:
         card_img.paste(info_bg, (0, 230), info_bg)
 
@@ -399,12 +397,17 @@ def _compose_char_list(
         if two_col:
             col = 0 if index < rows else 1
             row = index if col == 0 else index - rows
-            _x = col * 1000
+            _x = col * col_w
             _y = header_h + row * bar_star_h
         else:
             _x = 0
             _y = header_h + index * bar_star_h
         card_img.paste(bar_star, (_x, _y), bar_star)
+
+    if two_col:
+        hint_draw = ImageDraw.Draw(card_img)
+        hint = f"可指定  {PREFIX}练度统计 五星/四星/全部"
+        hint_draw.text((width // 2, header_h + rows * bar_star_h + 35), hint, SPECIAL_GOLD, waves_font_24, "mm")
 
     card_img = add_footer(card_img)
     return card_img

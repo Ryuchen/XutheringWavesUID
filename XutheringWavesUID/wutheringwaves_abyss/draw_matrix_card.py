@@ -92,8 +92,8 @@ async def _resolve_special_chars(uid: str, char_ids_map: dict) -> dict:
 
     for key, char_ids in char_ids_map.items():
         for i, cid in enumerate(char_ids):
-            if cid in SPECIAL_CHAR_INT_ALL:
-                # 漂泊者的所有形态头像可能互相匹配，遍历全部6个ID
+            # 接口roleId已是真实形态; 仅当该形态用户未持有(头像误匹配)时才替换
+            if cid in SPECIAL_CHAR_INT_ALL and str(cid) not in role_detail_map:
                 for form_id in SPECIAL_CHAR_INT_ALL:
                     if str(form_id) in role_detail_map:
                         char_ids[i] = form_id
@@ -102,7 +102,9 @@ async def _resolve_special_chars(uid: str, char_ids_map: dict) -> dict:
 
 
 async def match_all_char_ids(matrix_data: MatrixDetail) -> dict:
-    """对所有模式的所有队伍做一次 roleIcons → char_ids 匹配
+    """获取所有模式所有队伍的 char_ids (与 roleIcons 同序)
+
+    优先用接口自带的 roleList.roleId，缺失时才回退到头像相似度匹配。
 
     Returns:
         {(modeId, team_index): [char_id, ...], ...}
@@ -112,7 +114,9 @@ async def match_all_char_ids(matrix_data: MatrixDetail) -> dict:
         if not mode.hasRecord or not mode.teams:
             continue
         for idx, team in enumerate(mode.teams):
-            if team.roleIcons:
+            if team.roleList:
+                char_ids = [r.roleId for r in team.roleList]
+            elif team.roleIcons:
                 try:
                     char_ids = await match_role_icons_to_char_ids(
                         team.roleIcons, MATRIX_PATH
