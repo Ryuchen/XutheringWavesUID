@@ -558,14 +558,6 @@
         "need_admin": false
       },
       {
-        "name": "dps榜",
-        "desc": "查询角色 DPS 排行图。格式：`dps榜`。",
-        "eg": "dps榜",
-        "need_ck": false,
-        "need_sk": false,
-        "need_admin": false
-      },
-      {
         "name": "角色共鸣链",
         "desc": "查询某角色的共鸣链详情图，含每条共鸣链的效果文本。格式：`<角色名>共鸣链`。",
         "eg": "安可共鸣链",
