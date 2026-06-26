@@ -62,6 +62,19 @@ gacha_type_meta_rename = {
     "武器联动唤取": "武器联动唤取",
 }
 
+MINI_POOLS = (
+    "新手调谐",
+    "新手自选唤取",
+    "新手自选唤取（感恩定向唤取）",
+    "角色新旅唤取",
+    "武器新旅唤取",
+)
+NEWBIE_CARD_W = 250
+NEWBIE_CARD_H = 360
+NEWBIE_GAP = 30
+NEWBIE_ROW_GAP = 8
+NEWBIE_PER_ROW = 3
+
 
 def get_num_h(num: int, column: int):
     if num == 0:
@@ -344,11 +357,12 @@ def _render_gacha_card(
     footer = 50
 
     # 仅展示有抽卡记录（总抽数 > 0）的卡池
-    show_main = [n for n in total_data if "新手" not in n and total_data[n]["total"] > 0]
-    show_newbie = [n for n in total_data if "新手" in n and total_data[n]["total"] > 0]
-    drawable_newbie = [n for n in show_newbie if total_data[n]["rank_s_list"]]
+    show_main = [n for n in total_data if n not in MINI_POOLS and total_data[n]["total"] > 0]
+    show_mini = [n for n in total_data if n in MINI_POOLS and total_data[n]["total"] > 0]
+    mini_cells = [(n, gold) for n in show_mini for gold in reversed(total_data[n]["rank_s_list"])]
     title_num = len(show_main)
-    _newbielen = 395 if drawable_newbie else 0
+    mini_rows = get_num_h(len(mini_cells), NEWBIE_PER_ROW)
+    _newbielen = mini_rows * NEWBIE_CARD_H + max(0, mini_rows - 1) * NEWBIE_ROW_GAP + 35 if mini_cells else 0
 
     def _content_h(col: int) -> int:
         body = 0
@@ -685,17 +699,12 @@ def _render_gacha_card(
         else:
             y += get_num_h(len(s_list), column) * row_h
 
-    newbie_card_w = 250
-    newbie_card_h = 360
-    newbie_gap = 30
-    newbie_total_w = len(drawable_newbie) * newbie_card_w + max(0, len(drawable_newbie) - 1) * newbie_gap
-    newbie_start_x = max(10, (w - newbie_total_w) // 2)
-    nindex = 0
-    for gacha_name in drawable_newbie:
-        gacha_data = total_data[gacha_name]
-
-        s_list = gacha_data["rank_s_list"]
-        item_bg = draw_pic(s_list[0])
+    newbie_card_w = NEWBIE_CARD_W
+    newbie_card_h = NEWBIE_CARD_H
+    newbie_gap = NEWBIE_GAP
+    mini_base_y = _header + y + gindex * oset + 35
+    for nindex, (gacha_name, gold_item) in enumerate(mini_cells):
+        item_bg = draw_pic(gold_item)
 
         newbie_bg_cp = Image.new("RGBA", (newbie_card_w, newbie_card_h), (0, 0, 0, 0))
         newbie_shadow = Image.new("RGBA", newbie_bg_cp.size, (0, 0, 0, 0))
@@ -738,12 +747,7 @@ def _render_gacha_card(
             stroke_width=1,
             stroke_fill=(0, 0, 22, 130),
         )
-        if gacha_data["time_range"]:
-            time_range = (
-                gacha_data["time_range"].split("~")[1] if "~" in gacha_data["time_range"] else gacha_data["time_range"]
-            )
-        else:
-            time_range = "暂未抽过卡!"
+        time_range = gold_item.get("time") or "暂未抽过卡!"
         newbie_bg_cp_draw.rounded_rectangle(
             [28, 82, newbie_card_w - 28, 110],
             radius=14,
@@ -766,12 +770,19 @@ def _render_gacha_card(
         )
         newbie_bg_cp.paste(item_bg, ((newbie_card_w - 167) // 2, 142), item_bg)
 
+        row = nindex // NEWBIE_PER_ROW
+        col = nindex % NEWBIE_PER_ROW
+        row_count = min(NEWBIE_PER_ROW, len(mini_cells) - row * NEWBIE_PER_ROW)
+        row_w = row_count * newbie_card_w + max(0, row_count - 1) * newbie_gap
+        row_start_x = max(10, (w - row_w) // 2)
         card_img.paste(
             newbie_bg_cp,
-            (newbie_start_x + nindex * (newbie_card_w + newbie_gap), _header + y + gindex * oset + 35),
+            (
+                row_start_x + col * (newbie_card_w + newbie_gap),
+                mini_base_y + row * (newbie_card_h + NEWBIE_ROW_GAP),
+            ),
             newbie_bg_cp,
         )
-        nindex += 1
 
     return card_img
 

@@ -20,6 +20,9 @@ from ..utils.imagetool import draw_pic_with_ring
 from .draw_role_info_pil import draw_identity_header
 from ..utils.fonts.waves_fonts import (
     fit_text,
+    waves_font_8,
+    waves_font_9,
+    waves_font_10,
     waves_font_12,
     waves_font_14,
     waves_font_16,
@@ -307,7 +310,7 @@ def _compose_skin_img(
             nd,
             item.get("name") or "",
             cw - 8,
-            (waves_font_18, waves_font_16, waves_font_14, waves_font_12),
+            (waves_font_18, waves_font_16, waves_font_14, waves_font_12, waves_font_10, waves_font_9, waves_font_8),
         )
         nd.text((_x + cw // 2, _y + ch + 18), nm, "white", name_font, "mm")
 

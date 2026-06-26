@@ -152,11 +152,13 @@ async def draw_role_img(uid: str, ck: str, ev: Event):
                     break
 
             weapon_icon_b64 = ""
+            weapon_reson = 1
             chain_num = 0
             chain_name = ""
             if temp:
                 # 获取武器图标
                 weapon_icon_b64 = img_to_b64(get_square_weapon_path(temp.weaponData.weapon.weaponId), quality=75, bake=True, cover_size=(128, 128))
+                weapon_reson = temp.weaponData.resonLevel or 1
                 chain_num = temp.get_chain_num()
                 chain_name = temp.get_chain_name()
 
@@ -168,6 +170,8 @@ async def draw_role_img(uid: str, ck: str, ev: Event):
                 "attribute_icon": attribute_b64,
                 "avatar_icon": role_avatar_b64,
                 "weapon_icon": weapon_icon_b64,
+                "weapon_reson": weapon_reson,
+                "weapon_reson_name": f"{['零', '一', '二', '三', '四', '五'][weapon_reson]}阶",
                 "chain_num": chain_num,
                 "chain_name": chain_name,
             })

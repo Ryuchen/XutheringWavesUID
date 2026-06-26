@@ -275,13 +275,18 @@
             font-size: 15px;
             color: #e6e6e6;
             text-align: center;
-            line-height: 1.2;
+            height: 19px;
+            line-height: 19px;
             max-width: 100%;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .skin-name.long { font-size: 12px; }
+        .skin-name.s1 { font-size: 13px; }
+        .skin-name.s2 { font-size: 12px; }
+        .skin-name.s3 { font-size: 11px; }
+        .skin-name.s4 { font-size: 10px; }
+        .skin-name.s5 { font-size: 9px; letter-spacing: -0.2px; }
 
         .footer {
             margin-top: -10px;
@@ -352,7 +357,8 @@
                         <img src="{{ item.type_b64 }}" class="skin-type" alt="">
                         {% endif %}
                     </div>
-                    <div class="skin-name{% if item.name and item.name|length > 8 %} long{% endif %}">{{ item.name }}</div>
+                    {% set _l = item.name|length if item.name else 0 %}
+                    <div class="skin-name{% if _l > 12 %} s5{% elif _l > 10 %} s4{% elif _l > 9 %} s3{% elif _l > 8 %} s2{% elif _l > 7 %} s1{% endif %}">{{ item.name }}</div>
                 </div>
                 {% endfor %}
             </div>

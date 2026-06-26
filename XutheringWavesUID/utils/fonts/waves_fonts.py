@@ -322,6 +322,8 @@ def draw_text_with_fallback(
     return total_width
 
 
+waves_font_8 = waves_font_origin(8)
+waves_font_9 = waves_font_origin(9)
 waves_font_10 = waves_font_origin(10)
 waves_font_12 = waves_font_origin(12)
 waves_font_14 = waves_font_origin(14)

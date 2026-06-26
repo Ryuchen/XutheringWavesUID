@@ -13,6 +13,8 @@ from ..utils.error_reply import WAVES_CODE_102, WAVES_CODE_103
 from ..utils.database.models import WavesBind
 
 waves_role_info = SV("waves查询信息")
+# 收藏图鉴优先级前置于百科图鉴(鸣潮攻略 priority=10), 避免"收藏图鉴"被 <名>图鉴 正则抢匹配
+waves_skin_info = SV("waves收藏图鉴", priority=2)
 
 
 @waves_role_info.on_fullmatch(
@@ -47,7 +49,7 @@ async def send_role_info(bot: Bot, ev: Event):
     await bot.send(im)  # type: ignore
 
 
-@waves_role_info.on_fullmatch(
+@waves_skin_info.on_fullmatch(
     ("图鉴", "服饰", "皮肤", "收藏", "收藏图鉴", "皮肤图鉴", "服饰图鉴", "饰品", "饰品图鉴",
      "摩托", "摩托饰品", "涂装", "车架模组", "车架"),
     block=True,

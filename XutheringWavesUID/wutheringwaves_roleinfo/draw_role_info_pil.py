@@ -256,6 +256,16 @@ def _compose_role_img(
             weapon_bg.paste(weapon_icon, (123, 73), weapon_icon)
             char_bg.paste(weapon_bg, (0, 5), weapon_bg)
 
+            reson = temp.weaponData.resonLevel or 1
+            if reson > 1:
+                reson_name = f"{['零', '一', '二', '三', '四', '五'][reson]}阶"
+                reson_block = Image.new("RGBA", (60, 30), color=(255, 255, 255, 0))
+                reson_block_draw = ImageDraw.Draw(reson_block)
+                reson_block_draw.rounded_rectangle([0, 0, 60, 30], radius=7, fill=(212, 177, 99, int(0.9 * 255)))
+                reson_block_draw.text((30, 15), reson_name, "white", waves_font_26, "mm")
+                reson_block = reson_block.resize((30, 15))
+                char_bg.paste(reson_block, (165, 138), reson_block)
+
             info_block = Image.new("RGBA", (60, 30), color=(255, 255, 255, 0))
             info_block_draw = ImageDraw.Draw(info_block)
             info_block_draw.rounded_rectangle([0, 0, 60, 30], radius=7, fill=CHAIN_COLOR[temp.get_chain_num()] + (int(0.9 * 255),))
