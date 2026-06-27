@@ -26,7 +26,7 @@ from ..utils.ascension.char import get_char_model
 from ..utils.api.model_other import EnemyDetailData
 from ..utils.damage.utils import comma_separated_number
 from ..utils.ascension.template import get_template_data
-from ..utils.char_info_utils import get_all_roleid_detail_info
+from ..utils.char_info_utils import get_all_roleid_detail_info, get_rover_detail_map
 from . import base_info_cache
 from ..utils.name_convert import alias_to_char_name, char_name_to_char_id
 from ..utils.api.wwapi import ONE_RANK_URL, OneRankRequest, OneRankResponse
@@ -56,6 +56,7 @@ from ..utils.ascension.weapon import (
 )
 from ..utils.resource.constant import (
     SPECIAL_CHAR,
+    SPECIAL_CHAR_RANK_MAP,
     ATTRIBUTE_ID_MAP,
     DEAFAULT_WEAPON_ID,
     WEAPON_TYPE_ID_MAP,
@@ -462,6 +463,11 @@ async def get_role_need(
         all_role_detail: Optional[Dict[str, RoleDetailData]] = await get_all_roleid_detail_info(uid)
 
         if char_id in SPECIAL_CHAR:
+            # 漂泊者面板以 rover.json 为准
+            canon = SPECIAL_CHAR_RANK_MAP[char_id]
+            rover_map = await get_rover_detail_map(uid)
+            if canon in rover_map:
+                all_role_detail = {**(all_role_detail or {}), canon: rover_map[canon]}
             query_list = SPECIAL_CHAR.copy()[char_id]
         else:
             query_list = [char_id]
@@ -602,6 +608,15 @@ async def draw_fixed_img(img, avatar, account_info, role_detail, locale="", uid=
         draw_text_with_shadow(draw, hash_id, 525, 270, waves_font_12, offset=(1, 1), shadow_color="gray", anchor="rm")
 
 
+async def _rawdata_rover_canon(uid) -> Optional[str]:
+    """rawData 当前漂泊者属性的 canonical id，无则 None。"""
+    detail_map = await get_all_roleid_detail_info(uid)
+    for rid in (detail_map or {}):
+        if rid in SPECIAL_CHAR:
+            return SPECIAL_CHAR_RANK_MAP[rid]
+    return None
+
+
 # TODO: PIL 卸到线程池 (await/PIL 深度交错)
 async def draw_char_detail_img(
     ev: Event,
@@ -621,11 +636,15 @@ async def draw_char_detail_img(
     user_pref = await get_hide_uid_pref(waves_id or uid, user_id, ev.bot_id)
     char, damageId = parse_text_and_number(char)
 
+    char_name = alias_to_char_name(char)
     char_id = char_name_to_char_id(char)
+    if char_name == "漂泊者" and not waves_id:
+        # 泛指漂泊者 → rawData 当前属性
+        rover_canon = await _rawdata_rover_canon(uid)
+        if rover_canon:
+            char_id = rover_canon
     if not char_id or len(char_id) != 4 or not char_id.isdigit():
         return f"未找到指定角色, 请检查输入是否正确！"
-
-    char_name = alias_to_char_name(char)
 
     damageDetail = DamageDetailRegister.find_class(char_id)
     if damageDetail and not WutheringWavesConfig.get_config("WavesToken").data:

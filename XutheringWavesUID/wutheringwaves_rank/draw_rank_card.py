@@ -39,7 +39,7 @@ from ..utils.calculate import (
 )
 from ..utils.name_convert import alias_to_char_name, char_name_to_char_id
 from ..utils.ascension.sonata import detect_combo_sonata
-from ..utils.char_info_utils import get_all_role_detail_info_list
+from ..utils.char_info_utils import get_all_role_detail_info_list, get_rover_detail_map
 from ..utils.damage.abstract import DamageRankRegister
 from ..utils.database.models import WavesBind, WavesUser
 from ..utils.database.waves_user_activity import WavesUserActivity
@@ -55,7 +55,7 @@ from ..utils.fonts.waves_fonts import (
     waves_font_40,
     waves_font_44,
 )
-from ..utils.resource.constant import SPECIAL_CHAR, SPECIAL_CHAR_NAME
+from ..utils.resource.constant import SPECIAL_CHAR, SPECIAL_CHAR_NAME, SPECIAL_CHAR_RANK_MAP
 
 rank_length = 20  # 排行长度
 TEXT_PATH = Path(__file__).parent / "texture2d"
@@ -168,17 +168,18 @@ async def get_one_rank_info(user_id, uid, role_detail, rankDetail):
 
 
 async def find_role_detail(uid: str, char_id: Union[int, str, List[str], List[int]]) -> Optional[RoleDetailData]:
+    ids = char_id if isinstance(char_id, list) else [char_id]
+    char_id_list = [str(cid) for cid in ids]
+
+    # 漂泊者: 优先 rover.json(跨 rawData), 缺则回退 rawData(未迁移存量)
+    if char_id_list and char_id_list[0] in SPECIAL_CHAR:
+        rover = (await get_rover_detail_map(uid)).get(SPECIAL_CHAR_RANK_MAP[char_id_list[0]])
+        if rover is not None:
+            return rover
+
     role_details = await get_all_role_detail_info_list(uid)
     if role_details is None:
         return None
-
-    # 将char_id转换为字符串列表进行匹配
-    if isinstance(char_id, (int, str)):
-        char_id_list = [str(char_id)]
-    else:
-        char_id_list = [str(cid) for cid in char_id]
-
-    # 使用生成器来进行过滤
     return next((role for role in role_details if str(role.role.roleId) in char_id_list), None)
 
 

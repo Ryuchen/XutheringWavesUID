@@ -5,10 +5,8 @@
 - 磁盘: `PLAYER_PATH/<uid>/rawData.json` (角色展柜) / `charListData.json` (评分缓存) / `baseInfo.json` (账号总览)
 """
 
-import json
 from typing import Any, List, Optional
 
-import aiofiles
 from pydantic_ai import RunContext
 
 from gsuid_core.logger import logger
@@ -58,15 +56,8 @@ async def _resolve_user_default_uid(ev) -> Optional[str]:
 async def _read_player_json(uid, filename: str) -> Optional[Any]:
     if not _validate_uid(uid):
         return None
-    path = PLAYER_PATH / str(uid) / filename
-    if not path.exists():
-        return None
-    try:
-        async with aiofiles.open(path, "r", encoding="utf-8") as f:
-            return json.loads(await f.read())
-    except Exception as e:
-        logger.warning(f"[鸣潮·AI工具] read {path}: {e}")
-        return None
+    from ...utils.player_store import read_player_json
+    return await read_player_json(PLAYER_PATH / str(uid) / filename)
 
 
 def _score_rating(score: float) -> str:

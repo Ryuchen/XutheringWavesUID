@@ -13,7 +13,6 @@ from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 from pathlib import Path
 
-import aiofiles
 import httpx
 from starlette.responses import FileResponse, HTMLResponse, JSONResponse, Response
 
@@ -24,6 +23,7 @@ from gsuid_core.web_app import app
 from ..utils.api.model import AccountBaseInfo
 from ..utils.cache import TimedCache
 from ..utils.util import hide_uid
+from ..utils.player_store import read_player_json, player_json_exists
 from ..utils.resource.RESOURCE_PATH import (
     AVATAR_PATH,
     MAIN_PATH,
@@ -99,7 +99,7 @@ async def make_gacha_web_url(uid: str, ev: Event) -> Tuple[Optional[str], str]:
         return None, feature_disabled_msg()
 
     gacha_path = PLAYER_PATH / str(uid) / "gacha_logs.json"
-    if not gacha_path.exists():
+    if not player_json_exists(gacha_path):
         return None, f"[鸣潮] 你还没有抽卡记录噢!\n 请查看 {PREFIX}抽卡帮助 中的提示导入!"
 
     base = await _build_account_info(uid, ev)
@@ -403,8 +403,7 @@ def _build_pool_view(name: str, logs: List[Dict]) -> Dict:
 
 async def _load_gacha_data(uid: str) -> Dict:
     path = PLAYER_PATH / str(uid) / "gacha_logs.json"
-    async with aiofiles.open(path, "r", encoding="utf-8") as f:
-        return json.loads(await f.read())
+    return await read_player_json(path) or {}
 
 
 # ----------------------------- 路由 -----------------------------

@@ -1,5 +1,4 @@
 import re
-import json
 import math
 import time
 import asyncio
@@ -8,7 +7,6 @@ from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
 import httpx
-import aiofiles
 from PIL import Image, ImageDraw, ImageFont
 
 from gsuid_core.bot import Bot
@@ -17,6 +15,7 @@ from gsuid_core.models import Event
 from gsuid_core.utils.image.convert import convert_img
 
 from ..utils.util import get_version, hide_uid, build_uid_masker
+from ..utils.player_store import read_player_json
 from ..utils.image import (
     RED,
     GREY,
@@ -401,12 +400,10 @@ async def get_all_matrix_rank_info(
                 if (user.user_id, uid) not in wavesTokenUsersMap:
                     continue
             try:
-                matrix_data_path = Path(PLAYER_PATH / uid / "matrixData.json")
-                if not matrix_data_path.exists():
+                matrix_data_path = PLAYER_PATH / uid / "matrixData.json"
+                matrix_raw = await read_player_json(matrix_data_path)
+                if matrix_raw is None:
                     continue
-
-                async with aiofiles.open(matrix_data_path, mode="r", encoding="utf-8") as f:
-                    matrix_raw = json.loads(await f.read())
 
                 record_time = None
                 matrix_data = matrix_raw
@@ -460,28 +457,23 @@ async def get_matrix_rank_token_condition(ev) -> Tuple[bool, Dict[Tuple[str, str
 
 
 async def get_role_chain_count(uid: str, role_id: int) -> int:
-    """从rawData.json获取角色共鸣链数量，特殊角色遍历所有形态"""
+    """获取角色共鸣链数量, 漂泊者走 rover.json"""
     from ..utils.resource.RESOURCE_PATH import PLAYER_PATH
-    from ..utils.resource.constant import SPECIAL_CHAR_INT_ALL
-
-    # 漂泊者的所有形态头像可能互相匹配，遍历全部6个ID
-    candidates = SPECIAL_CHAR_INT_ALL if role_id in SPECIAL_CHAR_INT_ALL else [role_id]
+    from ..utils.resource.constant import SPECIAL_CHAR, SPECIAL_CHAR_RANK_MAP
+    from ..utils.char_info_utils import get_rover_detail_map
 
     try:
-        raw_data_path = Path(PLAYER_PATH / str(uid) / "rawData.json")
-        if not raw_data_path.exists():
+        if str(role_id) in SPECIAL_CHAR:
+            temp = (await get_rover_detail_map(uid)).get(SPECIAL_CHAR_RANK_MAP[str(role_id)])
+            return temp.get_chain_num() if temp else -1
+
+        raw_data = await read_player_json(PLAYER_PATH / str(uid) / "rawData.json")
+        if raw_data is None:
             return -1
-
-        async with aiofiles.open(raw_data_path, mode="r", encoding="utf-8") as f:
-            raw_data = json.loads(await f.read())
-
         if isinstance(raw_data, list):
-            for cid in candidates:
-                for role_data in raw_data:
-                    if role_data.get("role", {}).get("roleId") == cid:
-                        chain_list = role_data.get("chainList", [])
-                        unlocked_chains = [c for c in chain_list if c.get("unlocked", False)]
-                        return len(unlocked_chains)
+            for role_data in raw_data:
+                if role_data.get("role", {}).get("roleId") == role_id:
+                    return len([c for c in role_data.get("chainList", []) if c.get("unlocked", False)])
         return -1
     except Exception as e:
         logger.debug(f"[鸣潮·矩阵排行] 获取角色 roleId={role_id} 共鸣链失败: {e}")

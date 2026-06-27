@@ -163,17 +163,19 @@ if _old_login_cache.exists():
         logger.warning(f"[鸣潮·插件] 删除旧的 login_cache.db 失败: {_e}")
 
 # 修正: API曾错误地将陆·赫斯的resourceType标记为武器
-import json as _json
 from .utils.resource.RESOURCE_PATH import PLAYER_PATH as _PLAYER_PATH
+from .utils.player_store import read_player_json_sync, write_player_json_sync, player_json_exists
 _fix_flag = _PLAYER_PATH / ".fix_hesi_done"
 if not _fix_flag.exists():
     _fix_count = 0
     for _uid_dir in _PLAYER_PATH.iterdir():
         _gl = _uid_dir / "gacha_logs.json"
-        if not _gl.is_file():
+        if not player_json_exists(_gl):
             continue
         try:
-            _raw = _json.loads(_gl.read_text("utf-8"))
+            _raw = read_player_json_sync(_gl)
+            if not _raw:
+                continue
             _modified = False
             for _records in _raw.get("data", {}).values():
                 for _r in _records:
@@ -181,7 +183,7 @@ if not _fix_flag.exists():
                         _r["resourceType"] = "角色"
                         _modified = True
             if _modified:
-                _gl.write_text(_json.dumps(_raw, ensure_ascii=False), "utf-8")
+                write_player_json_sync(_gl, _raw)
                 _fix_count += 1
         except Exception:
             continue

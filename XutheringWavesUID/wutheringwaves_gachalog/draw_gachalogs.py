@@ -18,6 +18,7 @@ from gsuid_core.utils.image.image_tools import crop_center_img
 
 from ..utils import hint
 from ..utils.util import hide_uid, get_hide_uid_pref
+from ..utils.player_store import read_player_json, player_json_exists
 from ..utils.imagetool import draw_base_info_bg
 from ..utils.image import (
     GOLD,
@@ -242,7 +243,7 @@ async def get_gacha_stats(uid: str) -> Dict:
 
     gacha_log_path = _dir / "gacha_logs.json"
     stats_path = _dir / "gachaStats.json"
-    if gacha_log_path.exists() and stats_path.exists():
+    if player_json_exists(gacha_log_path) and stats_path.exists():
         try:
             async with aiofiles.open(stats_path, "r", encoding="utf-8") as f:
                 cached = json.loads(await f.read())
@@ -256,13 +257,11 @@ async def get_gacha_stats(uid: str) -> Dict:
         except Exception:
             pass
 
-    if not gacha_log_path.exists():
+    raw_data = await read_player_json(gacha_log_path)
+    if raw_data is None:
         return {}
 
     try:
-        async with aiofiles.open(gacha_log_path, "r", encoding="utf-8") as f:
-            raw_data = json.loads(await f.read())
-
         total_data = _compute_pool_stats(raw_data.get("data", {}))
         stats_data = _total_to_stats(total_data)
         await save_gacha_stats(uid, total_data)
@@ -307,10 +306,9 @@ async def save_gacha_stats(uid: str, total_data: Dict):
 async def draw_card(uid: str, ev: Event):
     # 获取数据
     gacha_log_path = PLAYER_PATH / str(uid) / "gacha_logs.json"
-    if not gacha_log_path.exists():
+    raw_data = await read_player_json(gacha_log_path)
+    if raw_data is None:
         return f"[鸣潮] 你还没有抽卡记录噢!\n 请查看 {PREFIX}抽卡帮助 中的提示导入!"
-    async with aiofiles.open(gacha_log_path, "r", encoding="UTF-8") as f:
-        raw_data: Dict = json.loads(await f.read())
 
     gachalogs = raw_data["data"]
     title_num = len([1 for i in gachalogs.keys() if "新手" not in i])

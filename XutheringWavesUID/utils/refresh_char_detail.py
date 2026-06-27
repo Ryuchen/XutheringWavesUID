@@ -14,7 +14,7 @@ from .at_help import safe_sender_avatar
 from .util import get_version, hide_uid, resolve_hide_uid
 from .api.model import RoleList, AccountBaseInfo, OwnedRoleInfoResponse
 from .waves_api import waves_api
-from .resource.constant import SPECIAL_CHAR_INT_ALL
+from .resource.constant import SPECIAL_CHAR_INT_ALL, SPECIAL_CHAR_RANK_MAP
 from .error_reply import WAVES_CODE_101, WAVES_CODE_102
 from .queues.const import QUEUE_SCORE_RANK
 from .queues.queues import push_item
@@ -22,6 +22,7 @@ from .expression_ctx import WavesCharRank, get_waves_char_rank, _compute_one_cha
 from ..wutheringwaves_config import PREFIX, WutheringWavesConfig
 from .resource.RESOURCE_PATH import PLAYER_PATH, CACHE_PATH
 from .char_info_utils import get_all_roleid_detail_info_int
+from .player_store import read_player_json, write_player_json, player_json_exists
 from .char_state import record_refresh_batch
 from .api.model import AccountBaseInfo as _AccountBaseInfo
 
@@ -242,14 +243,13 @@ async def save_card_info(
     path = _dir / "rawData.json"
 
     old_data = {}
-    if path.exists():
+    old = await read_player_json(path)
+    rawdata_corrupt = old is None and player_json_exists(path)
+    if old:
         try:
-            async with aiofiles.open(path, mode="r", encoding="utf-8") as f:
-                old = json.loads(await f.read())
-                old_data = {d["role"]["roleId"]: d for d in old}
+            old_data = {d["role"]["roleId"]: d for d in old}
         except Exception as e:
             logger.exception(f"[鸣潮·角色状态] save_card_info get failed {path}:", e)
-            path.unlink(missing_ok=True)
 
     #
     refresh_update = {}
@@ -285,13 +285,30 @@ async def save_card_info(
 
     await send_card(uid, user_id, save_data, is_self_ck, token, role_info, waves_data, sender_avatar, bot_id)
 
-    try:
-        # 移除所有 URL 后再保存
+    if rawdata_corrupt:
+        logger.error(f"[鸣潮·角色状态] rawData 读取失败, 跳过保存以防覆盖 {path}")
+    else:
         cleaned_data = remove_urls_from_data(save_data)
-        async with aiofiles.open(path, "w", encoding="utf-8") as file:
-            await file.write(json.dumps(cleaned_data, ensure_ascii=False))
-    except Exception as e:
-        logger.exception(f"[鸣潮·角色状态] save_card_info save failed {path}:", e)
+        try:
+            await write_player_json(path, cleaned_data)
+        except Exception as e:
+            logger.exception(f"[鸣潮·角色状态] save_card_info save failed {path}:", e)
+
+        # rover.json: 漂泊者各属性各存一份, 合并不删其它
+        rover_items = [it for it in cleaned_data if it["role"]["roleId"] in SPECIAL_CHAR_INT_ALL]
+        if rover_items:
+            try:
+                rover_path = _dir / "rover.json"
+                rover_map = await read_player_json(rover_path)
+                if rover_map is None and player_json_exists(rover_path):
+                    logger.error(f"[鸣潮·角色状态] rover.json 读取失败, 跳过 rover 保存 {rover_path}")
+                else:
+                    rover_map = rover_map or {}
+                    for it in rover_items:
+                        rover_map[SPECIAL_CHAR_RANK_MAP[str(it["role"]["roleId"])]] = it
+                    await write_player_json(rover_path, rover_map)
+            except Exception as e:
+                logger.exception("[鸣潮·角色状态] save rover.json failed:", e)
 
     # 保存charListData.json（角色评分缓存）—— 只算本次变更的角色, 未变更角色 score 不变
     waves_char_rank = await get_waves_char_rank(uid, list(refresh_update.values()), True)
@@ -372,14 +389,27 @@ async def save_char_list_cache(uid: str, waves_char_rank: Optional[List[WavesCha
 
         # 加载现有的角色评分数据
         existing_char_list_data = await load_char_list_data(uid)
-        if not existing_char_list_data:
+        if existing_char_list_data is None:
+            if (PLAYER_PATH / uid / "charListData.json").exists():
+                logger.error(f"[鸣潮·角色状态] charListData 读取失败, 跳过保存防覆盖 uid={uid}")
+                return
             existing_char_list_data = {}
 
         # 只更新改动的角色
+        canons = set(SPECIAL_CHAR_RANK_MAP.values())
+        refreshed_rover = None
         for char_rank in waves_char_rank:
             role_id_str = str(char_rank.roleId)
             mapped_id = SPECIAL_CHAR_RANK_MAP.get(role_id_str, role_id_str)
             existing_char_list_data[mapped_id] = char_rank.score
+            if mapped_id in canons:
+                refreshed_rover = mapped_id
+
+        # 漂泊者只保留最近刷新的一个属性, 与 rawData 一致
+        if refreshed_rover:
+            for canon in canons:
+                if canon != refreshed_rover:
+                    existing_char_list_data.pop(canon, None)
 
         larger_special_ids = [k for k, v in SPECIAL_CHAR_RANK_MAP.items() if k != v]
         for large_id in larger_special_ids:

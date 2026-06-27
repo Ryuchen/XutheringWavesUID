@@ -1,10 +1,8 @@
-import json
 import time
 import asyncio
 from typing import Dict, List, Tuple, Union, Optional
 from pathlib import Path
 
-import aiofiles
 from PIL import Image, ImageDraw
 from pydantic import BaseModel
 
@@ -89,12 +87,8 @@ async def save_char_list_data(uid: str, char_list_data: Dict):
         char_list_data: 角色评分字典，格式为 {roleId: score}
     """
     try:
-        _dir = PLAYER_PATH / uid
-        _dir.mkdir(parents=True, exist_ok=True)
-        path = _dir / "charListData.json"
-
-        async with aiofiles.open(path, "w", encoding="utf-8") as file:
-            await file.write(json.dumps(char_list_data, ensure_ascii=False))
+        from ..utils.player_store import write_player_json
+        await write_player_json(PLAYER_PATH / uid / "charListData.json", char_list_data)
     except Exception as e:
         logger.debug(f"[鸣潮·练度排行] 保存 charListData.json 失败 uid={uid}: {e}")
 
@@ -108,17 +102,8 @@ async def load_char_list_data(uid: str) -> Optional[Dict]:
     Returns:
         角色评分字典，格式为 {roleId: score}，如果文件不存在返回None
     """
-    try:
-        path = PLAYER_PATH / uid / "charListData.json"
-        if not path.exists():
-            return None
-
-        async with aiofiles.open(path, mode="r", encoding="utf-8") as f:
-            char_list_data = json.loads(await f.read())
-            return char_list_data
-    except Exception as e:
-        logger.debug(f"[鸣潮·练度排行] 读取 charListData.json 失败 uid={uid}: {e}")
-        return None
+    from ..utils.player_store import read_player_json
+    return await read_player_json(PLAYER_PATH / uid / "charListData.json")
 
 
 TEXT_PATH = Path(__file__).parent / "texture2d"
