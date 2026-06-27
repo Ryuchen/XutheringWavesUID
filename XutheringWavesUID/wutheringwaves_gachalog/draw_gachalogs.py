@@ -45,6 +45,7 @@ from ..utils.fonts.waves_fonts import (
 )
 from ..utils.resource.constant import NORMAL_LIST
 from ..utils.resource.RESOURCE_PATH import PLAYER_PATH
+from .get_gachalogs import gacha_type_meta_data
 
 TEXT_PATH = Path(__file__).parent / "texture2d"
 HOMO_TAG = ["非到极致", "运气不好", "平稳保底", "小欧一把", "欧狗在此"]
@@ -61,6 +62,8 @@ gacha_type_meta_rename = {
     "武器新旅唤取": "武器新旅唤取",
     "角色联动唤取": "角色联动唤取",
     "武器联动唤取": "武器联动唤取",
+    "角色忆旅唤取": "角色忆旅唤取",
+    "武器忆旅唤取": "武器忆旅唤取",
 }
 
 MINI_POOLS = (
@@ -168,6 +171,10 @@ async def draw_card_help():
 
 def _compute_pool_stats(gachalogs: Dict) -> Dict:
     """对每个卡池计算 total/avg/avg_up/remain/r_num/up_list/rank_s_list/level/time_range."""
+    gachalogs = {
+        **{n: gachalogs[n] for n in gacha_type_meta_data if n in gachalogs},
+        **{n: v for n, v in gachalogs.items() if n not in gacha_type_meta_data},
+    }
     total_data = {}
     for gacha_name in gachalogs:
         total_data[gacha_name] = {
