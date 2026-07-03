@@ -19,6 +19,7 @@ from gsuid_core.utils.database.models import Subscribe
 
 from .waves_subscribe import WavesSubscribe
 from .waves_user_activity import WavesUserActivity
+from .waves_group_activity import WavesGroupActivity
 from .waves_user_sdk import WavesUserSdk
 from .waves_gacha_cloud import WavesGachaCloud
 

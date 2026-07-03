@@ -241,6 +241,12 @@ CONFIG_DEFAULT: Dict[str, GSC] = {
         42,
         10000,
     ),
+    "AnnActiveGroupDays": GsIntConfig(
+        "公告推送活跃群认定天数",
+        "群在此天数内有人使用本插件才推送公告，0 表示不过滤",
+        42,
+        10000,
+    ),
     "CacheDaysToKeep": GsIntConfig(
         "保留缓存公告、日历资源天数",
         "自动删除创建时间早于此天数的公告和日历图片缓存，每次启动和每天定时执行",

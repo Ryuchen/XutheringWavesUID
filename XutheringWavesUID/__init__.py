@@ -26,6 +26,7 @@ from .utils.bot_send_hook import install_bot_hooks
 from .utils.database.models import WavesUser
 from .utils.database.waves_subscribe import WavesSubscribe
 from .utils.database.waves_user_activity import WavesUserActivity
+from .utils.database.waves_group_activity import WavesGroupActivity, ANN_PUSH_GUARD
 from .utils.database.waves_user_sdk import WavesUserSdk  # noqa: F401
 from .utils.plugin_checker import is_from_waves_plugin
 
@@ -33,26 +34,36 @@ from .utils.plugin_checker import is_from_waves_plugin
 # 内存中暂存活跃度记录，定时批量写入，避免高并发写入损坏数据库
 # value: (user_id, bot_id, bot_self_id, sender_avatar)
 _activity_buffer: dict[str, tuple[str, str, str, str]] = {}
+# 群活跃度缓冲 value: (group_id, bot_id, bot_self_id)
+_group_activity_buffer: dict[str, tuple[str, str, str]] = {}
 _FLUSH_INTERVAL = 60  # 秒
 
 
 async def _flush_activity_buffer():
     """将缓冲区中的活跃度记录批量写入数据库"""
-    if not _activity_buffer:
-        return
-    pending = dict(_activity_buffer)
-    _activity_buffer.clear()
+    if _activity_buffer:
+        pending = dict(_activity_buffer)
+        _activity_buffer.clear()
 
-    for key, (user_id, bot_id, bot_self_id, sender_avatar) in pending.items():
-        try:
-            await WavesUserActivity.update_user_activity(user_id, bot_id, bot_self_id)
-        except Exception as e:
-            logger.warning(f"[鸣潮·插件] 批量活跃度写入失败: {e}")
-        if sender_avatar:
+        for key, (user_id, bot_id, bot_self_id, sender_avatar) in pending.items():
             try:
-                await WavesUser.update_avatar_url(user_id, bot_id, sender_avatar)
+                await WavesUserActivity.update_user_activity(user_id, bot_id, bot_self_id)
             except Exception as e:
-                logger.warning(f"[鸣潮·插件] 头像更新失败: {e}")
+                logger.warning(f"[鸣潮·插件] 批量活跃度写入失败: {e}")
+            if sender_avatar:
+                try:
+                    await WavesUser.update_avatar_url(user_id, bot_id, sender_avatar)
+                except Exception as e:
+                    logger.warning(f"[鸣潮·插件] 头像更新失败: {e}")
+
+    if _group_activity_buffer:
+        group_pending = dict(_group_activity_buffer)
+        _group_activity_buffer.clear()
+        for key, (group_id, bot_id, bot_self_id) in group_pending.items():
+            try:
+                await WavesGroupActivity.update_group_activity(group_id, bot_id, bot_self_id)
+            except Exception as e:
+                logger.warning(f"[鸣潮·插件] 批量群活跃度写入失败: {e}")
 
 
 _shutdown_event = asyncio.Event()
@@ -112,6 +123,8 @@ async def waves_user_activity_hook(
     只记录由本插件触发的消息的用户活跃度
     写入内存缓冲区，由后台任务定时批量写入数据库
     """
+    if ANN_PUSH_GUARD.get():
+        return
     if not is_from_waves_plugin():
         return
 
@@ -126,11 +139,26 @@ async def waves_user_activity_hook(
             sender_avatar = existing[3]
     _activity_buffer[key] = (user_id, bot_id, bot_self_id, sender_avatar)
 
+# 注册群活跃度 hook
+async def waves_group_activity_hook(group_id: str, bot_id: str, bot_self_id: str):
+    if ANN_PUSH_GUARD.get():
+        return
+    if not is_from_waves_plugin():
+        return
+    if not group_id:
+        return
+    _group_activity_buffer[f"{group_id}:{bot_id}:{bot_self_id}"] = (group_id, bot_id, bot_self_id)
+
 # 安装 hooks 并注册
 install_bot_hooks()
-from .utils.bot_send_hook import register_target_send_hook, register_user_activity_hook
+from .utils.bot_send_hook import (
+    register_target_send_hook,
+    register_user_activity_hook,
+    register_group_activity_hook,
+)
 register_target_send_hook(waves_bot_check_hook)
 register_user_activity_hook(waves_user_activity_hook)
+register_group_activity_hook(waves_group_activity_hook)
 
 logger.debug("[鸣潮·插件] Bot 消息发送 hook 已注册")
 logger.debug("[鸣潮·插件] 用户活跃度 hook 已注册")
