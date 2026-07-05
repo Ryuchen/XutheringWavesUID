@@ -23,6 +23,9 @@ from .waves_group_activity import WavesGroupActivity
 from .waves_user_sdk import WavesUserSdk
 from .waves_gacha_cloud import WavesGachaCloud
 
+from gsuid_core.server import on_core_start
+from .auto_migrate import auto_add_missing_columns
+
 exec_list.extend(
     [
         "ALTER TABLE WavesUserActivity ADD COLUMN bot_self_id TEXT DEFAULT ''",
@@ -803,3 +806,8 @@ class WavesGachaCloudAdmin(GsAdminModel):
     )  # type: ignore
 
     model = WavesGachaCloud
+
+
+@on_core_start
+async def _waves_auto_migrate():
+    await auto_add_missing_columns(__name__, log_prefix="[鸣潮·补列]")
