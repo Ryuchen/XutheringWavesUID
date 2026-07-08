@@ -5,8 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>云鸣潮抽卡登录</title>
   <link rel="icon" href="https://web-static.kurobbs.com/resource/prod/icon.ico" type="image/x-icon">
-  <script src="https://static.geetest.com/v4/gt4.js"></script>
-  <script src="https://apps.bdimg.com/libs/jquery/1.6.4/jquery.min.js"></script>
+  <!-- 极验（异步多源，失败不阻塞页面渲染） -->
+  <script>
+    (function () {
+      var srcs = [
+        'https://static.geetest.com/v4/gt4.js',
+        'https://static.geevisit.com/v4/gt4.js'
+      ];
+      var done = false, i = 0, t;
+      function fin() { if (done) return; done = true; window.dispatchEvent(new Event('geetestready')); }
+      function next() {
+        if (done) return;
+        if (i >= srcs.length) { fin(); return; }
+        var s = document.createElement('script');
+        s.src = srcs[i++];
+        s.onload = function () { window.initGeetest4 ? fin() : next(); };
+        s.onerror = next;
+        document.head.appendChild(s);
+        clearTimeout(t); t = setTimeout(next, 3000);
+      }
+      next();
+      setTimeout(fin, 8000);
+    })();
+  </script>
   <!-- GSAP -->
   <script>
     (function () {
@@ -315,13 +336,43 @@
   const modal = document.getElementById('successModal');
   const closeBtn = modal.querySelector('.close');
 
+  let geetestReady = false;
+
+  function ajax(opts) {
+    var headers = {}, body = opts.data;
+    if (opts.data && typeof opts.data === 'object') {
+      headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
+      body = Object.keys(opts.data).map(function (k) {
+        return encodeURIComponent(k) + '=' + encodeURIComponent(opts.data[k]);
+      }).join('&');
+    } else if (opts.contentType) {
+      headers['Content-Type'] = opts.contentType;
+    }
+    if (opts.headers) for (var k in opts.headers) headers[k] = opts.headers[k];
+    fetch(opts.url, { method: opts.type || 'GET', headers: headers, body: body })
+      .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+      .then(function (res) { if (opts.success) opts.success(res); })
+      .catch(function () { if (opts.error) opts.error(); });
+  }
+
+  function whenGeetestReady(config, cb) {
+    function go() {
+      if (!window.initGeetest4) { getCodeBtn.textContent = '验证服务不可用'; getCodeBtn.disabled = true; return; }
+      geetestReady = true;
+      if (phoneInput.value.length === 11) getCodeBtn.disabled = false;
+      window.initGeetest4(config, cb);
+    }
+    if (window.initGeetest4) go();
+    else window.addEventListener('geetestready', go, { once: true });
+  }
+
   const auth = "{{ auth }}";
   const serverUrl = "{{ server_url }}";
   const captchaId = "{{ captchaId }}";
   const product = "{{ product }}";
 
   phoneInput.addEventListener('input', function () {
-    getCodeBtn.disabled = this.value.length !== 11;
+    getCodeBtn.disabled = !geetestReady || this.value.length !== 11;
     loginBtn.disabled = this.value.length !== 11 || verificationCodeInput.value === "";
   });
 
@@ -329,7 +380,7 @@
     loginBtn.disabled = this.value === "" || phoneInput.value.length !== 11;
   });
 
-  initGeetest4({
+  whenGeetestReady({
     captchaId: captchaId,
     product: product,
   }, function (captcha) {
@@ -339,7 +390,7 @@
       if (!result) {
         return alert('请完成验证');
       }
-      $.ajax({
+      ajax({
         url: serverUrl + '/waves/c/sendCode',
         type: 'POST',
         data: JSON.stringify({ auth: auth, phone: phoneInput.value, geetest: result }),
@@ -372,7 +423,7 @@
   loginForm.addEventListener('submit', function (e) {
     e.preventDefault();
     loginBtn.disabled = true;
-    $.ajax({
+    ajax({
       url: serverUrl + '/waves/c/login',
       type: 'POST',
       data: JSON.stringify({ auth: auth, phone: phoneInput.value, code: verificationCodeInput.value }),
