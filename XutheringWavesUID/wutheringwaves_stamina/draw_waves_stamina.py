@@ -28,6 +28,7 @@ from ..utils.image import (
     get_event_avatar,
     get_random_waves_bg,
     get_random_waves_role_pile,
+    mr_prefer_bg,
 )
 from ..utils.api.model import DailyData, AccountBaseInfo
 from ..utils.api.launcher_chain import fetch_launcher_panel
@@ -370,7 +371,7 @@ async def _draw_stamina_img(ev: Event, valid: Dict, locale: str = "") -> Image.I
         elif force_not_use_bg:
             pile, pile_path = await get_random_waves_role_pile(pile_id, force_not_use_custom=force_not_use_custom)
             has_bg = False
-        elif ShowConfig.get_config("MrUseBG").data:
+        elif mr_prefer_bg(pile_id, force_not_use_custom):
             pile, has_bg, pile_path = await get_random_waves_bg(pile_id, force_not_use_custom=force_not_use_custom)
         else:
             pile, pile_path = await get_random_waves_role_pile(pile_id, force_not_use_custom=force_not_use_custom)
