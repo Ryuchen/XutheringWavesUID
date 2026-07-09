@@ -11,6 +11,15 @@ from gsuid_core.server import on_core_shutdown
 if "XutheringWavesUID" not in SL.plugins:
     Plugins(name="XutheringWavesUID", force_prefix=["ww"], allow_empty_prefix=False)
 
+# 迁移遗留: 旧版锁文件落在仓库树内, 删掉; 过期后可整段注释
+from .utils.resource.RESOURCE_PATH import BUILD_ROOT
+_legacy_lock = BUILD_ROOT / ".build_copy.lock"
+if _legacy_lock.exists():
+    try:
+        _legacy_lock.unlink()
+    except OSError:
+        pass
+
 # 扩展(.pyd/.so)被 import 前先落盘新构建; Windows 下 .pyd 加载后锁定无法替换
 from .utils.download_utils import copy_build_files
 copy_build_files()
