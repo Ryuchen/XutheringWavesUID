@@ -44,7 +44,7 @@ from ..utils.fonts.waves_fonts import (
     waves_font_40,
 )
 from ..utils.resource.constant import NORMAL_LIST
-from ..utils.resource.RESOURCE_PATH import PLAYER_PATH
+from ..utils.resource.RESOURCE_PATH import CARD_POLYGON_PATH, PLAYER_PATH
 from .get_gachalogs import gacha_type_meta_data
 
 TEXT_PATH = Path(__file__).parent / "texture2d"
@@ -809,7 +809,6 @@ async def draw_pic_with_ring(ev: Event):
 
 
 async def get_random_card_polygon(ev: Event):
-    CARD_POLYGON_PATH = TEXT_PATH / "card_polygon"
     path = random.choice(os.listdir(f"{CARD_POLYGON_PATH}"))
     card_img = Image.open(f"{CARD_POLYGON_PATH}/{path}").convert("RGBA")
 
