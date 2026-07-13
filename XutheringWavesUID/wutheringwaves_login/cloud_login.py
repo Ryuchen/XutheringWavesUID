@@ -340,6 +340,8 @@ class CloudLoginRequest(BaseModel):
     auth: str
     phone: str
     code: str
+    # 机房/异常 IP 二次要求滑块时，前端补滑块后带 geetest 重试本接口
+    geetest: Optional[Dict[str, Any]] = None
 
 
 @app.post("/waves/c/sendCode")
@@ -374,7 +376,7 @@ async def waves_cloud_login(data: CloudLoginRequest):
 
     try:
         ok, msg, result = await _cloud_api().do_cloud_login(
-            data.phone, data.code, device_num, did
+            data.phone, data.code, device_num, did, data.geetest
         )
     except Exception as e:
         logger.exception("[鸣潮·云登录] 登录链路异常")
@@ -382,6 +384,11 @@ async def waves_cloud_login(data: CloudLoginRequest):
         state["error_msg"] = f"登录异常：{e}"
         cache.set(data.auth, state)
         return {"success": False, "msg": "登录异常，请稍后重试"}
+
+    # 机房/异常 IP 在 phoneCode 步被风控二次要求滑块：不置 failed，让前端补一次
+    # 滑块后带 geetest 重试本接口（登录会话保持，指令侧继续轮询等待结果）。
+    if msg == _get_cloud_api_module().NEED_GEETEST:
+        return {"success": False, "need_captcha": True, "msg": "请完成滑块验证"}
 
     if not ok or not result:
         state["phase"] = "failed"
