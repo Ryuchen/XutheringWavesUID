@@ -1,7 +1,7 @@
 from typing import Dict, List, Literal, Optional
 
 import httpx
-from pydantic import Field, BaseModel
+from pydantic import Field, BaseModel, field_validator
 
 from gsuid_core.logger import logger
 
@@ -191,6 +191,11 @@ class PhantomTotalRankDetail(BaseModel):
     grade: str  # 单声骸评级
     sender_avatar: Optional[str] = ""
     hide_uid: bool = False
+
+    @field_validator("main_props", "sub_props", mode="before")
+    @classmethod
+    def _null_props_to_list(cls, v):
+        return v if v is not None else []
 
 
 class PhantomTotalRankData(BaseModel):
