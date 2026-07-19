@@ -61,7 +61,7 @@ promote_icon = Image.open(TEXT_PATH / "promote_icon.png")
 # 由左侧内容收紧后的实测列宽反推：第二词条列右边界 1151px，随后依次保留
 # 14px 评分区间距、84px 评级图、12px 图文间距、144px 最大分数、16px 内边距和
 # bar1.png 实测 43px 右框外沿。
-WIDTH = 1464
+WIDTH = 1416
 ITEM_H = 150  # 单条声骸高度 (内容全部落在金线框内)
 CY = ITEM_H // 2
 TITLE_H = 500
@@ -140,7 +140,7 @@ _RANK_BOX_SIZE = (50, 50)
 _RANK_X = FRAME_LEFT // 4
 _RANK_MEDAL_Y = FRAME_TOP + (_FRAME_H - _RANK_MEDAL_SIZE[1]) // 2
 _RANK_BOX_Y = FRAME_TOP + (_FRAME_H - _RANK_BOX_SIZE[1]) // 2
-_AVATAR_FRAME_INSET = 8
+_AVATAR_FRAME_INSET = -40
 _AVATAR_VISIBLE_X = FRAME_LEFT + _AVATAR_FRAME_INSET
 _AVATAR_VISIBLE_W = 120
 _USER_INFO_BASE_GAP = 14
@@ -278,7 +278,7 @@ def _assert_static_row_layout() -> None:
     assert 0 <= _RANK_X
     assert rank_right < FRAME_LEFT
     assert rank_right < _AVATAR_VISIBLE_X
-    assert FRAME_LEFT <= _AVATAR_VISIBLE_X
+    assert 0 <= _AVATAR_VISIBLE_X
     assert _AVATAR_VISIBLE_X + _AVATAR_MAX_VISIBLE_W < USER_INFO_X
     assert (
         _AVATAR_VISIBLE_X + _AVATAR_MAX_VISIBLE_W + _AVATAR_INFO_SAFE_GAP
