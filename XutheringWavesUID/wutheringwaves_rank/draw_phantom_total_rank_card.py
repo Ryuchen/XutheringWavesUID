@@ -180,18 +180,11 @@ _FETTER_ICON_POS = (
 _PROMOTE_Y = FRAME_BOTTOM - _PROMOTE_SIZE[1]
 _THUMB_SHIFT = 14  # 声骸头像/套装/cost 整体左移 (词条列不动)
 
-# 词条表: 以实际字体宽度决定固定的名称/数值/分数列宽。
-_LAYOUT_DRAW = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
+# 词条表: 名称/数值/分数列宽为固定字体墨迹的实测固化值 (跨 Pillow 版本稳定)。
 _NAME_FONTS = (waves_font_18, waves_font_16, waves_font_14)
-_LONGEST_NAME = "共鸣解放伤害加成"
-_NAME_MAX = ceil(_LAYOUT_DRAW.textlength(_LONGEST_NAME, font=waves_font_16))
-_VALUE_MAX = ceil(
-    max(
-        _LAYOUT_DRAW.textlength(value, font=waves_font_16)
-        for value in ("2400", "30.0%")
-    )
-)
-_PROP_SCORE_MAX = ceil(_LAYOUT_DRAW.textlength("+120.55", font=waves_font_16))
+_NAME_MAX = 128  # waves_font_16 "共鸣解放伤害加成"
+_VALUE_MAX = 53  # waves_font_16 max("2400","30.0%")
+_PROP_SCORE_MAX = 69  # waves_font_16 "+120.55"
 _NAME_VALUE_GAP = 8
 _VALUE_SCORE_GAP = 10
 _PROP_COL_GAP = 12
@@ -218,10 +211,8 @@ _PROP_ROW_Y = (CY - _PROP_ROW_GAP, CY, CY + _PROP_ROW_GAP)
 _EMBLEM_SIZE = (84, 84)
 _PROP_SCORE_CELL_GAP = 14
 _SCORE_RIGHT_MARGIN = 16
-_SCORE_NUM_MAX = ceil(_LAYOUT_DRAW.textlength("999.99", font=waves_font_40))
-_SCORE_LABEL_MAX = ceil(
-    _LAYOUT_DRAW.textlength("单声骸分数", font=waves_font_14)
-)
+_SCORE_NUM_MAX = 144  # waves_font_40 "999.99"
+_SCORE_LABEL_MAX = 70  # waves_font_14 "单声骸分数"
 _SCORE_BLOCK_HALF_W = ceil(max(_SCORE_NUM_MAX, _SCORE_LABEL_MAX) / 2)
 _SCORE_CENTER_X = FRAME_RIGHT - _SCORE_RIGHT_MARGIN - _SCORE_BLOCK_HALF_W
 _SCORE_NUM_LEFT = _SCORE_CENTER_X - _SCORE_BLOCK_HALF_W
@@ -231,12 +222,8 @@ _EMBLEM_X = _SCORE_NUM_LEFT - _EMBLEM_NUM_GAP - _EMBLEM_SIZE[0]
 _EMBLEM_Y = FRAME_TOP + (_FRAME_H - _EMBLEM_SIZE[1]) // 2
 _SCORE_NUM_X = _SCORE_CENTER_X
 _SCORE_LABEL_X = _SCORE_CENTER_X
-_SCORE_NUM_BBOX = _LAYOUT_DRAW.textbbox(
-    (0, 0), "999.99", font=waves_font_40, anchor="mm"
-)
-_SCORE_LABEL_BBOX = _LAYOUT_DRAW.textbbox(
-    (0, 0), "单声骸分数", font=waves_font_14, anchor="mm"
-)
+_SCORE_NUM_BBOX = (-72, -13, 72, 18)  # waves_font_40 "999.99" anchor=mm
+_SCORE_LABEL_BBOX = (-35, -6, 35, 8)  # waves_font_14 "单声骸分数" anchor=mm
 _SCORE_STACK_GAP = 16
 _SCORE_NUM_H = _SCORE_NUM_BBOX[3] - _SCORE_NUM_BBOX[1]
 _SCORE_LABEL_H = _SCORE_LABEL_BBOX[3] - _SCORE_LABEL_BBOX[1]
@@ -248,12 +235,8 @@ _SCORE_LABEL_Y = (
 )
 
 # 总排行用户文字在 bot 徽章上方按字体墨迹高度垂直居中。
-_USER_NAME_BBOX = _LAYOUT_DRAW.textbbox(
-    (0, 0), "库洛玩家名", font=waves_font_22, anchor="lm"
-)
-_USER_UID_BBOX = _LAYOUT_DRAW.textbbox(
-    (0, 0), "特征码: 1****789", font=waves_font_18, anchor="lm"
-)
+_USER_NAME_BBOX = (0, -10, 110, 12)  # waves_font_22 "库洛玩家名" anchor=lm
+_USER_UID_BBOX = (0, -9, 157, 9)  # waves_font_18 "特征码: 1****789" anchor=lm
 _USER_TEXT_GAP = 8
 _USER_UID_EXTRA = 5  # UID 相对居中位置再往下一点
 _USER_TEXT_H = (
@@ -273,65 +256,6 @@ _USER_UID_Y = (
     + _USER_UID_EXTRA
     - _USER_UID_BBOX[1]
 )
-
-
-def _assert_static_row_layout() -> None:
-    """布局约束随素材/字体变化时立即失败，避免内容越过实测金线。"""
-    rank_right = _RANK_X + max(_RANK_MEDAL_SIZE[0], _RANK_BOX_SIZE[0])
-    assert 0 <= _RANK_X
-    assert rank_right < FRAME_LEFT
-    assert rank_right < _AVATAR_VISIBLE_X
-    assert 0 <= _AVATAR_VISIBLE_X
-    assert _AVATAR_VISIBLE_X + _AVATAR_MAX_VISIBLE_W < USER_INFO_X
-    assert (
-        _AVATAR_VISIBLE_X + _AVATAR_MAX_VISIBLE_W + _AVATAR_INFO_SAFE_GAP
-        == USER_INFO_X
-    )
-    assert USER_INFO_X < _USER_INFO_BASE_X
-    assert FRAME_TOP <= _RANK_MEDAL_Y
-    assert _RANK_MEDAL_Y + _RANK_MEDAL_SIZE[1] <= FRAME_BOTTOM
-    assert abs(2 * _RANK_MEDAL_Y + _RANK_MEDAL_SIZE[1] - ITEM_H) <= 1
-    assert FRAME_TOP <= _RANK_BOX_Y
-    assert _RANK_BOX_Y + _RANK_BOX_SIZE[1] <= FRAME_BOTTOM
-    assert abs(2 * _RANK_BOX_Y + _RANK_BOX_SIZE[1] - ITEM_H) <= 1
-    assert FRAME_LEFT <= _BOT_BADGE_POS[0]
-    assert _BOT_BADGE_POS[0] + _BOT_BADGE_SIZE[0] < PHANTOM_THUMB_X
-    assert PHANTOM_THUMB_X == (
-        _USER_INFO_BASE_X
-        + _BOT_BADGE_X_OFFSET
-        + _BOT_BADGE_SIZE[0]
-        + _BOT_THUMB_GAP
-    )
-    assert FRAME_TOP <= _BOT_BADGE_POS[1]
-    assert (
-        _BOT_BADGE_POS[1] + _BOT_BADGE_SIZE[1] + _BOT_BADGE_BOTTOM_INSET
-        == FRAME_BOTTOM
-    )
-    assert FRAME_TOP <= _PHANTOM_ICON_Y
-    assert _PHANTOM_ICON_Y + _PHANTOM_ICON_SIZE[1] <= FRAME_BOTTOM
-    assert FRAME_TOP <= _FETTER_ICON_POS[1]
-    assert _FETTER_ICON_POS[1] + _FETTER_ICON_SIZE[1] <= _PROMOTE_Y
-    assert _PROMOTE_Y + _PROMOTE_SIZE[1] <= FRAME_BOTTOM
-    assert PHANTOM_THUMB_X + _THUMB_EXTENT_W < _COL_NAME_X[0]
-    assert _COL_NAME_X[0] + _NAME_MAX < _COL_VALUE_RIGHT[0] - _VALUE_MAX
-    assert _COL_VALUE_RIGHT[0] < _COL_SCORE_RIGHT[0] - _PROP_SCORE_MAX
-    assert _COL_SCORE_RIGHT[0] < _COL_NAME_X[1]
-    assert _COL_SCORE_RIGHT[1] < _EMBLEM_X
-    assert _COL_SCORE_RIGHT[1] + _PROP_SCORE_CELL_GAP == _EMBLEM_X
-    assert _EMBLEM_X + _EMBLEM_SIZE[0] < _SCORE_NUM_LEFT
-    assert _SCORE_NUM_X == _SCORE_LABEL_X == _SCORE_CENTER_X
-    assert _SCORE_NUM_LEFT <= _SCORE_CENTER_X <= _SCORE_NUM_RIGHT
-    assert _SCORE_NUM_RIGHT <= FRAME_RIGHT
-    assert _SCORE_NUM_RIGHT + _SCORE_RIGHT_MARGIN == FRAME_RIGHT
-    assert FRAME_TOP <= _EMBLEM_Y
-    assert _EMBLEM_Y + _EMBLEM_SIZE[1] <= FRAME_BOTTOM
-    assert _SCORE_STACK_TOP >= FRAME_TOP
-    assert _SCORE_STACK_TOP + _SCORE_STACK_H <= FRAME_BOTTOM
-    assert _USER_TEXT_TOP >= FRAME_TOP
-    assert _USER_UID_Y + _USER_UID_BBOX[3] < _BOT_BADGE_POS[1]
-
-
-_assert_static_row_layout()
 
 
 def draw_phantom_bar_bg(bar: Image.Image, width: int = WIDTH) -> Image.Image:

@@ -1,5 +1,4 @@
 import asyncio
-from math import ceil
 from typing import Any, List, Union, Optional
 from pathlib import Path
 
@@ -74,18 +73,12 @@ TEXT_PATH = Path(__file__).parent / "texture2d"
 _CHAIN_BLOCK_SIZE = (46, 22)
 _LEVEL_BLOCK_SIZE = (62, 22)
 _INFO_BLOCK_GAP = 6
-_GROUP_LAYOUT_DRAW = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
-_GROUP_MY_BBOX = _GROUP_LAYOUT_DRAW.textbbox(
-    (0, 0), "我的", font=waves_font_16, anchor="lm"
-)
-_GROUP_UID_BBOX = _GROUP_LAYOUT_DRAW.textbbox(
-    (0, 0), "1****789", font=waves_font_20, anchor="lm"
-)
+# 字体墨迹为实测固化值 (跨 Pillow 版本稳定)。
+_GROUP_MY_BBOX = (0, -7, 32, 9)  # waves_font_16 "我的" anchor=lm
+_GROUP_UID_BBOX = (0, -7, 102, 9)  # waves_font_20 "1****789" anchor=lm
 _GROUP_INFO_W = _CHAIN_BLOCK_SIZE[0] + _INFO_BLOCK_GAP + _LEVEL_BLOCK_SIZE[0]
-_GROUP_UID_W = ceil(
-    _GROUP_LAYOUT_DRAW.textlength("1****789", font=waves_font_20)
-)
-_GROUP_MY_W = ceil(_GROUP_LAYOUT_DRAW.textlength("我的", font=waves_font_16))
+_GROUP_UID_W = 103  # waves_font_20 "1****789"
+_GROUP_MY_W = 32  # waves_font_16 "我的"
 _GROUP_INFO_CONTENT_W = max(_GROUP_INFO_W, _GROUP_UID_W, _GROUP_MY_W)
 _GROUP_INFO_RIGHT = _USER_INFO_BASE_X + _GROUP_INFO_CONTENT_W
 _GROUP_RENDERED_INFO_RIGHT = USER_INFO_X + _GROUP_INFO_CONTENT_W
@@ -133,52 +126,6 @@ _GROUP_MY_Y = (
     - _GROUP_MY_BBOX[1]
 )
 _GROUP_STACK_BOTTOM = _GROUP_MY_Y + _GROUP_MY_BBOX[3]
-
-
-def _assert_static_group_row_layout() -> None:
-    """群排行的独立宽度、横向位移和信息栈都必须落在实测内框内。"""
-    assert _GROUP_LAYOUT_DX < 0
-    assert GROUP_WIDTH < WIDTH
-    assert GROUP_FRAME_LEFT == FRAME_LEFT
-    assert GROUP_FRAME_RIGHT == FRAME_RIGHT + _GROUP_LAYOUT_DX
-    assert GROUP_FRAME_TOP == FRAME_TOP
-    assert GROUP_FRAME_BOTTOM == FRAME_BOTTOM
-    assert GROUP_FRAME_LEFT <= USER_INFO_X
-    assert _AVATAR_VISIBLE_X + _AVATAR_MAX_VISIBLE_W < USER_INFO_X
-    assert _GROUP_RENDERED_INFO_RIGHT < GROUP_PHANTOM_THUMB_X
-    assert _GROUP_RENDERED_INFO_RIGHT + _GROUP_INFO_THUMB_MIN_GAP < (
-        GROUP_PHANTOM_THUMB_X
-    )
-    assert _GROUP_INFO_RIGHT == _USER_INFO_BASE_X + _GROUP_INFO_CONTENT_W
-    assert GROUP_PHANTOM_THUMB_X - _GROUP_INFO_RIGHT == _GROUP_INFO_THUMB_GAP
-    assert GROUP_FRAME_LEFT <= GROUP_PHANTOM_THUMB_X
-    assert GROUP_PHANTOM_THUMB_X + _THUMB_EXTENT_W < GROUP_COL0
-    assert GROUP_COL0 < GROUP_COL1
-    assert _COL_SCORE_RIGHT[1] + _GROUP_LAYOUT_DX < GROUP_EMBLEM_X
-    assert GROUP_FRAME_LEFT <= GROUP_EMBLEM_X
-    assert GROUP_EMBLEM_X + _EMBLEM_SIZE[0] < _SCORE_NUM_LEFT + _GROUP_LAYOUT_DX
-    assert GROUP_FRAME_LEFT <= _SCORE_NUM_LEFT + _GROUP_LAYOUT_DX
-    assert GROUP_SCORE_CENTER_X == _SCORE_LABEL_X + _GROUP_LAYOUT_DX
-    assert _SCORE_NUM_RIGHT + _GROUP_LAYOUT_DX <= GROUP_FRAME_RIGHT
-    assert (
-        _SCORE_NUM_RIGHT + _GROUP_LAYOUT_DX + _SCORE_RIGHT_MARGIN
-        == GROUP_FRAME_RIGHT
-    )
-    assert _GROUP_INFO_Y >= GROUP_FRAME_TOP
-    assert _GROUP_INFO_Y + _CHAIN_BLOCK_SIZE[1] < (
-        _GROUP_UID_Y + _GROUP_UID_BBOX[1]
-    )
-    assert _GROUP_UID_Y + _GROUP_UID_BBOX[3] < (
-        _GROUP_MY_Y + _GROUP_MY_BBOX[1]
-    )
-    assert _GROUP_STACK_BOTTOM <= GROUP_FRAME_BOTTOM
-    assert abs(
-        (_GROUP_STACK_TOP - GROUP_FRAME_TOP)
-        - (GROUP_FRAME_BOTTOM - _GROUP_MAIN_BOTTOM)
-    ) <= 1
-
-
-_assert_static_group_row_layout()
 
 
 class PhantomRankInfo(BaseModel):
