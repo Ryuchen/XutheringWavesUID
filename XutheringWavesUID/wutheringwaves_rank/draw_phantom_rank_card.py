@@ -64,7 +64,7 @@ from ..utils.name_convert import alias_to_char_name, char_name_to_char_id
 from ..utils.database.models import WavesBind
 from ..utils.resource.download_file import get_phantom_img
 from ..wutheringwaves_config import PREFIX, WutheringWavesConfig
-from ..utils.fonts.waves_fonts import waves_font_16, waves_font_18, waves_font_20
+from ..utils.fonts.waves_fonts import waves_font_18, waves_font_20
 from ..utils.resource.constant import SPECIAL_CHAR, SPECIAL_CHAR_NAME
 
 rank_length = 20  # 排行长度
@@ -74,12 +74,10 @@ _CHAIN_BLOCK_SIZE = (46, 22)
 _LEVEL_BLOCK_SIZE = (62, 22)
 _INFO_BLOCK_GAP = 6
 # 字体墨迹为实测固化值 (跨 Pillow 版本稳定)。
-_GROUP_MY_BBOX = (0, -7, 32, 9)  # waves_font_16 "我的" anchor=lm
 _GROUP_UID_BBOX = (0, -7, 102, 9)  # waves_font_20 "1****789" anchor=lm
 _GROUP_INFO_W = _CHAIN_BLOCK_SIZE[0] + _INFO_BLOCK_GAP + _LEVEL_BLOCK_SIZE[0]
 _GROUP_UID_W = 103  # waves_font_20 "1****789"
-_GROUP_MY_W = 32  # waves_font_16 "我的"
-_GROUP_INFO_CONTENT_W = max(_GROUP_INFO_W, _GROUP_UID_W, _GROUP_MY_W)
+_GROUP_INFO_CONTENT_W = max(_GROUP_INFO_W, _GROUP_UID_W)
 _GROUP_INFO_RIGHT = _USER_INFO_BASE_X + _GROUP_INFO_CONTENT_W
 _GROUP_RENDERED_INFO_RIGHT = USER_INFO_X + _GROUP_INFO_CONTENT_W
 _GROUP_INFO_THUMB_GAP = 10
@@ -102,11 +100,9 @@ GROUP_COL1 = _COL1 + _GROUP_LAYOUT_DX
 GROUP_EMBLEM_X = _EMBLEM_X + _GROUP_LAYOUT_DX
 GROUP_SCORE_CENTER_X = _SCORE_CENTER_X + _GROUP_LAYOUT_DX
 
-# 群排行无 bot 徽章: 命座行 + uid 拉大间距并整体垂直居中; "我的"(附加自身行)落在下方。
+# 群排行无 bot 徽章: 命座行 + uid 拉大间距并整体垂直居中。
 _GROUP_INFO_UID_GAP = 22
-_GROUP_UID_MY_GAP = 6
 _GROUP_UID_H = _GROUP_UID_BBOX[3] - _GROUP_UID_BBOX[1]
-_GROUP_MY_H = _GROUP_MY_BBOX[3] - _GROUP_MY_BBOX[1]
 _GROUP_MAIN_H = _CHAIN_BLOCK_SIZE[1] + _GROUP_INFO_UID_GAP + _GROUP_UID_H
 _GROUP_STACK_TOP = GROUP_FRAME_TOP + (
     GROUP_FRAME_BOTTOM - GROUP_FRAME_TOP - _GROUP_MAIN_H
@@ -118,14 +114,6 @@ _GROUP_UID_Y = (
     + _GROUP_INFO_UID_GAP
     - _GROUP_UID_BBOX[1]
 )
-_GROUP_MAIN_BOTTOM = _GROUP_INFO_Y + _GROUP_MAIN_H
-_GROUP_MY_Y = (
-    _GROUP_UID_Y
-    + _GROUP_UID_BBOX[3]
-    + _GROUP_UID_MY_GAP
-    - _GROUP_MY_BBOX[1]
-)
-_GROUP_STACK_BOTTOM = _GROUP_MY_Y + _GROUP_MY_BBOX[3]
 
 
 class PhantomRankInfo(BaseModel):
@@ -380,9 +368,6 @@ def _compose_group_rows(card_img, bar, details, display_rank_ids, uid_texts, ava
             waves_font_20,
             "lm",
         )
-        if rank_id > rank_length:
-            draw.text((USER_INFO_X, _GROUP_MY_Y), "我的", RED, waves_font_16, "lm")
-
         draw_phantom_thumb(
             bar_bg,
             phantom_icon_img,

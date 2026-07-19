@@ -208,22 +208,23 @@ _PROP_ROW_GAP = 31
 _PROP_ROW_Y = (CY - _PROP_ROW_GAP, CY, CY + _PROP_ROW_GAP)
 
 # 评分区: 40px 分数和标签共用固定中心，再以最宽样例反推 84px 评级图位置。
-_EMBLEM_SIZE = (84, 84)
+_EMBLEM_SIZE = (96, 96)  # 评级图放大, 中心不变
 _PROP_SCORE_CELL_GAP = 14
 _SCORE_RIGHT_MARGIN = 16
 _SCORE_NUM_MAX = 144  # waves_font_40 "999.99"
-_SCORE_LABEL_MAX = 70  # waves_font_14 "单声骸分数"
+_SCORE_LABEL_MAX = 80  # waves_font_16 "单声骸分数"
 _SCORE_BLOCK_HALF_W = ceil(max(_SCORE_NUM_MAX, _SCORE_LABEL_MAX) / 2)
 _SCORE_CENTER_X = FRAME_RIGHT - _SCORE_RIGHT_MARGIN - _SCORE_BLOCK_HALF_W
 _SCORE_NUM_LEFT = _SCORE_CENTER_X - _SCORE_BLOCK_HALF_W
 _SCORE_NUM_RIGHT = _SCORE_CENTER_X + _SCORE_BLOCK_HALF_W
 _EMBLEM_NUM_GAP = 12
-_EMBLEM_X = _SCORE_NUM_LEFT - _EMBLEM_NUM_GAP - _EMBLEM_SIZE[0]
+_EMBLEM_CENTER_X = _SCORE_NUM_LEFT - _EMBLEM_NUM_GAP - 42  # 沿用原 84px 图中心, 放大不移位
+_EMBLEM_X = _EMBLEM_CENTER_X - _EMBLEM_SIZE[0] // 2
 _EMBLEM_Y = FRAME_TOP + (_FRAME_H - _EMBLEM_SIZE[1]) // 2
 _SCORE_NUM_X = _SCORE_CENTER_X
 _SCORE_LABEL_X = _SCORE_CENTER_X
 _SCORE_NUM_BBOX = (-72, -13, 72, 18)  # waves_font_40 "999.99" anchor=mm
-_SCORE_LABEL_BBOX = (-35, -6, 35, 8)  # waves_font_14 "单声骸分数" anchor=mm
+_SCORE_LABEL_BBOX = (-40, -7, 40, 9)  # waves_font_16 "单声骸分数" anchor=mm
 _SCORE_STACK_GAP = 16
 _SCORE_NUM_H = _SCORE_NUM_BBOX[3] - _SCORE_NUM_BBOX[1]
 _SCORE_LABEL_H = _SCORE_LABEL_BBOX[3] - _SCORE_LABEL_BBOX[1]
@@ -279,23 +280,24 @@ def draw_rank_and_avatar(bar_bg: Image.Image, rank_id: int, avatar: Optional[Ima
     if badge is not None:
         bar_bg.alpha_composite(badge, (_RANK_X, _RANK_MEDAL_Y))
     else:
-        box = Image.new("RGBA", _RANK_BOX_SIZE, (0, 0, 0, 0))
+        if rank_id > 999:  # 4 位/999+: 加宽底板, 受左侧金框外空间限制字号略小
+            _rt = "999+" if rank_id > 1000 else f"{rank_id}"
+            _rf, box_w = waves_font_30, 88
+        elif rank_id > 99:
+            _rt, _rf, box_w = f"{rank_id}", waves_font_34, 72
+        else:
+            _rt, _rf, box_w = f"{rank_id}", waves_font_34, _RANK_BOX_SIZE[0]
+        box_h = _RANK_BOX_SIZE[1]
+        box = Image.new("RGBA", (box_w, box_h), (0, 0, 0, 0))
         bd = ImageDraw.Draw(box)
         bd.rounded_rectangle(
-            [0, 0, _RANK_BOX_SIZE[0] - 1, _RANK_BOX_SIZE[1] - 1],
+            [0, 0, box_w - 1, box_h - 1],
             radius=8,
             fill=(54, 54, 54, int(0.9 * 255)),
         )
-        _rt = "999+" if rank_id > 1000 else f"{rank_id}"
-        _rf = waves_font_18 if rank_id > 1000 else (waves_font_34 if rank_id <= 99 else waves_font_24)
-        bd.text(
-            (_RANK_BOX_SIZE[0] // 2, _RANK_BOX_SIZE[1] // 2),
-            _rt,
-            "white",
-            _rf,
-            "mm",
-        )
-        bar_bg.alpha_composite(box, (_RANK_X, _RANK_BOX_Y))
+        bd.text((box_w // 2, box_h // 2), _rt, "white", _rf, "mm")
+        cx = _RANK_X + _RANK_BOX_SIZE[0] // 2
+        bar_bg.alpha_composite(box, (cx - box_w // 2, _RANK_BOX_Y))
 
 
 def draw_phantom_thumb(
@@ -390,7 +392,7 @@ def draw_score_cell(
         (_SCORE_LABEL_X + dx, _SCORE_LABEL_Y),
         "单声骸分数",
         SPECIAL_GOLD,
-        waves_font_14,
+        waves_font_16,
         "mm",
     )
 
@@ -526,7 +528,6 @@ async def draw_phantom_total_rank(bot: Bot, ev: Event, char: str, pages: int) ->
     details = list(ranking)
 
     # 自己行(仅登录/绑定时): 在榜用服务器数据; 未上榜用本地最高 5 副词条声骸 + 999+
-    self_index = -1
     self_entry = getattr(rankInfoList.data, "self_entry", None)
     if self_uid and self_entry is not None:
         if self_entry.rank and self_entry.rank > 0:
@@ -535,7 +536,6 @@ async def draw_phantom_total_rank(bot: Bot, ev: Event, char: str, pages: int) ->
             self_row = await _build_local_self_row(self_uid, char_id, self_entry)
         if self_row is not None:
             details.append(self_row)
-            self_index = len(details) - 1
 
     if not details:
         return f"[鸣潮] 暂无【{char}】声骸总排行数据"
@@ -566,7 +566,7 @@ async def draw_phantom_total_rank(bot: Bot, ev: Event, char: str, pages: int) ->
     )
 
     card_img = await _compose_rows(
-        card_img, bar, details, avatars, phantom_icons, fetter_icons, self_uid, calc_map, TITLE_H + text_bar_h, self_index
+        card_img, bar, details, avatars, phantom_icons, fetter_icons, self_uid, calc_map, TITLE_H + text_bar_h
     )
     return await convert_img(card_img)
 
@@ -635,7 +635,7 @@ async def _build_local_self_row(self_uid: str, char_id, self_entry: PhantomTotal
 
 
 @to_thread
-def _compose_rows(card_img, bar, details, avatars, phantom_icons, fetter_icons, self_uid, calc_map, top, self_index=-1):
+def _compose_rows(card_img, bar, details, avatars, phantom_icons, fetter_icons, self_uid, calc_map, top):
     for idx, temp in enumerate(zip(details, avatars, phantom_icons, fetter_icons)):
         detail, role_avatar, phantom_icon_img, fetter_icon_img = temp
         detail: PhantomTotalRankDetail
@@ -672,15 +672,6 @@ def _compose_rows(card_img, bar, details, avatars, phantom_icons, fetter_icons, 
         draw_phantom_thumb(bar_bg, phantom_icon_img, fetter_icon_img, detail.cost)
         draw_props_2col(bar_bg, draw, build_entries(detail.main_props, detail.sub_props, calc_map))
         draw_score_cell(bar_bg, draw, detail.grade, detail.score)
-
-        if idx == self_index:
-            draw.text(
-                (_RANK_X + _RANK_BOX_SIZE[0] // 2, _RANK_MEDAL_Y + 62),
-                "我的",
-                RED,
-                waves_font_16,
-                "mm",
-            )
 
         card_img.paste(bar_bg, (0, y_pos), bar_bg)
 
