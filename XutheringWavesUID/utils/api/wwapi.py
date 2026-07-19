@@ -12,6 +12,7 @@ UPLOAD_URL = f"{MAIN_URL}/top/waves/upload"
 GET_RANK_URL = f"{MAIN_URL}/top/waves/rank"
 GET_CARDS_RANK_URL = f"{MAIN_URL}/top/waves/cards/rank"
 GET_TOTAL_RANK_URL = f"{MAIN_URL}/top/waves/total/rank"
+GET_PHANTOM_TOTAL_RANK_URL = f"{MAIN_URL}/top/waves/phantom/total/rank"
 ONE_RANK_URL = f"{MAIN_URL}/top/waves/one"
 CHAR_RANK_OPTIONS_URL = f"{MAIN_URL}/top/waves/char/options"
 UPLOAD_ABYSS_RECORD_URL = f"{MAIN_URL}/top/waves/abyss/upload"
@@ -148,6 +149,60 @@ class TotalRankResponse(BaseModel):
     code: int
     message: str
     data: Optional[TotalRankInfoData] = None
+
+
+# ------------------------------------------------------------
+# 声骸总排行
+
+
+class PhantomTotalRankRequest(BaseModel):
+    char_id: int = Field(..., description="角色ID")
+    page: int = Field(..., description="页码")
+    page_num: int = Field(..., description="每页数量")
+    version: str = Field(..., description="版本号")
+    waves_id: str = Field(..., description="鸣潮id")
+
+
+class PhantomRankProp(BaseModel):
+    name: str  # 词条名
+    value: str  # 词条值
+    score: float = 0  # 单词条分数
+
+
+class PhantomTotalRankDetail(BaseModel):
+    rank: int
+    user_id: str
+    username: str
+    alias_name: str
+    background: Optional[str] = ""
+    kuro_name: str
+    waves_id: str
+    char_id: int  # 装备角色id
+    char_name: str = ""  # 装备角色名 (空则由客户端按 char_id 映射)
+    phantom_id: int
+    phantom_name: str
+    icon_url: str = ""
+    cost: int
+    level: int
+    set: str = ""  # 套装名
+    main_props: List[PhantomRankProp] = []
+    sub_props: List[PhantomRankProp] = []
+    score: float  # 单声骸分数
+    grade: str  # 单声骸评级
+    sender_avatar: Optional[str] = ""
+    hide_uid: bool = False
+
+
+class PhantomTotalRankData(BaseModel):
+    rank_list: List[PhantomTotalRankDetail]
+    page: int
+    page_num: int
+
+
+class PhantomTotalRankResponse(BaseModel):
+    code: int
+    message: str
+    data: Optional[PhantomTotalRankData] = None
 
 
 # ------------------------------------------------------------
