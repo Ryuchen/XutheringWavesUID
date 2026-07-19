@@ -197,6 +197,7 @@ class PhantomTotalRankData(BaseModel):
     rank_list: List[PhantomTotalRankDetail]
     page: int
     page_num: int
+    self_entry: Optional[PhantomTotalRankDetail] = Field(default=None, alias="self")
 
 
 class PhantomTotalRankResponse(BaseModel):

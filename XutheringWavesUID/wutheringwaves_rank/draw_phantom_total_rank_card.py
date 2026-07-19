@@ -15,6 +15,7 @@ from gsuid_core.utils.image.convert import convert_img
 
 from .rank_avatar import get_avatar
 from .rank_badge import _load_badge, draw_bot_name_badge
+from .draw_rank_card import find_role_detail
 from ..utils.util import get_version, hide_uid
 from ..utils.image import (
     RED,
@@ -28,16 +29,17 @@ from ..utils.image import (
 )
 from ..utils.api.wwapi import (
     GET_PHANTOM_TOTAL_RANK_URL,
+    PhantomRankProp,
     PhantomTotalRankRequest,
     PhantomTotalRankResponse,
     PhantomTotalRankDetail,
 )
-from ..utils.calculate import get_calc_map, get_valid_color
+from ..utils.calculate import get_calc_map, get_valid_color, calc_phantom_entry, calc_phantom_score
 from ..utils.database.models import WavesBind
 from ..wutheringwaves_config import WutheringWavesConfig
 from ..utils.resource.download_file import get_phantom_img
 from ..utils.name_convert import char_id_to_char_name, char_name_to_char_id
-from ..utils.resource.constant import SPECIAL_CHAR_NAME
+from ..utils.resource.constant import SPECIAL_CHAR, SPECIAL_CHAR_NAME
 from ..utils.fonts.waves_fonts import (
     fit_text,
     waves_font_14,
@@ -176,6 +178,7 @@ _FETTER_ICON_POS = (
     FRAME_BOTTOM - _FETTER_ICON_SIZE[1] - _PROMOTE_SIZE[1],
 )
 _PROMOTE_Y = FRAME_BOTTOM - _PROMOTE_SIZE[1]
+_THUMB_SHIFT = 14  # 声骸头像/套装/cost 整体左移 (词条列不动)
 
 # 词条表: 以实际字体宽度决定固定的名称/数值/分数列宽。
 _LAYOUT_DRAW = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
@@ -359,11 +362,13 @@ def draw_rank_and_avatar(bar_bg: Image.Image, rank_id: int, avatar: Optional[Ima
             radius=8,
             fill=(54, 54, 54, int(0.9 * 255)),
         )
+        _rt = "999+" if rank_id > 1000 else f"{rank_id}"
+        _rf = waves_font_18 if rank_id > 1000 else (waves_font_34 if rank_id <= 99 else waves_font_24)
         bd.text(
             (_RANK_BOX_SIZE[0] // 2, _RANK_BOX_SIZE[1] // 2),
-            f"{rank_id}",
+            _rt,
             "white",
-            waves_font_34 if rank_id <= 99 else waves_font_24,
+            _rf,
             "mm",
         )
         bar_bg.alpha_composite(box, (_RANK_X, _RANK_BOX_Y))
@@ -377,7 +382,7 @@ def draw_phantom_thumb(
     dx: int = 0,
 ) -> None:
     """声骸头像 + 套装图标 + cost, 全部落在金线框内。"""
-    x = PHANTOM_THUMB_X + dx
+    x = PHANTOM_THUMB_X + dx - _THUMB_SHIFT
     if icon is not None:
         bar_bg.alpha_composite(
             icon.resize(_PHANTOM_ICON_SIZE),
@@ -386,7 +391,7 @@ def draw_phantom_thumb(
     if fetter is not None:
         bar_bg.alpha_composite(
             fetter.resize(_FETTER_ICON_SIZE),
-            (_FETTER_ICON_POS[0] + dx, _FETTER_ICON_POS[1]),
+            (x + 58, _FETTER_ICON_POS[1]),
         )
     promote = promote_icon.resize(_PROMOTE_SIZE)
     # cost 在声骸头像正下方水平居中 (最大 4c, 均匀排布)
@@ -580,7 +585,7 @@ async def draw_phantom_total_rank(bot: Bot, ev: Event, char: str, pages: int) ->
     item = PhantomTotalRankRequest(
         char_id=int(char_id),
         page=pages,
-        page_num=10,
+        page_num=20,
         waves_id=self_uid,
         version=get_version(dynamic=True, waves_id=self_uid, pages=pages),
     )
@@ -593,7 +598,21 @@ async def draw_phantom_total_rank(bot: Bot, ev: Event, char: str, pages: int) ->
     if not rankInfoList.data:
         return "获取声骸总排行失败"
 
-    details = rankInfoList.data.rank_list
+    ranking = rankInfoList.data.rank_list
+    details = list(ranking)
+
+    # 自己行(仅登录/绑定时): 在榜用服务器数据; 未上榜用本地最高 5 副词条声骸 + 999+
+    self_index = -1
+    self_entry = getattr(rankInfoList.data, "self_entry", None)
+    if self_uid and self_entry is not None:
+        if self_entry.rank and self_entry.rank > 0:
+            self_row = self_entry
+        else:
+            self_row = await _build_local_self_row(self_uid, char_id, self_entry)
+        if self_row is not None:
+            details.append(self_row)
+            self_index = len(details) - 1
+
     if not details:
         return f"[鸣潮] 暂无【{char}】声骸总排行数据"
 
@@ -609,7 +628,7 @@ async def draw_phantom_total_rank(bot: Bot, ev: Event, char: str, pages: int) ->
 
     compose_cond_bar(card_img, "排行标准：以单声骸分数排序 (评分高不代表实际伤害高)", TITLE_H, text_bar_h)
 
-    avg_val = sum(d.score for d in details) / len(details) if details else 0
+    avg_val = sum(d.score for d in ranking) / len(ranking) if ranking else 0
     await compose_pile_header(card_img, char_id, char, "声骸总排行", f"{avg_val:.1f}")
 
     bar = draw_phantom_bar_bg(Image.open(TEXT_PATH / "bar1.png"))
@@ -623,13 +642,76 @@ async def draw_phantom_total_rank(bot: Bot, ev: Event, char: str, pages: int) ->
     )
 
     card_img = await _compose_rows(
-        card_img, bar, details, avatars, phantom_icons, fetter_icons, self_uid, calc_map, TITLE_H + text_bar_h
+        card_img, bar, details, avatars, phantom_icons, fetter_icons, self_uid, calc_map, TITLE_H + text_bar_h, self_index
     )
     return await convert_img(card_img)
 
 
+async def _build_local_self_row(self_uid: str, char_id, self_entry: PhantomTotalRankDetail) -> Optional[PhantomTotalRankDetail]:
+    """未上榜时: 用本地最高分(满 5 副词条)声骸拼一条 999+ 自己行, 用户信息取服务端 self。"""
+    from ..utils.calc import WuWaCalc
+
+    find_char_id = SPECIAL_CHAR[char_id] if char_id in SPECIAL_CHAR else char_id
+    role_detail = await find_role_detail(self_uid, find_char_id)
+    if not role_detail or not role_detail.phantomData or not role_detail.phantomData.equipPhantomList:
+        return None
+
+    calc = WuWaCalc(role_detail)
+    calc.phantom_pre = calc.prepare_phantom()
+    calc.phantom_card = calc.enhance_summation_phantom_value(calc.phantom_pre)
+    calc.calc_temp = get_calc_map(calc.phantom_card, role_detail.role.roleName, role_detail.role.roleId)
+
+    best = None
+    for ph in role_detail.phantomData.equipPhantomList:
+        if not ph or not ph.phantomProp or len(ph.subProps or []) != 5:
+            continue
+        _score, _grade = calc_phantom_score(role_detail.role.roleId, ph.get_props(), ph.cost, calc.calc_temp)
+        if best is None or _score > best[1]:
+            best = (ph, _score, _grade)
+    if best is None:
+        return None
+    ph, score, grade = best
+
+    char_attr = role_detail.role.attributeName or ""
+    props = ph.get_props()
+    main_len = len(ph.mainProps or [])
+    scored = []
+    for pi, prop in enumerate(props):
+        es = 0.0
+        if calc.calc_temp:
+            try:
+                _, es = calc_phantom_entry(pi, prop, ph.cost, calc.calc_temp, char_attr)
+            except Exception as e:
+                logger.debug(f"[鸣潮·声骸总排行] 自己行单词条分失败: {e}")
+        scored.append(PhantomRankProp(name=prop.attributeName, value=prop.attributeValue, score=es))
+
+    return PhantomTotalRankDetail(
+        rank=1001,  # → 999+
+        user_id=self_entry.user_id,
+        username="",
+        alias_name=self_entry.alias_name,
+        background=self_entry.background or "",
+        kuro_name=self_entry.kuro_name,
+        waves_id=self_entry.waves_id,
+        char_id=int(char_id),
+        char_name="",
+        phantom_id=ph.phantomProp.phantomId,
+        phantom_name=ph.phantomProp.name,
+        icon_url=ph.phantomProp.iconUrl,
+        cost=ph.cost,
+        level=ph.level,
+        set=ph.fetterDetail.name,
+        main_props=scored[:main_len],
+        sub_props=scored[main_len:main_len + 5],
+        score=score,
+        grade=grade,
+        sender_avatar=self_entry.sender_avatar or "",
+        hide_uid=self_entry.hide_uid,
+    )
+
+
 @to_thread
-def _compose_rows(card_img, bar, details, avatars, phantom_icons, fetter_icons, self_uid, calc_map, top):
+def _compose_rows(card_img, bar, details, avatars, phantom_icons, fetter_icons, self_uid, calc_map, top, self_index=-1):
     for idx, temp in enumerate(zip(details, avatars, phantom_icons, fetter_icons)):
         detail, role_avatar, phantom_icon_img, fetter_icon_img = temp
         detail: PhantomTotalRankDetail
@@ -666,6 +748,15 @@ def _compose_rows(card_img, bar, details, avatars, phantom_icons, fetter_icons, 
         draw_phantom_thumb(bar_bg, phantom_icon_img, fetter_icon_img, detail.cost)
         draw_props_2col(bar_bg, draw, build_entries(detail.main_props, detail.sub_props, calc_map))
         draw_score_cell(bar_bg, draw, detail.grade, detail.score)
+
+        if idx == self_index:
+            draw.text(
+                (_RANK_X + _RANK_BOX_SIZE[0] // 2, _RANK_MEDAL_Y + 62),
+                "我的",
+                RED,
+                waves_font_16,
+                "mm",
+            )
 
         card_img.paste(bar_bg, (0, y_pos), bar_bg)
 
