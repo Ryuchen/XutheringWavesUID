@@ -397,6 +397,7 @@ class MatrixRankItem(BaseModel):
     page_num: int
     waves_id: str
     version: str
+    single_team: bool = False
 
 
 class MatrixCharDetail(BaseModel):

@@ -8,38 +8,38 @@ import httpx
 from PIL import Image, ImageDraw
 
 from gsuid_core.bot import Bot
+from gsuid_core.pool import to_thread
 from gsuid_core.logger import logger
 from gsuid_core.models import Event
-from gsuid_core.pool import to_thread
 from gsuid_core.utils.image.convert import convert_img
 
-from .rank_avatar import get_avatar
+from .rank_bar import stretch_rank_bar as _stretch_bar
+from .pagination import RANK_PAGE_SIZE
 from .rank_badge import _load_badge, draw_bot_name_badge
-from .draw_rank_card import find_role_detail
-from ..utils.util import get_version, hide_uid
+from ..utils.util import hide_uid, get_version
+from .rank_avatar import get_avatar
 from ..utils.image import (
     RED,
     GREY,
-    WAVES_FREEZING,
     SPECIAL_GOLD,
+    WAVES_FREEZING,
     add_footer,
     get_custom_waves_bg,
     get_attribute_effect,
     get_role_pile_default,
 )
+from .draw_rank_card import find_role_detail
 from ..utils.api.wwapi import (
     GET_PHANTOM_TOTAL_RANK_URL,
     PhantomRankProp,
+    PhantomTotalRankDetail,
     PhantomTotalRankRequest,
     PhantomTotalRankResponse,
-    PhantomTotalRankDetail,
 )
 from ..utils.calculate import get_calc_map, get_valid_color, calc_phantom_entry, calc_phantom_score
+from ..utils.name_convert import char_id_to_char_name, char_name_to_char_id
 from ..utils.database.models import WavesBind
 from ..wutheringwaves_config import WutheringWavesConfig
-from ..utils.resource.download_file import get_phantom_img
-from ..utils.name_convert import char_id_to_char_name, char_name_to_char_id
-from ..utils.resource.constant import SPECIAL_CHAR, SPECIAL_CHAR_NAME
 from ..utils.fonts.waves_fonts import (
     fit_text,
     waves_font_14,
@@ -53,6 +53,8 @@ from ..utils.fonts.waves_fonts import (
     waves_font_40,
     waves_font_44,
 )
+from ..utils.resource.constant import SPECIAL_CHAR, SPECIAL_CHAR_NAME
+from ..utils.resource.download_file import get_phantom_img
 
 TEXT_PATH = Path(__file__).parent / "texture2d"
 TITLE_II = Image.open(TEXT_PATH / "title2.png")
@@ -70,23 +72,6 @@ TITLE_H = 500
 
 SCORE_POS = WAVES_FREEZING  # 词条分>0
 SCORE_ZERO = (120, 120, 120)  # 词条分=0
-
-
-def _stretch_bar(bar: Image.Image, width: int, height: int) -> Image.Image:
-    """把 bar 拉伸到目标尺寸: 保留左右/上下边缘, 中间用 1px 条带拉伸填充 (金线框随之延展)"""
-    w, h = bar.size
-    cx, cy = w // 2, h // 2
-    wide = Image.new("RGBA", (width, h))
-    wide.paste(bar.crop((0, 0, cx, h)), (0, 0))
-    wide.paste(bar.crop((cx, 0, w, h)), (width - (w - cx), 0))
-    if width > w:
-        wide.paste(bar.crop((cx - 1, 0, cx, h)).resize((width - w, h)), (cx, 0))
-    out = Image.new("RGBA", (width, height))
-    out.paste(wide.crop((0, 0, width, cy)), (0, 0))
-    out.paste(wide.crop((0, cy, width, h)), (0, height - (h - cy)))
-    if height > h:
-        out.paste(wide.crop((0, cy - 1, width, cy)).resize((width, height - h)), (0, cy))
-    return out
 
 
 def _bright_runs(points: List[int]) -> List[tuple[int, int]]:
@@ -511,7 +496,7 @@ async def draw_phantom_total_rank(bot: Bot, ev: Event, char: str, pages: int) ->
     item = PhantomTotalRankRequest(
         char_id=int(char_id),
         page=pages,
-        page_num=20,
+        page_num=RANK_PAGE_SIZE,
         waves_id=self_uid,
         version=get_version(dynamic=True, waves_id=self_uid, pages=pages),
     )
@@ -571,7 +556,11 @@ async def draw_phantom_total_rank(bot: Bot, ev: Event, char: str, pages: int) ->
     return await convert_img(card_img)
 
 
-async def _build_local_self_row(self_uid: str, char_id, self_entry: PhantomTotalRankDetail) -> Optional[PhantomTotalRankDetail]:
+async def _build_local_self_row(
+    self_uid: str,
+    char_id,
+    self_entry: PhantomTotalRankDetail,
+) -> Optional[PhantomTotalRankDetail]:
     """未上榜时: 用本地最高分(满 5 副词条)声骸拼一条 999+ 自己行, 用户信息取服务端 self。"""
     from ..utils.calc import WuWaCalc
 

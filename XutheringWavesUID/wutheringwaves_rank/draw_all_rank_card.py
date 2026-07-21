@@ -13,6 +13,11 @@ from gsuid_core.utils.image.convert import convert_img
 
 from .rank_avatar import get_avatar
 from .rank_badge import draw_bot_name_badge, draw_rank_badge
+from .pagination import (
+    RANK_PAGE_SIZE,
+    group_rank_empty_page_message,
+    paginate_group_rank,
+)
 from ..utils.util import get_version, hide_uid, build_uid_masker
 from ..utils.image import (
     RED,
@@ -147,7 +152,7 @@ async def draw_all_rank_card(bot: Bot, ev: Event, char: str, rank_type: str, pag
     logger.info(f"[鸣潮·练度排行] get_rank_info_for_user start: {start_time}")
 
     rank_type_num = 3 if rank_type == "综合评分" else (2 if rank_type == "伤害" else 1)
-    page_num = 20
+    page_num = RANK_PAGE_SIZE
     if not modal:
         options = get_modal_options(int(char_id))
         if options:
@@ -172,10 +177,15 @@ async def draw_all_rank_card(bot: Bot, ev: Event, char: str, rank_type: str, pag
         for i, d in enumerate(details):
             d.rank = i + 1
         self_entry = next((d for d in details if self_uid and d.waves_id == self_uid), None)
-        details = details[:20]
-        if self_entry and self_entry.rank > 20:
-            details.append(self_entry)
-        pages = 1
+        self_rank = self_entry.rank if self_entry else None
+        details, _, page_count, page_item_count = paginate_group_rank(
+            details,
+            pages,
+            self_rank,
+            self_entry,
+        )
+        if page_item_count == 0:
+            return group_rank_empty_page_message(pages, page_count)
     else:
         item = RankItem(
             char_id=int(char_id),
@@ -460,5 +470,3 @@ def get_breach(breach: Union[int, None], level: int):
             breach = 0
 
     return breach
-
-

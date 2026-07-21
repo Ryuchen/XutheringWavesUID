@@ -8,6 +8,7 @@ from .draw_rank_list_card import draw_rank_list
 from .draw_total_rank_card import draw_total_rank
 from .draw_phantom_rank_card import draw_phantom_rank_img
 from .draw_phantom_total_rank_card import draw_phantom_total_rank
+from .pagination import normalize_rank_page
 from ..utils.char_info_utils import PATTERN
 from ..utils.name_resolve import resolve_char
 from ..utils.name_convert import char_name_to_char_id
@@ -22,18 +23,18 @@ sv_waves_phantom_total_rank = SV("ww声骸总排行", priority=0)
 
 
 @sv_waves_rank_list.on_regex(
-    rf"^(?P<char>{PATTERN})(?:排行|排行榜|排名|ph|pm)$",
+    rf"^(?P<char>{PATTERN})(?:排行|排行榜|排名|ph|pm)(?P<pages>\d+)?$",
     block=True,
     to_ai="""查询本群某角色的排行（伤害或评分），仅群聊可用。
 
 当用户在群里问「<角色>排行 / <角色>评分排行 / 群里谁<角色>最强」时调用。
-text 必须是 "<角色名>排行" 或 "<角色名>评分排行"。
+text 必须是 "<角色名>排行<页码?>" 或 "<角色名>评分排行<页码?>"。
 名字中含「评分」/「pf」/「练度」会走评分模式，否则走伤害模式。
 
 私聊会被拒绝。
 
 Args:
-    text: "<角色名>排行" / "<角色名>评分排行"。例: "长离排行"、"椿评分排行"。
+    text: 例: "长离排行"、"椿评分排行2"。
 """,
 )
 async def send_rank_card(bot: Bot, ev: Event):
@@ -41,6 +42,7 @@ async def send_rank_card(bot: Bot, ev: Event):
         return await bot.send("请在群聊中使用")
 
     char = ev.regex_dict.get("char")
+    pages = normalize_rank_page(ev.regex_dict.get("pages"))
 
     rank_type = "伤害"
     if "综合" in char:
@@ -72,7 +74,7 @@ async def send_rank_card(bot: Bot, ev: Event):
         else:
             canonical_cmd = f"{PREFIX}{char}排行"
 
-    im = await draw_rank_img(bot, ev, char, rank_type)
+    im = await draw_rank_img(bot, ev, char, rank_type, pages)
 
     if isinstance(im, str):
         at_sender = True if ev.group_id else False
@@ -82,17 +84,17 @@ async def send_rank_card(bot: Bot, ev: Event):
 
 
 @sv_waves_phantom_rank.on_regex(
-    rf"^(?P<char>{PATTERN})(?:声骸排行|声骸排名|声骸排行榜|shph|shpm)$",
+    rf"^(?P<char>{PATTERN})(?:声骸排行|声骸排名|声骸排行榜|shph|shpm)(?P<pages>\d+)?$",
     block=True,
     to_ai="""查询本群某角色的单声骸分数排行，仅群聊可用。
 
 当用户在群里问「<角色>声骸排行 / 群里谁<角色>声骸最强」时调用。
-text 必须是 "<角色名>声骸排行"。
+text 必须是 "<角色名>声骸排行<页码?>"。
 
 私聊会被拒绝。
 
 Args:
-    text: "<角色名>声骸排行"。例: "长离声骸排行"、"椿声骸排行"。
+    text: 例: "长离声骸排行"、"椿声骸排行2"。
 """,
 )
 async def send_phantom_rank_card(bot: Bot, ev: Event):
@@ -100,6 +102,7 @@ async def send_phantom_rank_card(bot: Bot, ev: Event):
         return await bot.send("请在群聊中使用")
 
     char = ev.regex_dict.get("char")
+    pages = normalize_rank_page(ev.regex_dict.get("pages"))
 
     res = None
     canonical_cmd = None
@@ -111,7 +114,7 @@ async def send_phantom_rank_card(bot: Bot, ev: Event):
         from ..wutheringwaves_config import PREFIX
         canonical_cmd = f"{PREFIX}{char}声骸排行"
 
-    im = await draw_phantom_rank_img(bot, ev, char)
+    im = await draw_phantom_rank_img(bot, ev, char, pages)
 
     if isinstance(im, str):
         at_sender = True if ev.group_id else False
@@ -134,17 +137,7 @@ Args:
 )
 async def send_all_rank_card(bot: Bot, ev: Event):
     char = ev.regex_dict.get("char")
-    pages = ev.regex_dict.get("pages")
-
-    if pages:
-        pages = int(pages)
-    else:
-        pages = 1
-
-    if pages > 50:
-        pages = 50
-    elif pages < 1:
-        pages = 1
+    pages = normalize_rank_page(ev.regex_dict.get("pages"))
 
     rank_type = "伤害"
     if "综合" in char:
@@ -196,17 +189,7 @@ Args:
 """,
 )
 async def send_total_rank_card(bot: Bot, ev: Event):
-    pages = ev.regex_dict.get("pages")
-
-    if pages:
-        pages = int(pages)
-    else:
-        pages = 1
-
-    if pages > 50:
-        pages = 50
-    elif pages < 1:
-        pages = 1
+    pages = normalize_rank_page(ev.regex_dict.get("pages"))
 
     im = await draw_total_rank(bot, ev, pages)
     await bot.send(im)
@@ -218,7 +201,7 @@ async def send_total_rank_card(bot: Bot, ev: Event):
     to_ai="""查询全体某角色的单声骸分数排行（跨群）。
 
 当用户问「<角色>声骸总排行 / 全体谁<角色>声骸最强」时调用。
-text 是 "<角色名>声骸总排行<页码?>"，页码 1-100（默认 1）。
+text 是 "<角色名>声骸总排行<页码?>"，页码 1-50（默认 1）。
 
 Args:
     text: 例: "卡提希娅声骸总排行" / "长离声骸总排行1" / "椿shzph2"。
@@ -226,17 +209,7 @@ Args:
 )
 async def send_phantom_total_rank_card(bot: Bot, ev: Event):
     char = ev.regex_dict.get("char")
-    pages = ev.regex_dict.get("pages")
-
-    if pages:
-        pages = int(pages)
-    else:
-        pages = 1
-
-    if pages > 100:
-        pages = 100
-    elif pages < 1:
-        pages = 1
+    pages = normalize_rank_page(ev.regex_dict.get("pages"))
 
     res = None
     canonical_cmd = None
@@ -263,12 +236,12 @@ async def send_phantom_total_rank_card(bot: Bot, ev: Event):
     to_ai="""查询本群练度排行（按账号综合练度评分），仅群聊可用。
 
 当用户在群里问「群里谁练度最高 / 练度排行」时调用。
-text 可附评级筛选 a / s / ss，留空看全部。
+text 可附评级筛选 a / s / ss，并可在末尾加页码，留空看第1页全部。
 
 私聊会被拒绝。
 
 Args:
-    text: 可选 "a" / "s" / "ss" 评级筛选。
+    text: 例: "s"、"ss2"、"3"。
 """,
 )
 async def send_rank_list_card(bot: Bot, ev: Event):

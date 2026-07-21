@@ -24,6 +24,10 @@ sv_waves_rank_matrix = SV("waves矩阵总排行", priority=0)
 sv_waves_rank_matrix_list = SV("waves矩阵排行", priority=0)
 
 
+def _is_matrix_single_team_command(ev: Event) -> bool:
+    return "单队" in ev.raw_text or "队伍" in ev.raw_text or "dd" in ev.raw_text or "dw" in ev.raw_text
+
+
 @sv_waves_abyss.on_fullmatch(
     (
         "查询深渊",
@@ -202,111 +206,92 @@ async def send_waves_matrix_info(bot: Bot, ev: Event):
         return await bot.send(im)
 
 
-@sv_waves_rank_slash.on_command(
-    (
-        "无尽总排行",
-        "wjzph",
-        "wjzpm",
-        "无尽总排行榜",
-        "冥海总排行",
-        "冥海总排行榜",
-    ),
+@sv_waves_rank_slash.on_regex(
+    r"^(?:无尽总排行|wjzph|wjzpm|无尽总排行榜|冥海总排行|冥海总排行榜)(?P<pages>\d+)?$",
     block=True,
     to_ai='''查询全体冥歌海墟无尽层总排行（跨群）。
 
 当用户问「无尽总排行 / 冥海总排行」时调用。
 
 Args:
-    text: 无需参数，留空即可。
+    text: 可在命令末尾加页码。例: "无尽总排行2"。
 ''',
 )
 async def send_waves_rank_slash_info(bot: Bot, ev: Event):
     from ..wutheringwaves_rank.slash_rank import draw_all_slash_rank_card
+    from ..wutheringwaves_rank.pagination import normalize_rank_page
 
-    im = await draw_all_slash_rank_card(bot, ev)
+    page = normalize_rank_page(ev.regex_dict.get("pages"))
+    im = await draw_all_slash_rank_card(bot, ev, page)
     return await bot.send(im)
 
 
-@sv_waves_rank_slash_list.on_fullmatch(
-    (
-        "无尽排行",
-        "wjph",
-        "wjpm",
-        "无尽排行榜",
-        "无尽排名",
-        "无尽群排行",
-        "无尽群排行榜",
-        "无尽群排名",
-        "群无尽排行",
-        "群无尽排名",
-    ),
+@sv_waves_rank_slash_list.on_regex(
+    r"^(?:无尽排行|wjph|wjpm|无尽排行榜|无尽排名|无尽群排行|无尽群排行榜|无尽群排名|群无尽排行|群无尽排名)(?P<pages>\d+)?$",
     block=True,
     to_ai='''查询本群冥歌海墟无尽层排行，仅群聊可用。
 
 当用户在群里问「群里谁海墟最强 / 无尽排行」时调用。私聊会被拒绝。
 
 Args:
-    text: 无需参数，留空即可。
+    text: 可在命令末尾加页码。例: "无尽排行2"。
 ''',
 )
 async def send_waves_rank_slash_list_info(bot: Bot, ev: Event):
     if not ev.group_id:
         return await bot.send("请在群聊中使用")
     from ..wutheringwaves_rank.slash_rank import draw_slash_rank_list
+    from ..wutheringwaves_rank.pagination import normalize_rank_page
 
-    im = await draw_slash_rank_list(bot, ev)
+    page = normalize_rank_page(ev.regex_dict.get("pages"))
+    im = await draw_slash_rank_list(bot, ev, page)
     return await bot.send(im)
 
 
-@sv_waves_rank_matrix.on_command(
-    (
-        "矩阵总排行",
-        "jzzph",
-        "jzzpm",
-        "矩阵总排行榜",
-    ),
+@sv_waves_rank_matrix.on_regex(
+    r"^(?:矩阵总排行|jzzph|jzzpm|jzddzph|jzddzpm|jzdwzph|jzdwzpm|矩阵总排行榜|矩阵单队总排行|矩阵单队总排行榜|矩阵队伍总排行|矩阵队伍总排行榜)(?P<pages>\d+)?$",
     block=True,
     to_ai='''查询全体终焉矩阵积分总排行（跨群）。
 
-当用户问「矩阵总排行 / 全体矩阵积分」时调用。
+当用户问「矩阵总排行 / 全体矩阵积分」时调用；问「矩阵单队总排行 / 矩阵队伍总排行」时按最高单队积分查询。
 
 Args:
-    text: 无需参数，留空即可。
+    text: 可在命令末尾加页码。例: "矩阵总排行2"、"矩阵单队总排行2"。
 ''',
 )
 async def send_waves_rank_matrix_info(bot: Bot, ev: Event):
     from ..wutheringwaves_rank.matrix_rank import draw_all_matrix_rank_card
+    from ..wutheringwaves_rank.pagination import normalize_rank_page
 
-    im = await draw_all_matrix_rank_card(bot, ev)
+    single_team = _is_matrix_single_team_command(ev)
+    page = normalize_rank_page(ev.regex_dict.get("pages"))
+    im = await draw_all_matrix_rank_card(
+        bot,
+        ev,
+        single_team=single_team,
+        page=page,
+    )
     return await bot.send(im)
 
 
-@sv_waves_rank_matrix_list.on_fullmatch(
-    (
-        "矩阵排行",
-        "jzph",
-        "jzpm",
-        "矩阵排行榜",
-        "矩阵排名",
-        "矩阵群排行",
-        "矩阵群排行榜",
-        "矩阵群排名",
-        "群矩阵排行",
-        "群矩阵排名",
-    ),
+@sv_waves_rank_matrix_list.on_regex(
+    r"^(?:矩阵排行|jzph|jzpm|jzddph|jzddpm|jzdwph|jzdwpm|矩阵排行榜|矩阵排名|矩阵群排行|矩阵群排行榜|矩阵群排名|群矩阵排行|群矩阵排名|矩阵单队排行|矩阵单队排行榜|矩阵队伍排行|矩阵队伍排行榜)(?P<pages>\d+)?$",
     block=True,
     to_ai='''查询本群终焉矩阵积分排行，仅群聊可用。
 
-当用户在群里问「群里谁矩阵积分最高 / 矩阵排行」时调用。私聊会被拒绝。
+当用户在群里问「群里谁矩阵积分最高 / 矩阵排行」时调用；问「矩阵单队排行 / 矩阵队伍排行」时按最高单队积分查询。私聊会被拒绝。
 
 Args:
-    text: 无需参数，留空即可。
+    text: 可在命令末尾加页码。例: "矩阵排行2"、"矩阵单队排行2"。
 ''',
 )
 async def send_waves_rank_matrix_list_info(bot: Bot, ev: Event):
     if not ev.group_id:
         return await bot.send("请在群聊中使用")
     from ..wutheringwaves_rank.matrix_rank import draw_matrix_rank_list
+    from ..wutheringwaves_rank.pagination import normalize_rank_page
 
-    im = await draw_matrix_rank_list(bot, ev)
+    single_team = _is_matrix_single_team_command(ev)
+    page = normalize_rank_page(ev.regex_dict.get("pages"))
+    im = await draw_matrix_rank_list(bot, ev, single_team=single_team, page=page)
     return await bot.send(im)

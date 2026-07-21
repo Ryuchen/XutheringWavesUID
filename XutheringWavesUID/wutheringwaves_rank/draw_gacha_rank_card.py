@@ -12,6 +12,11 @@ from gsuid_core.utils.image.convert import convert_img
 
 from .rank_avatar import get_avatar
 from .rank_badge import draw_rank_badge
+from .pagination import (
+    group_rank_empty_page_message,
+    paginate_group_rank,
+    split_rank_page,
+)
 from ._permissions import get_rank_token_condition, filter_active_group_users
 from ..utils.util import build_uid_masker
 from ..utils.image import (
@@ -120,7 +125,7 @@ async def draw_gacha_rank_card(bot, ev: Event) -> Union[str, bytes]:
     min_pull = get_group_gacha_min(ev.group_id) or WutheringWavesConfig.get_config("GachaRankMin").data
 
     # 解析参数以获取排序类型
-    text = ev.text.strip() if ev.text else ""
+    text, page = split_rank_page(ev.text or "")
     sort_reverse = False
     sort_gacha_num = False
     if text:
@@ -177,10 +182,12 @@ async def draw_gacha_rank_card(bot, ev: Event) -> Union[str, bytes]:
     except Exception:
         pass
 
-    rank_length = 20  # 显示前20条
-    rankInfoList_display = rankInfoList_with_id[:rank_length]
-    if rankId and rankInfo and rankId > rank_length:
-        rankInfoList_display.append((rankId, rankInfo))
+    display_items, display_rank_ids, page_count, page_item_count = (
+        paginate_group_rank(rankInfoList, page, rankId, rankInfo)
+    )
+    if page_item_count == 0:
+        return group_rank_empty_page_message(page, page_count)
+    rankInfoList_display = list(zip(display_rank_ids, display_items))
 
     # 获取头像
     tasks = [

@@ -12,6 +12,10 @@ from gsuid_core.pool import to_thread
 from gsuid_core.utils.image.convert import convert_img
 
 from .rank_avatar import get_avatar
+from .pagination import (
+    group_rank_empty_page_message,
+    paginate_group_rank,
+)
 from .draw_rank_card import find_role_detail
 from ._permissions import get_rank_token_condition, filter_active_group_users
 from .draw_phantom_total_rank_card import (
@@ -67,7 +71,6 @@ from ..wutheringwaves_config import PREFIX, WutheringWavesConfig
 from ..utils.fonts.waves_fonts import waves_font_18, waves_font_20
 from ..utils.resource.constant import SPECIAL_CHAR, SPECIAL_CHAR_NAME
 
-rank_length = 20  # 排行长度
 TEXT_PATH = Path(__file__).parent / "texture2d"
 
 _CHAIN_BLOCK_SIZE = (46, 22)
@@ -242,7 +245,12 @@ async def _safe_fetter_icon(phantom: EquipPhantom) -> Optional[Image.Image]:
         return None
 
 
-async def draw_phantom_rank_img(bot: Bot, ev: Event, char: str) -> Union[str, bytes]:
+async def draw_phantom_rank_img(
+    bot: Bot,
+    ev: Event,
+    char: str,
+    page: int = 1,
+) -> Union[str, bytes]:
     char_id = char_name_to_char_id(char)
     if not char_id:
         return "未找到指定角色, 请检查输入是否正确！"
@@ -286,11 +294,14 @@ async def draw_phantom_rank_img(bot: Bot, ev: Event, char: str) -> Union[str, by
             (None, None),
         )
 
-    details = rankInfoList[:rank_length]
-    display_rank_ids = list(range(1, len(details) + 1))
-    if self_rankId and self_rankInfo and self_rankId > rank_length:
-        details.append(self_rankInfo)
-        display_rank_ids.append(self_rankId)
+    details, display_rank_ids, page_count, page_item_count = paginate_group_rank(
+        rankInfoList,
+        page,
+        self_rankId,
+        self_rankInfo,
+    )
+    if page_item_count == 0:
+        return group_rank_empty_page_message(page, page_count)
 
     if char_id in SPECIAL_CHAR_NAME:
         char_name = SPECIAL_CHAR_NAME[char_id]
@@ -299,7 +310,7 @@ async def draw_phantom_rank_img(bot: Bot, ev: Event, char: str) -> Union[str, by
     total_height = TITLE_H + text_bar_h + ITEM_H * len(details) + 60
     card_img = get_custom_waves_bg(GROUP_WIDTH, total_height, "bg3")
 
-    top_scores = [r.score for r, rid in zip(details, display_rank_ids) if rid <= rank_length]
+    top_scores = [r.score for r in details[:page_item_count]]
     avg_val = sum(top_scores) / len(top_scores) if top_scores else 0
     compose_cond_bar(card_img, "排行标准：以单声骸分数排序 (评分高不代表实际伤害高)", TITLE_H, text_bar_h, GROUP_WIDTH)
     await compose_pile_header(card_img, char_id, char_name, "声骸群排行", f"{avg_val:.1f}", GROUP_WIDTH)

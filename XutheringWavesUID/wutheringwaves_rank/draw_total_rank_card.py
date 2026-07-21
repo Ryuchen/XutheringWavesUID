@@ -14,6 +14,7 @@ from gsuid_core.utils.image.convert import convert_img
 
 from .rank_avatar import get_avatar
 from .rank_badge import draw_bot_name_badge, draw_rank_badge
+from .pagination import RANK_PAGE_SIZE
 from ..utils.util import get_version, hide_uid
 from ..utils.image import (
     RED,
@@ -73,7 +74,7 @@ async def get_rank(item: TotalRankRequest) -> Optional[TotalRankResponse]:
 
 
 async def draw_total_rank(bot: Bot, ev: Event, pages: int) -> Union[str, bytes]:
-    page_num = 20
+    page_num = RANK_PAGE_SIZE
     self_uid = await WavesBind.get_uid_by_game(ev.user_id, ev.bot_id)
     if not self_uid:
         self_uid = ""

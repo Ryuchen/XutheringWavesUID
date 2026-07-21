@@ -13,6 +13,7 @@ from gsuid_core.logger import logger
 
 from ..utils.single_flight import SingleFlightLock
 from ..utils.util import get_hide_uid_pref, hide_uid
+from .merge_utils import GachaMergeError
 from .gacha_handler import (
     fetch_mcgf_data,
     fetch_xhh_data,
@@ -131,7 +132,11 @@ _migrate_legacy_gacha_backups()
 
 # 导入抽卡记录的触发锁
 gacha_import_lock = SingleFlightLock()
-gacha_json_import_lock = SingleFlightLock()
+
+
+def _gacha_import_lock_key(uid: str) -> str:
+    """同一 UID 的所有导入、更新和删除操作必须串行。"""
+    return f"uid_{uid}"
 
 
 def _is_bot_self_event(ev: Event) -> bool:
@@ -188,6 +193,9 @@ async def _merge_mcgf_gacha(bot: Bot, ev: Event, uid: str, target_uid: str):
             )
         return await bot.send(im)
 
+    except GachaMergeError as e:
+        logger.warning(f"[鸣潮·抽卡导入] 工坊数据拒绝合并 uid={uid}: {e}")
+        return await bot.send(f"工坊抽卡记录无法安全合并：{e}\n原抽卡记录未修改。")
     except Exception as e:
         logger.exception(f"[鸣潮·抽卡导入] 工坊合并失败 uid={uid}: {e}")
         return await bot.send("处理过程中发生错误，请稍后重试")
@@ -210,12 +218,13 @@ async def get_gacha_log_by_mcgf(bot: Bot, ev: Event):
             f"请带上UID，例如：{PREFIX}导入工坊抽卡记录123456789"
         )
 
-    if not gacha_import_lock.acquire(f"{ev.user_id}_{uid}"):
+    lock_key = _gacha_import_lock_key(uid)
+    if not gacha_import_lock.acquire(lock_key):
         return
     try:
         return await _merge_mcgf_gacha(bot, ev, uid, target_uid)
     finally:
-        gacha_import_lock.release(f"{ev.user_id}_{uid}")
+        gacha_import_lock.release(lock_key)
 
 
 @sv_get_gachalog_by_link.on_command("导入抽卡链接", block=True)
@@ -227,7 +236,8 @@ async def get_gacha_log_by_link(bot: Bot, ev: Event):
 
     user_pref = await get_hide_uid_pref(uid, ev.user_id, ev.bot_id)
 
-    if not gacha_import_lock.acquire(f"{ev.user_id}_{uid}"):
+    lock_key = _gacha_import_lock_key(uid)
+    if not gacha_import_lock.acquire(lock_key):
         return
     try:
         raw = ev.text.strip()
@@ -276,7 +286,7 @@ async def get_gacha_log_by_link(bot: Bot, ev: Event):
         else:
             await bot.send(im)
     finally:
-        gacha_import_lock.release(f"{ev.user_id}_{uid}")
+        gacha_import_lock.release(lock_key)
 
 
 @sv_get_gachalog_by_link.on_command("导入小黑盒抽卡记录", block=True)
@@ -291,7 +301,8 @@ async def get_gacha_log_by_xhh(bot: Bot, ev: Event):
             f"请带上小黑盒ID，例如：{PREFIX}导入小黑盒抽卡记录12345678"
         )
 
-    if not gacha_import_lock.acquire(f"{ev.user_id}_{uid}"):
+    lock_key = _gacha_import_lock_key(uid)
+    if not gacha_import_lock.acquire(lock_key):
         return
     try:
         xhh_data = await fetch_xhh_data(heybox_id)
@@ -329,16 +340,20 @@ async def get_gacha_log_by_xhh(bot: Bot, ev: Event):
             )
         return await bot.send(im)
 
+    except GachaMergeError as e:
+        logger.warning(f"[鸣潮·小黑盒导入] 数据拒绝合并 uid={uid}: {e}")
+        return await bot.send(f"小黑盒抽卡记录无法安全合并：{e}\n原抽卡记录未修改。")
     except Exception as e:
         logger.exception(f"[鸣潮·小黑盒导入] 合并失败 uid={uid}: {e}")
         return await bot.send("处理过程中发生错误，请稍后重试")
     finally:
-        gacha_import_lock.release(f"{ev.user_id}_{uid}")
+        gacha_import_lock.release(lock_key)
 
 
 async def pull_cloud_gacha(bot: Bot, ev: Event, uid: str, record_id: str):
     """用 recordId 走导入抽卡记录链路，复用导入锁，直接发送 save_gachalogs 结果。"""
-    if not gacha_import_lock.acquire(f"{ev.user_id}_{uid}"):
+    lock_key = _gacha_import_lock_key(uid)
+    if not gacha_import_lock.acquire(lock_key):
         return
     try:
         im = await save_gachalogs(ev, uid, record_id)
@@ -351,7 +366,7 @@ async def pull_cloud_gacha(bot: Bot, ev: Event, uid: str, record_id: str):
         else:
             await bot.send(im)
     finally:
-        gacha_import_lock.release(f"{ev.user_id}_{uid}")
+        gacha_import_lock.release(lock_key)
 
 
 @sv_update_gacha_log.on_fullmatch(("刷新抽卡记录", "更新抽卡记录", "刷新抽卡", "更新抽卡"), block=True)
@@ -442,15 +457,11 @@ async def get_gacha_log_by_file(bot: Bot, ev: Event):
         await bot.logger.info(f"[鸣潮·JSON导入抽卡] 用户 {ev.user_id} (UID:{uid}) 未登录或Cookie失效，忽略此次导入。这是为了避免被别人绑定uid后上传json覆盖真实玩家的抽卡数据")
         return
 
-    json_lock_key = f"json_{uid}"
-    user_lock_key = f"{ev.user_id}_{uid}"
-    if not gacha_json_import_lock.acquire(json_lock_key):
+    lock_key = _gacha_import_lock_key(uid)
+    if not gacha_import_lock.acquire(lock_key):
         await bot.logger.info(
-            f"[鸣潮·JSON导入抽卡] UID:{uid} 正在导入JSON文件，忽略并发文件: {ev.file_name}"
+            f"[鸣潮·JSON导入抽卡] UID:{uid} 正在执行其他抽卡数据操作，忽略并发文件: {ev.file_name}"
         )
-        return
-    if not gacha_import_lock.acquire(user_lock_key):
-        gacha_json_import_lock.release(json_lock_key)
         return
     try:
         if ev.file and ev.file_type:
@@ -461,8 +472,7 @@ async def get_gacha_log_by_file(bot: Bot, ev: Event):
         else:
             return await bot.send("导入抽卡记录异常...")
     finally:
-        gacha_import_lock.release(user_lock_key)
-        gacha_json_import_lock.release(json_lock_key)
+        gacha_import_lock.release(lock_key)
 
 
 @sv_export_json_gacha_log.on_fullmatch(("导出抽卡记录"))
@@ -496,7 +506,8 @@ async def delete_gacha_history(bot: Bot, ev: Event):
     if (not ck or not is_self) and not ev.user_pm == 0:
         return await bot.send(f"UID{hide_uid(uid, user_pref)}未登录或Cookie失效，不允许删除抽卡记录")
 
-    if not gacha_import_lock.acquire(f"{ev.user_id}_{uid}"):
+    lock_key = _gacha_import_lock_key(uid)
+    if not gacha_import_lock.acquire(lock_key):
         return await bot.send(f"UID{hide_uid(uid, user_pref)}抽卡导入正在进行，请稍后再试")
     try:
         player_dir = PLAYER_PATH / uid
@@ -525,7 +536,7 @@ async def delete_gacha_history(bot: Bot, ev: Event):
 
         await bot.send(f"UID{hide_uid(uid, user_pref)}抽卡记录已删除！")
     finally:
-        gacha_import_lock.release(f"{ev.user_id}_{uid}")
+        gacha_import_lock.release(lock_key)
 
 
 @sv_delete_import_gacha_log.on_command(("删除抽卡导入", "删除导入记录", "删除导入抽卡"), block=True)
@@ -569,12 +580,12 @@ async def delete_import_gacha_files(bot: Bot, ev: Event):
     to_ai="""查询本群抽卡排行（要求在群聊中使用）。
 
 当用户在群聊问「群里谁最欧 / 抽卡排行欧 / 谁抽得最多」时调用。
-text 可附筛选: "欧" (按5星出货数) / "非" (按歪4星比例) / "抽数" (按总抽数)。
+text 可附筛选: "欧" / "非" / "抽数"，并可在末尾加页码。
 
 私聊调用会被拒绝。
 
 Args:
-    text: 可选 "欧" / "非" / "抽数"，留空默认按抽数。
+    text: 例: "欧"、"非2"、"抽数3"，留空默认按抽数第1页。
 """,
 )
 async def send_gacha_rank_info(bot: Bot, ev: Event):
