@@ -39,6 +39,7 @@ import httpx
 
 from gsuid_core.bot import Bot
 from gsuid_core.models import Event
+from gsuid_core.segment import MessageSegment
 from gsuid_core.utils.image.convert import convert_img
 
 from ..utils.name_convert import alias_to_char_name, char_name_to_char_id, easy_id_to_name
@@ -762,7 +763,7 @@ async def _send_found_matches(bot: Bot, matches) -> None:
         type_name = CUSTOM_PATH_NAME_MAP.get(t, t)
         imgs.append(f"{_listing_char_name(other_char_id)}的{type_name}图")
         imgs.append(await _one_card_img(t, path))
-    await bot.send(imgs)
+    await bot.send(MessageSegment.node(imgs))
 
 
 async def send_custom_card_single(
