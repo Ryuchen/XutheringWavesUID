@@ -178,8 +178,23 @@ def _real_cycle_details_are_preserved(
     return _is_key_subsequence(removed_real, kept_real)
 
 
+def _truncated_cycle_matches_local(
+    local_cycle: List[GachaLog], incoming_cycle: List[GachaLog]
+) -> bool:
+    """截断侧逐抽须与本地同位置的已知真实记录一致，占位可匹配任意。"""
+    for local_log, incoming_log in zip(local_cycle[1:], incoming_cycle[1:]):
+        if _is_filler(local_log):
+            continue
+        if local_log.match_key() != incoming_log.match_key():
+            return False
+    return True
+
+
 def _reconcile_filler_cycles(
-    local: List[GachaLog], incoming: List[GachaLog]
+    local: List[GachaLog],
+    incoming: List[GachaLog],
+    *,
+    incoming_may_be_truncated: bool = False,
 ) -> tuple[List[GachaLog], List[GachaLog]]:
     """Replace a complete synthetic cycle with a complete real cycle.
 
@@ -254,6 +269,30 @@ def _reconcile_filler_cycles(
                 )
             continue
         if len(local_cycle) != len(incoming_cycle):
+            # 官方链接只返回近180天：最老周期常被窗口截断，真实长度不可知。
+            # 此时本地占位周期长度来自完整历史，保留本地，仅丢弃截断侧逐抽；
+            # 文件导入不放宽，两侧都有更老五星边界时也不放宽。
+            if (
+                incoming_may_be_truncated
+                and incoming_older is None
+                and local_has_filler
+                and not incoming_has_filler
+                and len(incoming_cycle) < len(local_cycle)
+                and not any(
+                    has_history_gap_before(log)
+                    for log in local_cycle + incoming_cycle
+                )
+            ):
+                if not _truncated_cycle_matches_local(
+                    local_cycle, incoming_cycle
+                ):
+                    raise GachaMergeError(
+                        "导入的截断周期与本地已知逐抽记录冲突，已拒绝合并"
+                    )
+                remove_incoming.update(
+                    range(incoming_start + 1, incoming_end)
+                )
+                continue
             raise GachaMergeError(
                 f"占位周期为{len(local_cycle)}抽，导入的真实周期为"
                 f"{len(incoming_cycle)}抽，已拒绝合并"
@@ -398,12 +437,15 @@ def merge_gacha_logs_by_common_subarray(a: List[GachaLog], b: List[GachaLog]) ->
 
 
 def _merge_gacha_pool_records(
-    local: List[GachaLog], incoming: List[GachaLog]
+    local: List[GachaLog],
+    incoming: List[GachaLog],
+    *,
+    incoming_may_be_truncated: bool = False,
 ) -> tuple[List[GachaLog], int]:
     """统一合并官方链接与文件的单池记录，并返回真实新增数。"""
     common_indices = find_longest_common_subarray_indices(local, incoming)
     reconciled_local, reconciled_incoming = _reconcile_filler_cycles(
-        local, incoming
+        local, incoming, incoming_may_be_truncated=incoming_may_be_truncated
     )
     if local and incoming and not common_indices:
         merged = _merge_without_common_anchor(
@@ -450,6 +492,7 @@ async def get_new_gachalog(
             new[gacha_name], new_count[gacha_name] = _merge_gacha_pool_records(
                 full_data[gacha_name],
                 gacha_log,
+                incoming_may_be_truncated=True,
             )
         except GachaMergeError as exc:
             return (
