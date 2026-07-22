@@ -352,7 +352,13 @@ def _merge_external_five_stars(
                     f"本地卡池[{pool_id}]锚点前已有{len(known_before_anchor)}抽，"
                     f"超过{source}记录的{expected_before_anchor}抽"
                 )
-            filler_time = get_filler_time(oldest_local["time"], previous_time)
+            filler_anchor_time = (
+                known_before_anchor[0]["time"]
+                if known_before_anchor
+                else oldest_local["time"]
+            )
+            # 缺失抽位于已有真实抽之前，合成时间也必须早于最老的已知记录。
+            filler_time = get_filler_time(filler_anchor_time, previous_time)
             for _ in range(missing):
                 filler = FILLER_ITEM.copy()
                 filler["cardPoolType"] = pool_id
