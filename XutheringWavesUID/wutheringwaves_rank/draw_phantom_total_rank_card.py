@@ -157,6 +157,7 @@ PHANTOM_THUMB_X = (
     + _BOT_BADGE_SIZE[0]
     + _BOT_THUMB_GAP
 )
+_USER_NAME_MAX_WIDTH = PHANTOM_THUMB_X - USER_INFO_X - _BOT_THUMB_GAP
 _PHANTOM_ICON_Y = FRAME_TOP + (_FRAME_H - _PHANTOM_ICON_SIZE[1]) // 2
 _FETTER_ICON_POS = (
     PHANTOM_THUMB_X + 58,
@@ -635,11 +636,17 @@ def _compose_rows(card_img, bar, details, avatars, phantom_icons, fetter_icons, 
         draw_rank_and_avatar(bar_bg, detail.rank, role_avatar)
 
         # 库洛名 / 特征码 / bot主人徽章
+        name_font, name_text = fit_text(
+            draw,
+            str(detail.kuro_name),
+            _USER_NAME_MAX_WIDTH,
+            (waves_font_22, waves_font_20, waves_font_18, waves_font_16, waves_font_14),
+        )
         draw.text(
             (USER_INFO_X, _USER_NAME_Y),
-            f"{detail.kuro_name}",
+            name_text,
             "white",
-            waves_font_22,
+            name_font,
             "lm",
         )
         uid_color = RED if detail.waves_id == self_uid else "white"

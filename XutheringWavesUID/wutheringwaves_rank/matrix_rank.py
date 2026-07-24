@@ -83,6 +83,7 @@ MATRIX_SINGLE_GROUP_WIDTH = 800
 MATRIX_SINGLE_TOTAL_BASE_WIDTH = 1050
 MATRIX_BAR_RIGHT_CAP_WIDTH = 400
 MATRIX_SINGLE_NAME_MAX_WIDTH = 120
+MATRIX_TOTAL_NAME_MAX_WIDTH = 130
 
 
 def _crop_matrix_rank_bar(source: Image.Image, width: int) -> Image.Image:
@@ -284,22 +285,23 @@ async def draw_all_matrix_rank_card(
         rank_id = rank_temp.rank
         draw_rank_badge(role_bg, rank_id)
 
-        # 名字：单队榜左侧只保留六个汉字的视觉宽度，过长时复用统一缩字/截断逻辑。
+        # 名字：昵称过长时统一缩字/截断。
         role_name = str(rank_temp.kuro_name)
-        role_name_font = waves_font_20
-        if single_team:
-            role_name_font, role_name = fit_text(
-                role_bg_draw,
-                role_name,
-                MATRIX_SINGLE_NAME_MAX_WIDTH,
-                (
-                    waves_font_20,
-                    waves_font_18,
-                    waves_font_16,
-                    waves_font_14,
-                    waves_font_12,
-                ),
-            )
+        name_max_width = (
+            MATRIX_SINGLE_NAME_MAX_WIDTH if single_team else MATRIX_TOTAL_NAME_MAX_WIDTH
+        )
+        role_name_font, role_name = fit_text(
+            role_bg_draw,
+            role_name,
+            name_max_width,
+            (
+                waves_font_20,
+                waves_font_18,
+                waves_font_16,
+                waves_font_14,
+                waves_font_12,
+            ),
+        )
         role_bg_draw.text((210, 75), role_name, "white", role_name_font, "lm")
 
         # 单队榜沿用角色总排行的信息关系：UID 在右上、角色名在左下、Bot 名片在右下。
@@ -321,6 +323,8 @@ async def draw_all_matrix_rank_card(
         else:
             role_bg_draw.text((210, 40), uid_text, uid_color, waves_font_20, "lm")
 
+        # 上场队伍数量 与 bot名徽章 共用左锚点。
+        team_info_x = 350
         if single_team:
             # 单队响应只含最高分队伍；角色命座已随 API 返回，无需额外查询。
             char_gold_total = _get_matrix_team_char_gold_count(rank_temp.teams)
@@ -339,7 +343,7 @@ async def draw_all_matrix_rank_card(
             team_count = rank_temp.team_count if rank_temp.team_count else len(rank_temp.teams)
             if team_count:
                 role_bg_draw.text(
-                    (350, 40),
+                    (team_info_x, 40),
                     f"上场队伍数量: {team_count}",
                     GREY,
                     waves_font_20,
@@ -349,7 +353,7 @@ async def draw_all_matrix_rank_card(
         # bot主人名字
         botName = rank_temp.alias_name if rank_temp.alias_name else ""
         if botName:
-            bot_badge_pos = (346, 60) if single_team else (326, 61)
+            bot_badge_pos = (346, 60) if single_team else (team_info_x, 60)
             draw_bot_name_badge(
                 role_bg,
                 getattr(rank_temp, "background", ""),
@@ -363,7 +367,7 @@ async def draw_all_matrix_rank_card(
             if single_team
             else get_score_color(rank_temp.score)
         )
-        score_center_x = 950 if single_team else 1130
+        score_center_x = 950 if single_team else 1150
         if score_color == CRYSTAL_SENTINEL:
             draw_crystal_text(role_bg, f"{rank_temp.score}", score_center_x, 55, waves_font_44, "mm")
         else:
@@ -375,8 +379,8 @@ async def draw_all_matrix_rank_card(
                 "mm",
             )
 
-        team_base_x = 600 if single_team else 530
-        team_spacing = 250
+        team_base_x = 600 if single_team else 575
+        team_spacing = 250 if single_team else 230
 
         # 按分数排序取最高和次高
         sorted_teams = sorted(rank_temp.teams, key=lambda t: t.score, reverse=True)

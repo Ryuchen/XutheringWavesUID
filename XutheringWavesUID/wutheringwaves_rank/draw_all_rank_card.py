@@ -52,6 +52,8 @@ from ..utils.damage.modal import get_modal_name, get_modal_options, get_role_mod
 from .draw_rank_card import find_role_detail
 from ..utils.ascension.weapon import get_weapon_model
 from ..utils.fonts.waves_fonts import (
+    fit_text,
+    waves_font_12,
     waves_font_14,
     waves_font_16,
     waves_font_18,
@@ -370,7 +372,13 @@ async def draw_all_rank_card(bot: Bot, ev: Event, char: str, rank_type: str, pag
         draw_rank_badge(bar_bg, rank_id)
 
         # 名字
-        bar_star_draw.text((210, 75), f"{rank.kuro_name}", "white", waves_font_20, "lm")
+        name_font, name_text = fit_text(
+            bar_star_draw,
+            str(rank.kuro_name),
+            130,
+            (waves_font_20, waves_font_18, waves_font_16, waves_font_14, waves_font_12),
+        )
+        bar_star_draw.text((210, 75), name_text, "white", name_font, "lm")
 
         # uid
         uid_color = "white"

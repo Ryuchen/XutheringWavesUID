@@ -42,7 +42,10 @@ from ..utils.database.models import WavesBind, WavesUser
 from ..utils.resource.constant import SPECIAL_CHAR_INT_ALL, NORMAL_LIST_IDS, randomize_special_char_id
 from ..wutheringwaves_config import PREFIX, WutheringWavesConfig
 from ..utils.fonts.waves_fonts import (
+    fit_text,
     waves_font_12,
+    waves_font_14,
+    waves_font_16,
     waves_font_18,
     waves_font_20,
     waves_font_34,
@@ -221,7 +224,13 @@ async def draw_all_slash_rank_card(bot: Bot, ev: Event, page: int = 1):
         draw_rank_badge(role_bg, rank_id)
 
         # 名字
-        role_bg_draw.text((210, 75), f"{rank_temp.kuro_name}", "white", waves_font_20, "lm")
+        name_font, name_text = fit_text(
+            role_bg_draw,
+            str(rank_temp.kuro_name),
+            130,
+            (waves_font_20, waves_font_18, waves_font_16, waves_font_14, waves_font_12),
+        )
+        role_bg_draw.text((210, 75), name_text, "white", name_font, "lm")
 
         # uid
         uid_color = "white"
