@@ -270,6 +270,7 @@ async def draw_all_matrix_rank_card(
     card_img.paste(char_mask_temp, (0, 0), char_mask_temp)
 
     rank_list = rankInfoList.data.rank_list
+    board_7digit = any(rank.score >= 1_000_000 for rank in rank_list)
     tasks = [get_avatar(rank.user_id, getattr(rank, "sender_avatar", "")) for rank in rank_list]
     results = await asyncio.gather(*tasks)
     bar = _get_matrix_rank_bar(width)
@@ -323,8 +324,9 @@ async def draw_all_matrix_rank_card(
         else:
             role_bg_draw.text((210, 40), uid_text, uid_color, waves_font_20, "lm")
 
-        # 上场队伍数量 与 bot名徽章 共用左锚点。
+        # 上场队伍数量 居中对齐 bot名徽章（徽章 208 宽，名字居中于 +104）。
         team_info_x = 350
+        team_info_cx = team_info_x + 104
         if single_team:
             # 单队响应只含最高分队伍；角色命座已随 API 返回，无需额外查询。
             char_gold_total = _get_matrix_team_char_gold_count(rank_temp.teams)
@@ -343,11 +345,11 @@ async def draw_all_matrix_rank_card(
             team_count = rank_temp.team_count if rank_temp.team_count else len(rank_temp.teams)
             if team_count:
                 role_bg_draw.text(
-                    (team_info_x, 40),
+                    (team_info_cx, 40),
                     f"上场队伍数量: {team_count}",
                     GREY,
                     waves_font_20,
-                    "lm",
+                    "mm",
                 )
 
         # bot主人名字
@@ -380,7 +382,7 @@ async def draw_all_matrix_rank_card(
             )
 
         team_base_x = 600 if single_team else 575
-        team_spacing = 250 if single_team else 230
+        team_spacing = 230 if (not single_team and board_7digit) else 250
 
         # 按分数排序取最高和次高
         sorted_teams = sorted(rank_temp.teams, key=lambda t: t.score, reverse=True)
